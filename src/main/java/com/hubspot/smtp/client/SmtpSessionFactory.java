@@ -22,7 +22,7 @@ public class SmtpSessionFactory {
 
   public CompletableFuture<SmtpClientResponse> connect(NioEventLoopGroup group, SmtpSessionConfig config) {
     ResponseHandler responseHandler = new ResponseHandler();
-    CompletableFuture<SmtpResponse> initialResponseFuture = responseHandler.createResponseFuture();
+    CompletableFuture<SmtpResponse[]> initialResponseFuture = responseHandler.createResponseFuture(1);
 
     Bootstrap bootstrap = new Bootstrap()
         .group(group)
@@ -36,7 +36,7 @@ public class SmtpSessionFactory {
     bootstrap.connect().addListener(f -> {
       if (f.isSuccess()) {
         SmtpSession session = new SmtpSession(((ChannelFuture) f).channel(), responseHandler);
-        initialResponseFuture.thenAccept(r -> connectFuture.complete(new SmtpClientResponse(r, session)));
+        initialResponseFuture.thenAccept(r -> connectFuture.complete(new SmtpClientResponse(r[0], session)));
       } else {
         LOG.error("Could not connect to {}", config.getRemoteAddress(), f.cause());
         connectFuture.completeExceptionally(f.cause());

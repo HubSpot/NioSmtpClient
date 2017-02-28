@@ -15,25 +15,33 @@ import io.netty.handler.codec.smtp.SmtpResponse;
 class ResponseHandler extends ChannelInboundHandlerAdapter {
   private static final Logger LOG = LoggerFactory.getLogger(ResponseHandler.class);
 
-  private final AtomicReference<CompletableFuture<SmtpResponse>> responseFuture = new AtomicReference<>();
+  private final AtomicReference<ResponseCollector> responseCollector = new AtomicReference<>();
 
-  CompletableFuture<SmtpResponse> createResponseFuture() {
-    CompletableFuture<SmtpResponse> f = new CompletableFuture<>();
+  CompletableFuture<SmtpResponse[]> createResponseFuture(int expectedResponses) {
+    ResponseCollector collector = new ResponseCollector(expectedResponses);
 
-    boolean success = responseFuture.compareAndSet(null, f);
+    boolean success = responseCollector.compareAndSet(null, collector);
     Preconditions.checkState(success, "Cannot wait for a response while one is already pending");
 
-    return f;
+    return collector.getFuture();
   }
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     if (msg instanceof SmtpResponse) {
-      CompletableFuture<SmtpResponse> f = responseFuture.getAndSet(null);
-      if (f == null) {
+      ResponseCollector collector = responseCollector.get();
+
+      if (collector == null) {
         LOG.warn("Unexpected response received: " + msg);
       } else {
-        f.complete((SmtpResponse) msg);
+        boolean complete = collector.addResponse((SmtpResponse) msg);
+        if (complete) {
+          // because only the event loop code sets this field when it is non-null,
+          // and because channelRead is always run in the same thread, we can
+          // be sure this value hasn't changed since we read it earlier in this method
+          responseCollector.set(null);
+          collector.complete();
+        }
       }
     }
 
@@ -42,9 +50,9 @@ class ResponseHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    CompletableFuture<SmtpResponse> f = responseFuture.getAndSet(null);
-    if (f != null) {
-      f.completeExceptionally(cause);
+    ResponseCollector collector = responseCollector.getAndSet(null);
+    if (collector != null) {
+      collector.completeExceptionally(cause);
     }
   }
 }

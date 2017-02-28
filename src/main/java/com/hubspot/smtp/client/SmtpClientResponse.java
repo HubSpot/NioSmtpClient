@@ -12,7 +12,7 @@ public class SmtpClientResponse implements SmtpResponse {
   private final SmtpResponse response;
   private final SmtpSession session;
 
-  public SmtpClientResponse(SmtpResponse response, SmtpSession session) {
+  SmtpClientResponse(SmtpResponse response, SmtpSession session) {
     this.response = response;
     this.session = session;
   }

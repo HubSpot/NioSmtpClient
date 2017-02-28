@@ -1,6 +1,7 @@
 package com.hubspot.smtp.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 import java.util.EnumSet;
@@ -9,6 +10,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InOrder;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -28,9 +30,16 @@ public class SmtpSessionTest {
   private static final SmtpContent SMTP_CONTENT = new DefaultSmtpContent(Unpooled.copiedBuffer(new byte[1]));
   private static final SmtpContent LAST_SMTP_CONTENT = new DefaultLastSmtpContent(Unpooled.copiedBuffer(new byte[2]));
   private static final SmtpResponse SMTP_RESPONSE = new DefaultSmtpResponse(250, "OK");
+  private static final SmtpRequest MAIL_REQUEST = new DefaultSmtpRequest(SmtpCommand.MAIL, "FROM:alice@example.com");
+  private static final SmtpRequest RCPT_REQUEST = new DefaultSmtpRequest(SmtpCommand.RCPT, "FROM:bob@example.com");
+  private static final SmtpRequest DATA_REQUEST = new DefaultSmtpRequest(SmtpCommand.DATA);
+  private static final SmtpRequest EHLO_REQUEST = new DefaultSmtpRequest(SmtpCommand.EHLO);
+  private static final SmtpRequest NOOP_REQUEST = new DefaultSmtpRequest(SmtpCommand.NOOP);
+  private static final SmtpRequest HELO_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELO);
+  private static final SmtpRequest HELP_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELP);
 
   private ResponseHandler responseHandler;
-  private CompletableFuture<SmtpResponse> responseFuture;
+  private CompletableFuture<SmtpResponse[]> responseFuture;
   private Channel channel;
   private SmtpSession session;
 
@@ -41,7 +50,7 @@ public class SmtpSessionTest {
     session = new SmtpSession(channel, responseHandler);
 
     responseFuture = new CompletableFuture<>();
-    when(responseHandler.createResponseFuture()).thenReturn(responseFuture);
+    when(responseHandler.createResponseFuture(anyInt())).thenReturn(responseFuture);
   }
   
   @Test
@@ -61,15 +70,80 @@ public class SmtpSessionTest {
   }
 
   @Test
-  public void itWrapsTheResponseResult() throws ExecutionException, InterruptedException {
+  public void itWrapsTheResponse() throws ExecutionException, InterruptedException {
     CompletableFuture<SmtpClientResponse> future = session.send(SMTP_REQUEST);
 
-    responseFuture.complete(SMTP_RESPONSE);
+    responseFuture.complete(new SmtpResponse[] { SMTP_RESPONSE });
 
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().getSession()).isEqualTo(session);
     assertThat(future.get().code()).isEqualTo(SMTP_RESPONSE.code());
     assertThat(future.get().details()).isEqualTo(SMTP_RESPONSE.details());
+  }
+
+  @Test
+  public void itSendsPipelinedRequests() {
+    SmtpContent[] contents = {SMTP_CONTENT, LAST_SMTP_CONTENT};
+    session.sendPipelined(contents, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(SMTP_CONTENT);
+    order.verify(channel).write(LAST_SMTP_CONTENT);
+    order.verify(channel).write(MAIL_REQUEST);
+    order.verify(channel).write(RCPT_REQUEST);
+    order.verify(channel).write(DATA_REQUEST);
+    order.verify(channel).flush();
+  }
+
+  @Test
+  public void itCanSendASingleCommandWithPipelined() {
+    // this is the same as just calling send
+    session.sendPipelined(MAIL_REQUEST);
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(MAIL_REQUEST);
+    order.verify(channel).flush();
+  }
+
+  @Test
+  public void itChecksPipelineArgumentsAreValid() {
+    assertPipelineError("DATA must appear last in a pipelined request", DATA_REQUEST, MAIL_REQUEST);
+    assertPipelineError("EHLO must appear last in a pipelined request", EHLO_REQUEST, MAIL_REQUEST);
+    assertPipelineError("NOOP must appear last in a pipelined request", NOOP_REQUEST, MAIL_REQUEST);
+
+    assertPipelineError("HELO cannot be used in a pipelined request", HELO_REQUEST);
+    assertPipelineError("HELP cannot be used in a pipelined request", HELP_REQUEST);
+  }
+
+  private void assertPipelineError(String message, SmtpRequest... requests) {
+    assertThatThrownBy(() -> session.sendPipelined(requests))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(message);
+  }
+
+  @Test
+  public void itWrapsTheResponsesWhenPipelining() throws ExecutionException, InterruptedException {
+    SmtpContent[] contents = {SMTP_CONTENT, LAST_SMTP_CONTENT};
+    CompletableFuture<SmtpClientResponse[]> future = session.sendPipelined(contents, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
+
+    SmtpResponse[] responses = {SMTP_RESPONSE, SMTP_RESPONSE, SMTP_RESPONSE, SMTP_RESPONSE};
+    responseFuture.complete(responses);
+
+    // 4 responses expected: one for the content, 3 for the requests
+    verify(responseHandler).createResponseFuture(4);
+
+    assertThat(future.isDone()).isTrue();
+    assertThat(future.get().length).isEqualTo(responses.length);
+    assertThat(future.get()[0].getSession()).isEqualTo(session);
+    assertThat(future.get()[0].code()).isEqualTo(SMTP_RESPONSE.code());
+  }
+
+  @Test
+  public void itExpectsTheRightNumberOfResponsesWhenPipelining() {
+    CompletableFuture<SmtpClientResponse[]> future = session.sendPipelined(RCPT_REQUEST, DATA_REQUEST);
+
+    // 1 response expected for each request
+    verify(responseHandler).createResponseFuture(2);
   }
 
   @Test
