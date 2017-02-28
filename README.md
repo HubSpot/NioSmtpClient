@@ -1,4 +1,4 @@
-SmtpImapClient
+NioSmtpClient
 ==============
 
 A high-performance async HubSpot SMTP client.
