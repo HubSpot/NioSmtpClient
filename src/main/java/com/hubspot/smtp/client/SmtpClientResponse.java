@@ -27,6 +27,18 @@ public class SmtpClientResponse implements SmtpResponse {
     return response.details();
   }
 
+  public boolean isTransientError() {
+    return response.code() >= 400 && response.code() < 500;
+  }
+
+  public boolean isPermanentError() {
+    return response.code() >= 500;
+  }
+
+  public boolean isError() {
+    return isTransientError() || isPermanentError();
+  }
+
   public SmtpSession getSession() {
     return session;
   }
