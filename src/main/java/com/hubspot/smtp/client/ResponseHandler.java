@@ -32,7 +32,7 @@ class ResponseHandler extends ChannelInboundHandlerAdapter {
       ResponseCollector collector = responseCollector.get();
 
       if (collector == null) {
-        LOG.warn("Unexpected response received: " + msg);
+        LOG.warn("Unexpected response received: {}", msg);
       } else {
         boolean complete = collector.addResponse((SmtpResponse) msg);
         if (complete) {
