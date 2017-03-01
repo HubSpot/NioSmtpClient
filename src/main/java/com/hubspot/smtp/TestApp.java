@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
 import com.hubspot.smtp.client.SmtpClientResponse;
 import com.hubspot.smtp.client.SmtpSession;
 import com.hubspot.smtp.client.SmtpSessionConfig;
@@ -53,7 +54,7 @@ class TestApp {
 
   private static void sendPipelinedEmails(NioEventLoopGroup eventLoopGroup, int messageCount)  {
     ByteBuf messageBuffer = ByteBufs.createDotStuffedBuffer(TEST_EMAIL.getBytes(StandardCharsets.UTF_8));
-    SmtpContent[] contents = new SmtpContent[] { new DefaultSmtpContent(messageBuffer), EMPTY_LAST_CONTENT };
+    List<SmtpContent> contents = Lists.newArrayList(new DefaultSmtpContent(messageBuffer), EMPTY_LAST_CONTENT);
 
     SmtpSessionConfig config = SmtpSessionConfig.forRemoteAddress(InetSocketAddress.createUnresolved("localhost", 9925));
 

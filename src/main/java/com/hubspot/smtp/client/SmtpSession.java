@@ -1,5 +1,7 @@
 package com.hubspot.smtp.client;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -63,15 +65,15 @@ public class SmtpSession {
   public CompletableFuture<SmtpClientResponse[]> sendPipelined(SmtpRequest... requests) {
     Preconditions.checkNotNull(requests);
 
-    return sendPipelined(new SmtpContent[0], requests);
+    return sendPipelined(Collections.emptyList(), requests);
   }
 
-  public CompletableFuture<SmtpClientResponse[]> sendPipelined(SmtpContent[] contents, SmtpRequest... requests) {
+  public CompletableFuture<SmtpClientResponse[]> sendPipelined(Collection<SmtpContent> contents, SmtpRequest... requests) {
     Preconditions.checkNotNull(contents);
     Preconditions.checkNotNull(requests);
     checkValidPipelinedRequest(requests);
 
-    int expectedResponses = requests.length + (contents.length > 0 ? 1 : 0);
+    int expectedResponses = requests.length + (contents.isEmpty() ? 0 : 1);
     CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(expectedResponses);
 
     for (SmtpContent c : contents) {

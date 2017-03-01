@@ -5,12 +5,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
+
+import com.google.common.collect.Lists;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -83,7 +86,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itSendsPipelinedRequests() {
-    SmtpContent[] contents = {SMTP_CONTENT, LAST_SMTP_CONTENT};
+    List<SmtpContent> contents = Lists.newArrayList(SMTP_CONTENT, LAST_SMTP_CONTENT);
     session.sendPipelined(contents, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
 
     InOrder order = inOrder(channel);
@@ -123,7 +126,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itWrapsTheResponsesWhenPipelining() throws ExecutionException, InterruptedException {
-    SmtpContent[] contents = {SMTP_CONTENT, LAST_SMTP_CONTENT};
+    List<SmtpContent> contents = Lists.newArrayList(SMTP_CONTENT, LAST_SMTP_CONTENT);
     CompletableFuture<SmtpClientResponse[]> future = session.sendPipelined(contents, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
 
     SmtpResponse[] responses = {SMTP_RESPONSE, SMTP_RESPONSE, SMTP_RESPONSE, SMTP_RESPONSE};
