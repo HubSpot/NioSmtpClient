@@ -27,48 +27,6 @@
     </repository>
   </repositories>
 
-  <profiles>
-    <profile>
-      <id>linux</id>
-      <activation>
-        <os>
-          <name>Linux</name>
-          <family>unix</family>
-        </os>
-      </activation>
-      <properties>
-        <netty.epoll.classifier>${os.detected.classifier}</netty.epoll.classifier>
-      </properties>
-      <dependencies>
-        <dependency>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-transport-native-epoll</artifactId>
-          <version>${netty.version}</version>
-          <classifier>${netty.epoll.classifier}</classifier>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <id>mac</id>
-      <activation>
-        <os>
-          <family>mac</family>
-        </os>
-      </activation>
-      <properties>
-        <netty.epoll.classifier/>
-      </properties>
-      <dependencies>
-        <dependency>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-transport-native-epoll</artifactId>
-          <version>${netty.version}</version>
-          <classifier>${netty.epoll.classifier}</classifier>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
-
   <dependencies>
     <dependency>
       <groupId>io.netty</groupId>
@@ -133,16 +91,6 @@
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <configuration>
-          <ignoredDependencies combine.children="append">
-            <ignoredDependency>io.netty:netty-transport-native-epoll</ignoredDependency>
-            <ignoredDependency>io.netty:netty-codec-http</ignoredDependency>
-          </ignoredDependencies>
         </configuration>
       </plugin>
       <plugin>
