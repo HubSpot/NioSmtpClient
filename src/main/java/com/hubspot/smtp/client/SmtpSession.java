@@ -6,6 +6,7 @@ import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
@@ -37,6 +38,8 @@ public class SmtpSession {
       SmtpCommand.QUIT,
       SmtpCommand.NOOP);
 
+  private static final Joiner COMMA_JOINER = Joiner.on(", ");
+
   private final Channel channel;
   private final ResponseHandler responseHandler;
 
@@ -56,7 +59,7 @@ public class SmtpSession {
   public CompletableFuture<SmtpClientResponse> send(SmtpRequest request) {
     Preconditions.checkNotNull(request);
 
-    CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1);
+    CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> createDebugString(request));
     channel.writeAndFlush(request);
 
     return responseFuture.thenApply(r -> new SmtpClientResponse(r[0], this));
@@ -74,7 +77,7 @@ public class SmtpSession {
     checkValidPipelinedRequest(requests);
 
     int expectedResponses = requests.length + (contents.isEmpty() ? 0 : 1);
-    CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(expectedResponses);
+    CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(expectedResponses, () -> createDebugString(requests));
 
     for (SmtpContent c : contents) {
       channel.write(c);
@@ -92,6 +95,10 @@ public class SmtpSession {
       }
       return smtpClientResponses;
     });
+  }
+
+  private String createDebugString(SmtpRequest... requests) {
+    return COMMA_JOINER.join(requests);
   }
 
   private static void checkValidPipelinedRequest(SmtpRequest[] requests) {
@@ -118,7 +125,7 @@ public class SmtpSession {
     Preconditions.checkNotNull(contents);
     Preconditions.checkArgument(contents.length > 0, "You must provide content to send");
 
-    CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1);
+    CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> "message contents");
 
     for (SmtpContent c : contents) {
       channel.write(c);

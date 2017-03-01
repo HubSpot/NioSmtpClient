@@ -22,7 +22,7 @@ public class SmtpSessionFactory {
 
   public CompletableFuture<SmtpClientResponse> connect(NioEventLoopGroup group, SmtpSessionConfig config) {
     ResponseHandler responseHandler = new ResponseHandler();
-    CompletableFuture<SmtpResponse[]> initialResponseFuture = responseHandler.createResponseFuture(1);
+    CompletableFuture<SmtpResponse[]> initialResponseFuture = responseHandler.createResponseFuture(1, () -> "initial response");
 
     Bootstrap bootstrap = new Bootstrap()
         .group(group)

@@ -8,6 +8,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -40,6 +41,7 @@ public class SmtpSessionTest {
   private static final SmtpRequest NOOP_REQUEST = new DefaultSmtpRequest(SmtpCommand.NOOP);
   private static final SmtpRequest HELO_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELO);
   private static final SmtpRequest HELP_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELP);
+  private static final Supplier<String> DEBUG_STRING = () -> "debug";
 
   private ResponseHandler responseHandler;
   private CompletableFuture<SmtpResponse[]> responseFuture;
@@ -53,7 +55,7 @@ public class SmtpSessionTest {
     session = new SmtpSession(channel, responseHandler);
 
     responseFuture = new CompletableFuture<>();
-    when(responseHandler.createResponseFuture(anyInt())).thenReturn(responseFuture);
+    when(responseHandler.createResponseFuture(anyInt(), any())).thenReturn(responseFuture);
   }
   
   @Test
@@ -133,7 +135,7 @@ public class SmtpSessionTest {
     responseFuture.complete(responses);
 
     // 4 responses expected: one for the content, 3 for the requests
-    verify(responseHandler).createResponseFuture(4);
+    verify(responseHandler).createResponseFuture(eq(4), any());
 
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().length).isEqualTo(responses.length);
@@ -143,10 +145,10 @@ public class SmtpSessionTest {
 
   @Test
   public void itExpectsTheRightNumberOfResponsesWhenPipelining() {
-    CompletableFuture<SmtpClientResponse[]> future = session.sendPipelined(RCPT_REQUEST, DATA_REQUEST);
+    session.sendPipelined(RCPT_REQUEST, DATA_REQUEST);
 
     // 1 response expected for each request
-    verify(responseHandler).createResponseFuture(2);
+    verify(responseHandler).createResponseFuture(eq(2), any());
   }
 
   @Test

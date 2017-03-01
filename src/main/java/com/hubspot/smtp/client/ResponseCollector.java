@@ -1,6 +1,7 @@
 package com.hubspot.smtp.client;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 import com.google.common.base.Preconditions;
 
@@ -9,16 +10,23 @@ import io.netty.handler.codec.smtp.SmtpResponse;
 class ResponseCollector {
   private final CompletableFuture<SmtpResponse[]> future;
   private final SmtpResponse[] responses;
+  private final Supplier<String> debugString;
   private int remainingResponses;
 
-  ResponseCollector(int expectedResponses) {
-    remainingResponses = expectedResponses;
+  ResponseCollector(int expectedResponses, Supplier<String> debugString) {
+    this.remainingResponses = expectedResponses;
+    this.debugString = debugString;
+
     responses = new SmtpResponse[expectedResponses];
     future = new CompletableFuture<>();
   }
 
   CompletableFuture<SmtpResponse[]> getFuture() {
     return future;
+  }
+
+  public String getDebugString() {
+    return debugString.get();
   }
 
   boolean addResponse(SmtpResponse response) {
