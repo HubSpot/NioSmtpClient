@@ -12,6 +12,7 @@ git fetch --depth 1 origin gh-pages
 git fetch origin gh-pages:refs/remotes/origin/gh-pages
 git config user.email 'paas+janky@hubspot.com'
 git config user.name 'Janky'
+git branch -D gh-pages || true
 git checkout -b gh-pages origin/gh-pages
 
 rsync -a $tmpDir/ ./$PROJECT_VERSION
