@@ -166,12 +166,25 @@
         </property>
       </activation>
       <build>
+        <pluginManagement>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.5.0</version>
+          </plugin>
+        </plugins>
+        </pluginManagement>
+
         <plugins>
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>
             <configuration>
               <executable>${env.WORKSPACE}/deploy-docs.sh</executable>
+              <environmentVariables>
+                <PROJECT_VERSION>${project.version}</PROJECT_VERSION>
+              </environmentVariables>
             </configuration>
             <executions>
               <execution>

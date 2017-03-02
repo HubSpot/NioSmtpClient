@@ -6,7 +6,7 @@ cd $WORKSPACE  # move from the module directory -> workspace (blazar runs your b
 
 tmpDir=$(mktemp -d)
 
-rsync -a $MODULE_NAME/target/apidocs/ $tmpDir/
+rsync -a ./target/apidocs/ $tmpDir/
 
 git fetch --depth 1 origin gh-pages
 git fetch origin gh-pages:refs/remotes/origin/gh-pages
@@ -14,9 +14,9 @@ git config user.email 'paas+janky@hubspot.com'
 git config user.name 'Janky'
 git checkout -b gh-pages origin/gh-pages
 
-rsync -a $tmpDir/ $MODULE_NAME/
+rsync -a $tmpDir/ ./$PROJECT_VERSION
 
-git add $MODULE_NAME/*css
+git add --all ./$PROJECT_VERSION
 
 git commit -m "Update Docs $BUILD_URL"
 git push origin gh-pages
