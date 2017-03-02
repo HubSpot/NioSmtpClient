@@ -1,7 +1,7 @@
 # NioSmtpClient
 
 
-*A high-performance async HubSpot SMTP client.*
+*A high-performance async SMTP client based on Netty.*
 
 [![Build Status](https://travis-ci.org/HubSpot/NioSmtpClient.svg?branch=master)](https://travis-ci.org/HubSpot/NioSmtpClient)
 
