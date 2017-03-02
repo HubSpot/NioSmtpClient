@@ -162,7 +162,7 @@
       <activation>
         <property>
           <name>env.BLAZAR_COORDINATES</name>
-          <value>git.hubteam.com-HubSpot-Franklin-master-FranklinService</value>
+          <value>github.com-HubSpot-NioSmtpClient-master-NioSmtpClient</value>
         </property>
       </activation>
       <build>
