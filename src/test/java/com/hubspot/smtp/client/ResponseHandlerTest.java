@@ -2,10 +2,11 @@ package com.hubspot.smtp.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -15,9 +16,11 @@ import io.netty.handler.codec.smtp.DefaultSmtpResponse;
 import io.netty.handler.codec.smtp.SmtpResponse;
 
 public class ResponseHandlerTest {
+  private static final DefaultSmtpResponse SMTP_RESPONSE = new DefaultSmtpResponse(250);
+  private static final Supplier<String> DEBUG_STRING = () -> "debug";
+
   private ResponseHandler responseHandler;
   private ChannelHandlerContext context;
-  private static final DefaultSmtpResponse SMTP_RESPONSE = new DefaultSmtpResponse(250);
 
   @Before
   public void setup() {
@@ -27,7 +30,7 @@ public class ResponseHandlerTest {
 
   @Test
   public void itCompletesExceptionallyIfAnExceptionIsCaught() throws Exception {
-    CompletableFuture<SmtpResponse> f = responseHandler.createResponseFuture();
+    CompletableFuture<SmtpResponse[]> f = responseHandler.createResponseFuture(1, DEBUG_STRING);
     Exception testException = new Exception("test");
 
     responseHandler.exceptionCaught(context, testException);
@@ -38,17 +41,17 @@ public class ResponseHandlerTest {
 
   @Test
   public void itCompletesWithAResponseWhenHandled() throws Exception {
-    CompletableFuture<SmtpResponse> f = responseHandler.createResponseFuture();
+    CompletableFuture<SmtpResponse[]> f = responseHandler.createResponseFuture(1, DEBUG_STRING);
 
     responseHandler.channelRead(context, SMTP_RESPONSE);
 
     assertThat(f.isCompletedExceptionally()).isFalse();
-    assertThat(f.get()).isEqualTo(SMTP_RESPONSE);
+    assertThat(f.get()).isEqualTo(new SmtpResponse[] { SMTP_RESPONSE });
   }
 
   @Test
   public void itDoesNotCompleteWhenSomeOtherObjectIsRead() throws Exception {
-    CompletableFuture<SmtpResponse> f = responseHandler.createResponseFuture();
+    CompletableFuture<SmtpResponse[]> f = responseHandler.createResponseFuture(1, DEBUG_STRING);
 
     responseHandler.channelRead(context, "unexpected");
 
@@ -57,26 +60,88 @@ public class ResponseHandlerTest {
 
   @Test
   public void itOnlyCreatesOneResponseFutureAtATime() {
-    assertThat(responseHandler.createResponseFuture()).isNotNull();
+    assertThat(responseHandler.createResponseFuture(1, () -> "old")).isNotNull();
 
-    assertThatThrownBy(() -> responseHandler.createResponseFuture())
+    assertThatThrownBy(() -> responseHandler.createResponseFuture(1, () -> "new"))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot wait for a response while one is already pending");
+        .hasMessage("Cannot wait for a response to [new] because we're still waiting for a response to [old]");
+  }
+
+  @Test
+  public void itOnlyCreatesOneResponseFutureAtATimeForMultipleResponses() {
+    assertThat(responseHandler.createResponseFuture(2, () -> "old")).isNotNull();
+
+    assertThatThrownBy(() -> responseHandler.createResponseFuture(1, () -> "new"))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Cannot wait for a response to [new] because we're still waiting for a response to [old]");
+  }
+
+  @Test
+  public void itCanCreateAFutureThatWaitsForMultipleReponses() throws Exception {
+    CompletableFuture<SmtpResponse[]> f = responseHandler.createResponseFuture(3, DEBUG_STRING);
+    SmtpResponse response1 = new DefaultSmtpResponse(250, "1");
+    SmtpResponse response2 = new DefaultSmtpResponse(250, "2");
+    SmtpResponse response3 = new DefaultSmtpResponse(250, "3");
+
+    responseHandler.channelRead(context, response1);
+
+    assertThat(f.isDone()).isFalse();
+
+    responseHandler.channelRead(context, response2);
+    responseHandler.channelRead(context, response3);
+
+    assertThat(f.isDone()).isTrue();
+
+    assertThat(f.isCompletedExceptionally()).isFalse();
+    assertThat(f.get()[0]).isEqualTo(response1);
+    assertThat(f.get()[1]).isEqualTo(response2);
+    assertThat(f.get()[2]).isEqualTo(response3);
+  }
+
+  @Test
+  public void itCanCreateAFutureInTheCallbackForAPreviousFuture() throws Exception {
+    CompletableFuture<SmtpResponse[]> future = responseHandler.createResponseFuture(1, DEBUG_STRING);
+
+    CompletableFuture<Void> assertion = future.thenRun(() -> assertThat(responseHandler.createResponseFuture(1, DEBUG_STRING)).isNotNull());
+
+    responseHandler.channelRead(context, SMTP_RESPONSE);
+
+    assertion.get();
+  }
+
+  @Test
+  public void itCanFailMultipleResponseFuturesAtAnyTime() throws Exception {
+    CompletableFuture<SmtpResponse[]> f = responseHandler.createResponseFuture(3, DEBUG_STRING);
+    Exception testException = new Exception("test");
+
+    responseHandler.exceptionCaught(context, testException);
+
+    assertThat(f.isCompletedExceptionally()).isTrue();
+    assertThatThrownBy(f::get).isInstanceOf(ExecutionException.class).hasCause(testException);
   }
 
   @Test
   public void itCanCreateNewFuturesOnceAResponseHasArrived() throws Exception {
-    responseHandler.createResponseFuture();
+    responseHandler.createResponseFuture(1, DEBUG_STRING);
     responseHandler.channelRead(context, SMTP_RESPONSE);
 
-    responseHandler.createResponseFuture();
+    responseHandler.createResponseFuture(1, DEBUG_STRING);
+  }
+
+  @Test
+  public void itCanCreateNewFuturesOnceATheExpectedResponsesHaveArrived() throws Exception {
+    responseHandler.createResponseFuture(2, DEBUG_STRING);
+    responseHandler.channelRead(context, SMTP_RESPONSE);
+    responseHandler.channelRead(context, SMTP_RESPONSE);
+
+    responseHandler.createResponseFuture(1, DEBUG_STRING);
   }
 
   @Test
   public void itCanCreateNewFuturesOnceAnExceptionIsHandled() throws Exception {
-    responseHandler.createResponseFuture();
+    responseHandler.createResponseFuture(1, DEBUG_STRING);
     responseHandler.exceptionCaught(context, new Exception("test"));
 
-    responseHandler.createResponseFuture();
+    responseHandler.createResponseFuture(1, DEBUG_STRING);
   }
 }

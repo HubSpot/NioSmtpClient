@@ -2,11 +2,10 @@ package com.hubspot.smtp.client;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Preconditions;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -15,25 +14,44 @@ import io.netty.handler.codec.smtp.SmtpResponse;
 class ResponseHandler extends ChannelInboundHandlerAdapter {
   private static final Logger LOG = LoggerFactory.getLogger(ResponseHandler.class);
 
-  private final AtomicReference<CompletableFuture<SmtpResponse>> responseFuture = new AtomicReference<>();
+  private final AtomicReference<ResponseCollector> responseCollector = new AtomicReference<>();
 
-  CompletableFuture<SmtpResponse> createResponseFuture() {
-    CompletableFuture<SmtpResponse> f = new CompletableFuture<>();
+  CompletableFuture<SmtpResponse[]> createResponseFuture(int expectedResponses, Supplier<String> debugStringSupplier) {
+    ResponseCollector collector = new ResponseCollector(expectedResponses, debugStringSupplier);
 
-    boolean success = responseFuture.compareAndSet(null, f);
-    Preconditions.checkState(success, "Cannot wait for a response while one is already pending");
+    boolean success = responseCollector.compareAndSet(null, collector);
+    if (!success) {
+      ResponseCollector previousCollector = this.responseCollector.get();
+      if (previousCollector == null) {
+        return createResponseFuture(expectedResponses, debugStringSupplier);
+      }
 
-    return f;
+      throw new IllegalStateException(String.format("Cannot wait for a response to [%s] because we're still waiting for a response to [%s]",
+          collector.getDebugString(), previousCollector.getDebugString()));
+    }
+
+    // although the future field may have been written in another thread,
+    // the compareAndSet call above has volatile semantics and
+    // ensures the write will be visible
+    return collector.getFuture();
   }
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     if (msg instanceof SmtpResponse) {
-      CompletableFuture<SmtpResponse> f = responseFuture.getAndSet(null);
-      if (f == null) {
-        LOG.warn("Unexpected response received: " + msg);
+      ResponseCollector collector = responseCollector.get();
+
+      if (collector == null) {
+        LOG.warn("Unexpected response received: {}", msg);
       } else {
-        f.complete((SmtpResponse) msg);
+        boolean complete = collector.addResponse((SmtpResponse) msg);
+        if (complete) {
+          // because only the event loop code sets this field when it is non-null,
+          // and because channelRead is always run in the same thread, we can
+          // be sure this value hasn't changed since we read it earlier in this method
+          responseCollector.set(null);
+          collector.complete();
+        }
       }
     }
 
@@ -42,9 +60,9 @@ class ResponseHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-    CompletableFuture<SmtpResponse> f = responseFuture.getAndSet(null);
-    if (f != null) {
-      f.completeExceptionally(cause);
+    ResponseCollector collector = responseCollector.getAndSet(null);
+    if (collector != null) {
+      collector.completeExceptionally(cause);
     }
   }
 }

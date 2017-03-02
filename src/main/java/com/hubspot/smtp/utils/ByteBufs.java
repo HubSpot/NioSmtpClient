@@ -7,12 +7,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 public final class ByteBufs {
-  private final static byte CR = '\r';
-  private final static byte LF = '\n';
-  private final static byte DOT = '.';
-  private final static byte[] DOT_DOT = {DOT, DOT};
-  private final static byte[] CR_LF = {CR, LF};
-  private final static byte[] EMPTY_BYTE_ARRAY = new byte[0];
+  private static final byte CR = '\r';
+  private static final byte LF = '\n';
+  private static final byte DOT = '.';
+  private static final byte[] DOT_DOT = {DOT, DOT};
+  private static final byte[] CR_LF = {CR, LF};
+  private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
   public static ByteBuf createDotStuffedBuffer(byte[] bytes) {
     int dotIndex = findDotAtBeginningOfLine(bytes, 0);

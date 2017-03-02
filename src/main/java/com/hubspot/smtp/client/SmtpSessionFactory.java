@@ -1,6 +1,7 @@
 package com.hubspot.smtp.client;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,12 +18,17 @@ import io.netty.handler.codec.smtp.SmtpResponseDecoder;
 
 public class SmtpSessionFactory {
   private static final Logger LOG = LoggerFactory.getLogger(SmtpSessionFactory.class);
-
   private static final int MAX_LINE_LENGTH = 200;
+
+  private final ExecutorService executorService;
+
+  public SmtpSessionFactory(ExecutorService executorService) {
+    this.executorService = executorService;
+  }
 
   public CompletableFuture<SmtpClientResponse> connect(NioEventLoopGroup group, SmtpSessionConfig config) {
     ResponseHandler responseHandler = new ResponseHandler();
-    CompletableFuture<SmtpResponse> initialResponseFuture = responseHandler.createResponseFuture();
+    CompletableFuture<SmtpResponse[]> initialResponseFuture = responseHandler.createResponseFuture(1, () -> "initial response");
 
     Bootstrap bootstrap = new Bootstrap()
         .group(group)
@@ -35,8 +41,8 @@ public class SmtpSessionFactory {
 
     bootstrap.connect().addListener(f -> {
       if (f.isSuccess()) {
-        SmtpSession session = new SmtpSession(((ChannelFuture) f).channel(), responseHandler);
-        initialResponseFuture.thenAccept(r -> connectFuture.complete(new SmtpClientResponse(r, session)));
+        SmtpSession session = new SmtpSession(((ChannelFuture) f).channel(), responseHandler, executorService);
+        initialResponseFuture.thenAccept(r -> connectFuture.complete(new SmtpClientResponse(r[0], session)));
       } else {
         LOG.error("Could not connect to {}", config.getRemoteAddress(), f.cause());
         connectFuture.completeExceptionally(f.cause());

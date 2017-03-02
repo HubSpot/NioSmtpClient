@@ -1,6 +1,12 @@
 package com.hubspot.smtp;
 
 import static io.netty.handler.codec.smtp.LastSmtpContent.EMPTY_LAST_CONTENT;
+import static io.netty.handler.codec.smtp.SmtpCommand.DATA;
+import static io.netty.handler.codec.smtp.SmtpCommand.EHLO;
+import static io.netty.handler.codec.smtp.SmtpCommand.MAIL;
+import static io.netty.handler.codec.smtp.SmtpCommand.QUIT;
+import static io.netty.handler.codec.smtp.SmtpCommand.RCPT;
+import static io.netty.handler.codec.smtp.SmtpCommand.RSET;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -9,11 +15,14 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
 import com.hubspot.smtp.client.SmtpClientResponse;
 import com.hubspot.smtp.client.SmtpSession;
 import com.hubspot.smtp.client.SmtpSessionConfig;
@@ -29,31 +38,52 @@ import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpContent;
 import io.netty.handler.codec.smtp.SmtpRequest;
 
+@SuppressWarnings("ALL")
 class TestApp {
   private static final String TEST_EMAIL = "Subject: test mail\r\n\r\nHi there!\r\n\r\n- Michael\r\n";
+  private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 
   public static void main(String[] args) throws InterruptedException, IOException, ExecutionException {
-
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
 
     Stopwatch stopwatch = Stopwatch.createStarted();
-    for (int i = 0; i < 1000; i++) {
-      sendEmail(eventLoopGroup);
-      return;
-    }
+
+    sendPipelinedEmails(eventLoopGroup, 100_000);
 
     System.out.println("Completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
-    while (Thread.currentThread().isAlive()) {
-      Thread.sleep(500);
+    eventLoopGroup.shutdownGracefully().sync();
+  }
+
+  private static void sendPipelinedEmails(NioEventLoopGroup eventLoopGroup, int messageCount)  {
+    ByteBuf messageBuffer = ByteBufs.createDotStuffedBuffer(TEST_EMAIL.getBytes(StandardCharsets.UTF_8));
+    List<SmtpContent> contents = Lists.newArrayList(new DefaultSmtpContent(messageBuffer), EMPTY_LAST_CONTENT);
+
+    SmtpSessionConfig config = SmtpSessionConfig.forRemoteAddress(InetSocketAddress.createUnresolved("localhost", 9925));
+
+    CompletableFuture<SmtpClientResponse[]> future = new SmtpSessionFactory(EXECUTOR_SERVICE).connect(eventLoopGroup, config)
+        .thenCompose(r -> r.getSession().send(req(EHLO, "hubspot.com")))
+        .thenCompose(r -> r.getSession().sendPipelined(req(MAIL, "FROM:test@example.com"), req(RCPT, "TO:person1@example.com"), req(DATA)));
+
+    for (int i = 1; i < messageCount; i++) {
+      messageBuffer.retain();
+
+      String recipient = "TO:person" + i + "@example.com";
+      future = future.thenCompose(r -> r[0].getSession().sendPipelined(contents, req(RSET), req(MAIL, "FROM:test@example.com"), req(RCPT, recipient), req(DATA)));
     }
+
+    future.thenCompose(r -> r[0].getSession().sendPipelined(contents,  req(QUIT)))
+        .thenCompose(r -> r[0].getSession().close())
+        .join();
+  }
+
+  private static SmtpRequest req(SmtpCommand command, CharSequence... arguments) {
+    return new DefaultSmtpRequest(command, arguments);
   }
 
   private static void sendEmail(NioEventLoopGroup eventLoopGroup) throws InterruptedException, ExecutionException {
-    SmtpClient client = new SmtpClient(eventLoopGroup, new SmtpSessionFactory());
+    SmtpClient client = new SmtpClient(eventLoopGroup, new SmtpSessionFactory(EXECUTOR_SERVICE));
 
-    // todo: ensure dot stuffed messages end with CR
-    // todo: allocate dot stuffed messages with the right allocator
     ByteBuf messageBuffer = ByteBufs.createDotStuffedBuffer(TEST_EMAIL.getBytes(StandardCharsets.UTF_8));
 
     client.connect(SmtpSessionConfig.forRemoteAddress(InetSocketAddress.createUnresolved("localhost", 9925)))
@@ -93,7 +123,7 @@ class TestApp {
     }
 
     CompletableFuture<SmtpClientResponse> ehlo(SmtpSession session, String greetingName) {
-      return send(session, request(SmtpCommand.EHLO, greetingName)).whenComplete((response, cause) -> {
+      return send(session, request(EHLO, greetingName)).whenComplete((response, cause) -> {
         if (response != null) {
           setSupportedExtensions(session, response.details());
         }
@@ -116,7 +146,7 @@ class TestApp {
     }
 
     CompletableFuture<SmtpClientResponse> rcpt(SmtpSession session, String to) {
-      return send(session, request(SmtpCommand.RCPT, "TO:" + to));
+      return send(session, request(RCPT, "TO:" + to));
     }
 
     CompletableFuture<SmtpClientResponse> data(SmtpSession session, ByteBuf messageBuffer) {
@@ -128,7 +158,7 @@ class TestApp {
       return send(session, request(SmtpCommand.QUIT));
     }
 
-    private SmtpRequest request(SmtpCommand command, CharSequence... arguments) {
+    SmtpRequest request(SmtpCommand command, CharSequence... arguments) {
       return new DefaultSmtpRequest(command, arguments);
     }
 
@@ -136,7 +166,7 @@ class TestApp {
       return session.send(request);
     }
 
-    private CompletableFuture<SmtpClientResponse> send(SmtpSession session, SmtpContent... contents) {
+    CompletableFuture<SmtpClientResponse> send(SmtpSession session, SmtpContent... contents) {
       return session.send(contents);
     }
   }
