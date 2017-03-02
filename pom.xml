@@ -5,33 +5,86 @@
   <parent>
     <groupId>com.hubspot</groupId>
     <artifactId>basepom</artifactId>
-    <version>12.2</version>
+    <version>15.8</version>
   </parent>
 
   <artifactId>NioSmtpClient</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>0.0.1-SNAPSHOT</version>
+
+  <scm>
+    <connection>scm:git:git@github.com:HubSpot/NioSmtpClient.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/HubSpot/NioSmtpClient.git</developerConnection>
+    <url>git@github.com:HubSpot/NioSmtpClient.git</url>
+    <tag>HEAD</tag>
+  </scm>
+
+  <developers>
+    <developer>
+      <name>Michael O'Brien</name>
+      <email>mobrien@hubspot.com</email>
+    </developer>
+  </developers>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 
   <properties>
-    <hubspot.nexus.serverId>hubspot-development</hubspot.nexus.serverId>
-    <hubspot.nexus.hostname>http://maven.hubteam.com</hubspot.nexus.hostname>
-    <netty.version>4.1.8.Final</netty.version>
+    <project.build.targetJdk>1.8</project.build.targetJdk>
+    <hubspot.immutables.version>2.2.10</hubspot.immutables.version>
+    <netty41.version>4.1.8.Final</netty41.version>
   </properties>
 
-  <repositories>
-    <repository>
-      <snapshots>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
-      <id>${hubspot.nexus.serverId}</id>
-      <url>${hubspot.nexus.hostname}/nexus/content/repositories/development</url>
-    </repository>
-  </repositories>
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-buffer</artifactId>
+        <version>${netty41.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-transport</artifactId>
+        <version>${netty41.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-common</artifactId>
+        <version>${netty41.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-codec-smtp</artifactId>
+        <version>${netty41.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.immutables</groupId>
+        <artifactId>value</artifactId>
+        <version>${hubspot.immutables.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty-all</artifactId>
-      <version>${netty.version}</version>
+      <artifactId>netty-buffer</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-smtp</artifactId>
     </dependency>
 
     <dependency>
@@ -45,14 +98,12 @@
     <dependency>
       <groupId>org.immutables</groupId>
       <artifactId>value</artifactId>
-      <version>2.1.15</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
-      <version>3.0.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -70,43 +121,70 @@
       <artifactId>slf4j-simple</artifactId>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
   <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-deploy-plugin</artifactId>
-          <version>2.8.2</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
+    <plugins>
+      <plugin>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <notimestamp>true</notimestamp>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-docs</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <reporting>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.3</version>
+        <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <forkedProcessTimeoutInSeconds>240</forkedProcessTimeoutInSeconds>
+          <stylesheetfile>${basedir}/src/main/javadoc/stylesheet.css</stylesheetfile>
+          <show>public</show>
         </configuration>
       </plugin>
     </plugins>
-    <extensions>
-      <extension>
-        <groupId>kr.motd.maven</groupId>
-        <artifactId>os-maven-plugin</artifactId>
-        <version>1.4.1.Final</version>
-      </extension>
-    </extensions>
-  </build>
+  </reporting>
+
+  <profiles>
+    <profile>
+      <id>publish-docs</id>
+      <activation>
+        <property>
+          <name>env.BLAZAR_COORDINATES</name>
+          <value>git.hubteam.com-HubSpot-Franklin-master-FranklinService</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <configuration>
+              <executable>${env.WORKSPACE}/deploy-docs.sh</executable>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>deploy</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>
