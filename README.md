@@ -15,13 +15,22 @@ Please do not try to use this in its current form.
 
 This project depends on Java8 and Netty 4.1.8
 
-## License
-
-Apache 2.0
-
 ## Java Docs
 
 See http://github.hubspot.com/NioSmtpClient/0.0.1-SNAPSHOT/
+
+## Maven
+
+Note that we haven't published anything yet since we're in active
+development. When we do, the first version will be:
+
+```xml
+<dependency>
+  <groupId>com.hubspot</groupId>
+  <artifactId>NioSmtpClient</groupId>
+  <version>0.0.1</version>
+</dependency>
+```
 
 
 ## Notes For Developers
@@ -31,3 +40,8 @@ See http://github.hubspot.com/NioSmtpClient/0.0.1-SNAPSHOT/
 - Use `new` as sparingly as possible:
   - Share objects when possible
   - Use Netty ByteBuf allocators when possible
+
+## License
+
+Apache 2.0
+
