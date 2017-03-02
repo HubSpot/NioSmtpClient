@@ -30,6 +30,9 @@ class ResponseHandler extends ChannelInboundHandlerAdapter {
           collector.getDebugString(), previousCollector.getDebugString()));
     }
 
+    // although the future field may have been written in another thread,
+    // the compareAndSet call above has volatile semantics and
+    // ensures the write will be visible
     return collector.getFuture();
   }
 
