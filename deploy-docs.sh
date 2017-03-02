@@ -19,8 +19,8 @@ rsync -a $tmpDir/ ./$PROJECT_VERSION
 
 git add --all ./$PROJECT_VERSION
 
-git commit -m "Update Docs $BUILD_URL"
-git push origin gh-pages
+git commit -m "Update Docs $BUILD_URL" || true
+git push origin gh-pages || true
 git checkout $GIT_COMMIT
 rm -rf $tmpDir
 
