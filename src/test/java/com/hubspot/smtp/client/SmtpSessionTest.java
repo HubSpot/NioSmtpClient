@@ -8,13 +8,16 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Supplier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -41,7 +44,8 @@ public class SmtpSessionTest {
   private static final SmtpRequest NOOP_REQUEST = new DefaultSmtpRequest(SmtpCommand.NOOP);
   private static final SmtpRequest HELO_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELO);
   private static final SmtpRequest HELP_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELP);
-  private static final Supplier<String> DEBUG_STRING = () -> "debug";
+
+  private static final ExecutorService EXECUTOR_SERVICE = MoreExecutors.sameThreadExecutor();
 
   private ResponseHandler responseHandler;
   private CompletableFuture<SmtpResponse[]> responseFuture;
@@ -52,7 +56,7 @@ public class SmtpSessionTest {
   public void setup() {
     channel = mock(Channel.class);
     responseHandler = mock(ResponseHandler.class);
-    session = new SmtpSession(channel, responseHandler);
+    session = new SmtpSession(channel, responseHandler, EXECUTOR_SERVICE);
 
     responseFuture = new CompletableFuture<>();
     when(responseHandler.createResponseFuture(anyInt(), any())).thenReturn(responseFuture);
@@ -84,6 +88,18 @@ public class SmtpSessionTest {
     assertThat(future.get().getSession()).isEqualTo(session);
     assertThat(future.get().code()).isEqualTo(SMTP_RESPONSE.code());
     assertThat(future.get().details()).isEqualTo(SMTP_RESPONSE.details());
+  }
+
+  @Test
+  public void itExecutesReturnedFuturesOnTheProvidedExecutor() {
+    ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("SmtpSessionTestExecutor").build());
+    SmtpSession session = new SmtpSession(channel, responseHandler, executorService);
+
+    CompletableFuture<SmtpClientResponse> future = session.send(SMTP_REQUEST);
+    CompletableFuture<Void> assertionFuture = future.thenRun(() -> assertThat(Thread.currentThread().getName()).contains("SmtpSessionTestExecutor"));
+    responseFuture.complete(new SmtpResponse[] { SMTP_RESPONSE });
+
+    assertionFuture.join();
   }
 
   @Test

@@ -15,6 +15,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.CharMatcher;
@@ -39,6 +41,7 @@ import io.netty.handler.codec.smtp.SmtpRequest;
 @SuppressWarnings("ALL")
 class TestApp {
   private static final String TEST_EMAIL = "Subject: test mail\r\n\r\nHi there!\r\n\r\n- Michael\r\n";
+  private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 
   public static void main(String[] args) throws InterruptedException, IOException, ExecutionException {
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
@@ -58,11 +61,13 @@ class TestApp {
 
     SmtpSessionConfig config = SmtpSessionConfig.forRemoteAddress(InetSocketAddress.createUnresolved("localhost", 9925));
 
-    CompletableFuture<SmtpClientResponse[]> future = new SmtpSessionFactory().connect(eventLoopGroup, config)
+    CompletableFuture<SmtpClientResponse[]> future = new SmtpSessionFactory(EXECUTOR_SERVICE).connect(eventLoopGroup, config)
         .thenCompose(r -> r.getSession().send(req(EHLO, "hubspot.com")))
         .thenCompose(r -> r.getSession().sendPipelined(req(MAIL, "FROM:test@example.com"), req(RCPT, "TO:person1@example.com"), req(DATA)));
 
     for (int i = 1; i < messageCount; i++) {
+      messageBuffer.retain();
+
       String recipient = "TO:person" + i + "@example.com";
       future = future.thenCompose(r -> r[0].getSession().sendPipelined(contents, req(RSET), req(MAIL, "FROM:test@example.com"), req(RCPT, recipient), req(DATA)));
     }
@@ -77,7 +82,7 @@ class TestApp {
   }
 
   private static void sendEmail(NioEventLoopGroup eventLoopGroup) throws InterruptedException, ExecutionException {
-    SmtpClient client = new SmtpClient(eventLoopGroup, new SmtpSessionFactory());
+    SmtpClient client = new SmtpClient(eventLoopGroup, new SmtpSessionFactory(EXECUTOR_SERVICE));
 
     ByteBuf messageBuffer = ByteBufs.createDotStuffedBuffer(TEST_EMAIL.getBytes(StandardCharsets.UTF_8));
 

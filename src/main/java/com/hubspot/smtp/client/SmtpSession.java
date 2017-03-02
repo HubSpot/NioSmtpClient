@@ -5,9 +5,12 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 
 import io.netty.channel.Channel;
@@ -42,12 +45,14 @@ public class SmtpSession {
 
   private final Channel channel;
   private final ResponseHandler responseHandler;
+  private final ExecutorService executorService;
 
   private volatile EnumSet<SupportedExtensions> supportedExtensions = EnumSet.noneOf(SupportedExtensions.class);
 
-  SmtpSession(Channel channel, ResponseHandler responseHandler) {
+  SmtpSession(Channel channel, ResponseHandler responseHandler, ExecutorService executorService) {
     this.channel = channel;
     this.responseHandler = responseHandler;
+    this.executorService = executorService;
   }
 
   public CompletableFuture<Void> close() {
@@ -62,7 +67,22 @@ public class SmtpSession {
     CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> createDebugString(request));
     channel.writeAndFlush(request);
 
-    return responseFuture.thenApply(r -> new SmtpClientResponse(r[0], this));
+    return applyOnExecutor(responseFuture, r -> new SmtpClientResponse(r[0], this));
+  }
+
+  public CompletableFuture<SmtpClientResponse> send(SmtpContent... contents) {
+    Preconditions.checkNotNull(contents);
+    Preconditions.checkArgument(contents.length > 0, "You must provide content to send");
+
+    CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> "message contents");
+
+    for (SmtpContent c : contents) {
+      channel.write(c);
+    }
+
+    channel.flush();
+
+    return applyOnExecutor(responseFuture, r -> new SmtpClientResponse(r[0], this));
   }
 
   public CompletableFuture<SmtpClientResponse[]> sendPipelined(SmtpRequest... requests) {
@@ -88,7 +108,7 @@ public class SmtpSession {
 
     channel.flush();
 
-    return responseFuture.thenApply(rs -> {
+    return applyOnExecutor(responseFuture, rs -> {
       SmtpClientResponse[] smtpClientResponses = new SmtpClientResponse[rs.length];
       for (int i = 0; i < smtpClientResponses.length; i++) {
         smtpClientResponses[i] = new SmtpClientResponse(rs[i], this);
@@ -97,7 +117,7 @@ public class SmtpSession {
     });
   }
 
-  private String createDebugString(SmtpRequest... requests) {
+  private static String createDebugString(SmtpRequest... requests) {
     return COMMA_JOINER.join(requests);
   }
 
@@ -121,19 +141,14 @@ public class SmtpSession {
     }
   }
 
-  public CompletableFuture<SmtpClientResponse> send(SmtpContent... contents) {
-    Preconditions.checkNotNull(contents);
-    Preconditions.checkArgument(contents.length > 0, "You must provide content to send");
+  private <T> CompletableFuture<T> applyOnExecutor(CompletableFuture<SmtpResponse[]> eventLoopFuture, Function<SmtpResponse[], T> mapper) {
+    return eventLoopFuture.handleAsync((rs, e) -> {
+      if (e != null) {
+        throw Throwables.propagate(e);
+      }
 
-    CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> "message contents");
-
-    for (SmtpContent c : contents) {
-      channel.write(c);
-    }
-
-    channel.flush();
-
-    return responseFuture.thenApply(r -> new SmtpClientResponse(r[0], this));
+      return mapper.apply(rs);
+    }, executorService);
   }
 
   public void setSupportedExtensions(EnumSet<SupportedExtensions> supportedExtensions) {
