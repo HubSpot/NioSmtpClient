@@ -7,8 +7,6 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Throwables;
-
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -56,9 +54,10 @@ public class SmtpSessionFactory {
   }
 
   private <R, T> CompletableFuture<R> applyOnExecutor(CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
+    // use handleAsync to ensure exceptions and other callbacks are completed on the ExecutorService thread
     return eventLoopFuture.handleAsync((rs, e) -> {
       if (e != null) {
-        throw Throwables.propagate(e);
+        throw new RuntimeException(e);
       }
 
       return mapper.apply(rs);

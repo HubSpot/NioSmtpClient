@@ -142,6 +142,7 @@ public class SmtpSession {
   }
 
   private <R, T> CompletableFuture<R> applyOnExecutor(CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
+    // use handleAsync to ensure exceptions and other callbacks are completed on the ExecutorService thread
     return eventLoopFuture.handleAsync((rs, e) -> {
       if (e != null) {
         throw Throwables.propagate(e);
