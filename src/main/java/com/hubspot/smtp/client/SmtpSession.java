@@ -141,7 +141,7 @@ public class SmtpSession {
     }
   }
 
-  private <T> CompletableFuture<T> applyOnExecutor(CompletableFuture<SmtpResponse[]> eventLoopFuture, Function<SmtpResponse[], T> mapper) {
+  private <R, T> CompletableFuture<R> applyOnExecutor(CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
     return eventLoopFuture.handleAsync((rs, e) -> {
       if (e != null) {
         throw Throwables.propagate(e);

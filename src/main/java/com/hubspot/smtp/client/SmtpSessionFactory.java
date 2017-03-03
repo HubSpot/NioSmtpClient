@@ -2,9 +2,12 @@ package com.hubspot.smtp.client;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Throwables;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -42,14 +45,24 @@ public class SmtpSessionFactory {
     bootstrap.connect().addListener(f -> {
       if (f.isSuccess()) {
         SmtpSession session = new SmtpSession(((ChannelFuture) f).channel(), responseHandler, executorService);
-        initialResponseFuture.thenAccept(r -> connectFuture.complete(new SmtpClientResponse(r[0], session)));
+        applyOnExecutor(initialResponseFuture, r -> connectFuture.complete(new SmtpClientResponse(r[0], session)));
       } else {
         LOG.error("Could not connect to {}", config.getRemoteAddress(), f.cause());
-        connectFuture.completeExceptionally(f.cause());
+        executorService.execute(() -> connectFuture.completeExceptionally(f.cause()));
       }
     });
 
     return connectFuture;
+  }
+
+  private <R, T> CompletableFuture<R> applyOnExecutor(CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
+    return eventLoopFuture.handleAsync((rs, e) -> {
+      if (e != null) {
+        throw Throwables.propagate(e);
+      }
+
+      return mapper.apply(rs);
+    }, executorService);
   }
 
   private static class Initializer extends ChannelInitializer<SocketChannel> {
