@@ -97,8 +97,23 @@ public class SmtpSessionTest {
 
     CompletableFuture<SmtpClientResponse> future = session.send(SMTP_REQUEST);
     CompletableFuture<Void> assertionFuture = future.thenRun(() -> assertThat(Thread.currentThread().getName()).contains("SmtpSessionTestExecutor"));
-    responseFuture.complete(new SmtpResponse[] { SMTP_RESPONSE });
 
+    responseFuture.complete(new SmtpResponse[] { SMTP_RESPONSE });
+    assertionFuture.join();
+  }
+
+  @Test
+  public void itExecutesReturnedExceptionalFuturesOnTheProvidedExecutor() {
+    ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("SmtpSessionTestExecutor").build());
+    SmtpSession session = new SmtpSession(channel, responseHandler, executorService);
+
+    CompletableFuture<SmtpClientResponse> future = session.send(SMTP_REQUEST);
+    CompletableFuture<Boolean> assertionFuture = future.handle((r, e) -> {
+      assertThat(Thread.currentThread().getName()).contains("SmtpSessionTestExecutor");
+      return true;
+    });
+
+    responseFuture.completeExceptionally(new RuntimeException());
     assertionFuture.join();
   }
 
