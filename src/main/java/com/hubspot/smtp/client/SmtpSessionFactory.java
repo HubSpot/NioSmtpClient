@@ -87,6 +87,20 @@ public class SmtpSessionFactory implements Closeable  {
     }
   }
 
+  public CompletableFuture<Void> closeAsync() {
+    CompletableFuture<Void> returnedFuture = new CompletableFuture<>();
+
+    allChannels.close().addListener(f -> {
+      if (f.isSuccess()) {
+        returnedFuture.complete(null);
+      } else {
+        returnedFuture.completeExceptionally(f.cause());
+      }
+    });
+
+    return returnedFuture;
+  }
+
   private static class Initializer extends ChannelInitializer<SocketChannel> {
     private final ResponseHandler responseHandler;
 
