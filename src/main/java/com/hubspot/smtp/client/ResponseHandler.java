@@ -8,10 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.smtp.SmtpResponse;
 
-class ResponseHandler extends ChannelInboundHandlerAdapter {
+class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
   private static final Logger LOG = LoggerFactory.getLogger(ResponseHandler.class);
 
   private final AtomicReference<ResponseCollector> responseCollector = new AtomicReference<>();
@@ -37,25 +37,21 @@ class ResponseHandler extends ChannelInboundHandlerAdapter {
   }
 
   @Override
-  public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-    if (msg instanceof SmtpResponse) {
-      ResponseCollector collector = responseCollector.get();
+  protected void channelRead0(ChannelHandlerContext ctx, SmtpResponse msg) throws Exception {
+    ResponseCollector collector = responseCollector.get();
 
-      if (collector == null) {
-        LOG.warn("Unexpected response received: {}", msg);
-      } else {
-        boolean complete = collector.addResponse((SmtpResponse) msg);
-        if (complete) {
-          // because only the event loop code sets this field when it is non-null,
-          // and because channelRead is always run in the same thread, we can
-          // be sure this value hasn't changed since we read it earlier in this method
-          responseCollector.set(null);
-          collector.complete();
-        }
+    if (collector == null) {
+      LOG.warn("Unexpected response received: {}", msg);
+    } else {
+      boolean complete = collector.addResponse(msg);
+      if (complete) {
+        // because only the event loop code sets this field when it is non-null,
+        // and because channelRead is always run in the same thread, we can
+        // be sure this value hasn't changed since we read it earlier in this method
+        responseCollector.set(null);
+        collector.complete();
       }
     }
-
-    ctx.fireChannelRead(msg);
   }
 
   @Override
