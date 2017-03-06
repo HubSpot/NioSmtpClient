@@ -1,5 +1,7 @@
 package com.hubspot.smtp.client;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
@@ -8,31 +10,40 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.smtp.SmtpRequestEncoder;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.handler.codec.smtp.SmtpResponseDecoder;
+import io.netty.util.concurrent.GlobalEventExecutor;
 
-public class SmtpSessionFactory {
+public class SmtpSessionFactory implements Closeable  {
   private static final Logger LOG = LoggerFactory.getLogger(SmtpSessionFactory.class);
   private static final int MAX_LINE_LENGTH = 200;
 
+  private final NioEventLoopGroup eventLoopGroup;
   private final ExecutorService executorService;
+  private final ChannelGroup allChannels;
 
-  public SmtpSessionFactory(ExecutorService executorService) {
+  public SmtpSessionFactory(NioEventLoopGroup eventLoopGroup, ExecutorService executorService) {
+    this.eventLoopGroup = eventLoopGroup;
     this.executorService = executorService;
+
+    allChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   }
 
-  public CompletableFuture<SmtpClientResponse> connect(NioEventLoopGroup group, SmtpSessionConfig config) {
+  public CompletableFuture<SmtpClientResponse> connect(SmtpSessionConfig config) {
     ResponseHandler responseHandler = new ResponseHandler();
     CompletableFuture<SmtpResponse[]> initialResponseFuture = responseHandler.createResponseFuture(1, () -> "initial response");
 
     Bootstrap bootstrap = new Bootstrap()
-        .group(group)
+        .group(eventLoopGroup)
         .channel(NioSocketChannel.class)
         .remoteAddress(config.getRemoteAddress())
         .localAddress(config.getLocalAddress())
@@ -42,7 +53,10 @@ public class SmtpSessionFactory {
 
     bootstrap.connect().addListener(f -> {
       if (f.isSuccess()) {
-        SmtpSession session = new SmtpSession(((ChannelFuture) f).channel(), responseHandler, executorService);
+        Channel channel = ((ChannelFuture) f).channel();
+        allChannels.add(channel);
+
+        SmtpSession session = new SmtpSession(channel, responseHandler, executorService);
         applyOnExecutor(initialResponseFuture, r -> connectFuture.complete(new SmtpClientResponse(r[0], session)));
       } else {
         LOG.error("Could not connect to {}", config.getRemoteAddress(), f.cause());
@@ -64,10 +78,33 @@ public class SmtpSessionFactory {
     }, executorService);
   }
 
+  @Override
+  public void close() throws IOException {
+    try {
+      allChannels.close().await();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  public CompletableFuture<Void> closeAsync() {
+    CompletableFuture<Void> returnedFuture = new CompletableFuture<>();
+
+    allChannels.close().addListener(f -> {
+      if (f.isSuccess()) {
+        returnedFuture.complete(null);
+      } else {
+        returnedFuture.completeExceptionally(f.cause());
+      }
+    });
+
+    return returnedFuture;
+  }
+
   private static class Initializer extends ChannelInitializer<SocketChannel> {
     private final ResponseHandler responseHandler;
 
-    public Initializer(ResponseHandler responseHandler) {
+    Initializer(ResponseHandler responseHandler) {
       this.responseHandler = responseHandler;
     }
 

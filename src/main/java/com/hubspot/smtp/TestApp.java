@@ -41,27 +41,26 @@ import io.netty.handler.codec.smtp.SmtpRequest;
 @SuppressWarnings("ALL")
 class TestApp {
   private static final String TEST_EMAIL = "Subject: test mail\r\n\r\nHi there!\r\n\r\n- Michael\r\n";
+  private static final NioEventLoopGroup EVENT_LOOP_GROUP = new NioEventLoopGroup();
   private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 
   public static void main(String[] args) throws InterruptedException, IOException, ExecutionException {
-    NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-
     Stopwatch stopwatch = Stopwatch.createStarted();
 
-    sendPipelinedEmails(eventLoopGroup, 100_000);
+    sendPipelinedEmails(100_000);
 
     System.out.println("Completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
-    eventLoopGroup.shutdownGracefully().sync();
+    EVENT_LOOP_GROUP.shutdownGracefully().sync();
   }
 
-  private static void sendPipelinedEmails(NioEventLoopGroup eventLoopGroup, int messageCount)  {
+  private static void sendPipelinedEmails(int messageCount)  {
     ByteBuf messageBuffer = ByteBufs.createDotStuffedBuffer(TEST_EMAIL.getBytes(StandardCharsets.UTF_8));
     List<SmtpContent> contents = Lists.newArrayList(new DefaultSmtpContent(messageBuffer), EMPTY_LAST_CONTENT);
 
     SmtpSessionConfig config = SmtpSessionConfig.forRemoteAddress(InetSocketAddress.createUnresolved("localhost", 9925));
 
-    CompletableFuture<SmtpClientResponse[]> future = new SmtpSessionFactory(EXECUTOR_SERVICE).connect(eventLoopGroup, config)
+    CompletableFuture<SmtpClientResponse[]> future = new SmtpSessionFactory(EVENT_LOOP_GROUP, EXECUTOR_SERVICE).connect(config)
         .thenCompose(r -> r.getSession().send(req(EHLO, "hubspot.com")))
         .thenCompose(r -> r.getSession().sendPipelined(req(MAIL, "FROM:test@example.com"), req(RCPT, "TO:person1@example.com"), req(DATA)));
 
@@ -82,7 +81,7 @@ class TestApp {
   }
 
   private static void sendEmail(NioEventLoopGroup eventLoopGroup) throws InterruptedException, ExecutionException {
-    SmtpClient client = new SmtpClient(eventLoopGroup, new SmtpSessionFactory(EXECUTOR_SERVICE));
+    SmtpClient client = new SmtpClient(eventLoopGroup, new SmtpSessionFactory(EVENT_LOOP_GROUP, EXECUTOR_SERVICE));
 
     ByteBuf messageBuffer = ByteBufs.createDotStuffedBuffer(TEST_EMAIL.getBytes(StandardCharsets.UTF_8));
 
@@ -107,7 +106,7 @@ class TestApp {
     }
 
     CompletableFuture<SmtpClientResponse> connect(SmtpSessionConfig config) {
-      return sessionFactory.connect(group, config);
+      return sessionFactory.connect(config);
     }
 
     CompletableFuture<SmtpClientResponse> noop(SmtpSession session) {
