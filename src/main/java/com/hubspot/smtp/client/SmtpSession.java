@@ -1,7 +1,7 @@
 package com.hubspot.smtp.client;
 
-import java.util.Collection;
-import java.util.Collections;
+import static io.netty.handler.codec.smtp.LastSmtpContent.EMPTY_LAST_CONTENT;
+
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -12,10 +12,10 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
+import com.hubspot.smtp.messages.MessageContent;
 
 import io.netty.channel.Channel;
 import io.netty.handler.codec.smtp.SmtpCommand;
-import io.netty.handler.codec.smtp.SmtpContent;
 import io.netty.handler.codec.smtp.SmtpRequest;
 import io.netty.handler.codec.smtp.SmtpResponse;
 
@@ -70,16 +70,12 @@ public class SmtpSession {
     return applyOnExecutor(responseFuture, r -> new SmtpClientResponse(r[0], this));
   }
 
-  public CompletableFuture<SmtpClientResponse> send(SmtpContent... contents) {
-    Preconditions.checkNotNull(contents);
-    Preconditions.checkArgument(contents.length > 0, "You must provide content to send");
+  public CompletableFuture<SmtpClientResponse> send(MessageContent content) {
+    Preconditions.checkNotNull(content);
 
     CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> "message contents");
 
-    for (SmtpContent c : contents) {
-      channel.write(c);
-    }
-
+    writeContent(content);
     channel.flush();
 
     return applyOnExecutor(responseFuture, r -> new SmtpClientResponse(r[0], this));
@@ -88,19 +84,18 @@ public class SmtpSession {
   public CompletableFuture<SmtpClientResponse[]> sendPipelined(SmtpRequest... requests) {
     Preconditions.checkNotNull(requests);
 
-    return sendPipelined(Collections.emptyList(), requests);
+    return sendPipelined(null, requests);
   }
 
-  public CompletableFuture<SmtpClientResponse[]> sendPipelined(Collection<SmtpContent> contents, SmtpRequest... requests) {
-    Preconditions.checkNotNull(contents);
+  public CompletableFuture<SmtpClientResponse[]> sendPipelined(MessageContent content, SmtpRequest... requests) {
     Preconditions.checkNotNull(requests);
     checkValidPipelinedRequest(requests);
 
-    int expectedResponses = requests.length + (contents.isEmpty() ? 0 : 1);
+    int expectedResponses = requests.length + (content == null ? 0 : 1);
     CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(expectedResponses, () -> createDebugString(requests));
 
-    for (SmtpContent c : contents) {
-      channel.write(c);
+    if (content != null) {
+      writeContent(content);
     }
     for (SmtpRequest r : requests) {
       channel.write(r);
@@ -115,6 +110,18 @@ public class SmtpSession {
       }
       return smtpClientResponses;
     });
+  }
+
+  private void writeContent(MessageContent content) {
+    if (isSupported(SupportedExtensions.EIGHT_BIT_MIME)) {
+      channel.write(content.get8BitMimeEncodedContent());
+    } else {
+      channel.write(content.get7BitEncodedContent());
+    }
+
+    // SmtpRequestEncoder requires that we send an SmtpContent instance after the DATA command
+    // to unset its contentExpected state.
+    channel.write(EMPTY_LAST_CONTENT);
   }
 
   private static String createDebugString(SmtpRequest... requests) {

@@ -1,6 +1,5 @@
 package com.hubspot.smtp;
 
-import static io.netty.handler.codec.smtp.LastSmtpContent.EMPTY_LAST_CONTENT;
 import static io.netty.handler.codec.smtp.SmtpCommand.DATA;
 import static io.netty.handler.codec.smtp.SmtpCommand.EHLO;
 import static io.netty.handler.codec.smtp.SmtpCommand.MAIL;
@@ -22,20 +21,19 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.Lists;
 import com.hubspot.smtp.client.SmtpClientResponse;
 import com.hubspot.smtp.client.SmtpSession;
 import com.hubspot.smtp.client.SmtpSessionConfig;
 import com.hubspot.smtp.client.SmtpSessionFactory;
 import com.hubspot.smtp.client.SupportedExtensions;
+import com.hubspot.smtp.messages.MessageContent;
 import com.hubspot.smtp.utils.ByteBufs;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.handler.codec.smtp.DefaultSmtpContent;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.SmtpCommand;
-import io.netty.handler.codec.smtp.SmtpContent;
 import io.netty.handler.codec.smtp.SmtpRequest;
 
 @SuppressWarnings("ALL")
@@ -55,8 +53,7 @@ class TestApp {
   }
 
   private static void sendPipelinedEmails(int messageCount)  {
-    ByteBuf messageBuffer = ByteBufs.createDotStuffedBuffer(TEST_EMAIL.getBytes(StandardCharsets.UTF_8));
-    List<SmtpContent> contents = Lists.newArrayList(new DefaultSmtpContent(messageBuffer), EMPTY_LAST_CONTENT);
+    ByteBuf messageBuffer = Unpooled.wrappedBuffer(TEST_EMAIL.getBytes(StandardCharsets.UTF_8));
 
     SmtpSessionConfig config = SmtpSessionConfig.forRemoteAddress(InetSocketAddress.createUnresolved("localhost", 9925));
 
@@ -65,13 +62,11 @@ class TestApp {
         .thenCompose(r -> r.getSession().sendPipelined(req(MAIL, "FROM:test@example.com"), req(RCPT, "TO:person1@example.com"), req(DATA)));
 
     for (int i = 1; i < messageCount; i++) {
-      messageBuffer.retain();
-
       String recipient = "TO:person" + i + "@example.com";
-      future = future.thenCompose(r -> r[0].getSession().sendPipelined(contents, req(RSET), req(MAIL, "FROM:test@example.com"), req(RCPT, recipient), req(DATA)));
+      future = future.thenCompose(r -> r[0].getSession().sendPipelined(MessageContent.of(messageBuffer), req(RSET), req(MAIL, "FROM:test@example.com"), req(RCPT, recipient), req(DATA)));
     }
 
-    future.thenCompose(r -> r[0].getSession().sendPipelined(contents,  req(QUIT)))
+    future.thenCompose(r -> r[0].getSession().sendPipelined(MessageContent.of(messageBuffer), req(QUIT)))
         .thenCompose(r -> r[0].getSession().close())
         .join();
   }
@@ -150,7 +145,7 @@ class TestApp {
 
     CompletableFuture<SmtpClientResponse> data(SmtpSession session, ByteBuf messageBuffer) {
       return send(session, request(SmtpCommand.DATA))
-          .thenCompose(r -> send(session, new DefaultSmtpContent(messageBuffer), EMPTY_LAST_CONTENT));
+          .thenCompose(r -> send(session, MessageContent.of(messageBuffer)));
     }
 
     CompletableFuture<SmtpClientResponse> quit(SmtpSession session) {
@@ -165,7 +160,7 @@ class TestApp {
       return session.send(request);
     }
 
-    CompletableFuture<SmtpClientResponse> send(SmtpSession session, SmtpContent... contents) {
+    CompletableFuture<SmtpClientResponse> send(SmtpSession session, MessageContent contents) {
       return session.send(contents);
     }
   }
