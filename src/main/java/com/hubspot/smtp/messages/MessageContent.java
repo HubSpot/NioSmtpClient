@@ -9,15 +9,15 @@ import io.netty.buffer.ByteBuf;
 
 public abstract class MessageContent {
   public static MessageContent of(ByteBuf messageBuffer) {
-    return new ByteBufMessageContent(messageBuffer, true);
+    return new ByteBufMessageContent(messageBuffer, MessageContentEncoding.REQUIRES_DOT_STUFFING);
   }
 
-  public static MessageContent of(Supplier<InputStream> messageStream, int size, boolean applyDotStuffing) {
-    return new InputStreamMessageContent(messageStream, size, applyDotStuffing);
+  public static MessageContent of(Supplier<InputStream> messageStream, int size, MessageContentEncoding encoding) {
+    return new InputStreamMessageContent(messageStream, size, encoding);
   }
 
-  public static MessageContent of(ByteSource byteSource, int size, boolean applyDotStuffing) {
-    return new InputStreamMessageContent(byteSource, size, applyDotStuffing);
+  public static MessageContent of(ByteSource byteSource, int size, MessageContentEncoding encoding) {
+    return new InputStreamMessageContent(byteSource, size, encoding);
   }
 
   public abstract int size();

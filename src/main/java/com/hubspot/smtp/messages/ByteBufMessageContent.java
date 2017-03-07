@@ -8,8 +8,9 @@ public class ByteBufMessageContent extends MessageContent {
   private final ByteBuf buffer;
   private final int size;
 
-  public ByteBufMessageContent(ByteBuf buffer, boolean applyDotStuffing) {
-    this.buffer = applyDotStuffing ? ByteBufs.createDotStuffedBuffer(buffer.alloc(), buffer, null, true) : buffer;
+  public ByteBufMessageContent(ByteBuf buffer, MessageContentEncoding encoding) {
+    this.buffer = encoding == MessageContentEncoding.REQUIRES_DOT_STUFFING ?
+        ByteBufs.createDotStuffedBuffer(buffer.alloc(), buffer, null, true) : buffer;
     size = this.buffer.readableBytes();
   }
 

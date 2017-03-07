@@ -12,19 +12,20 @@ public class InputStreamMessageContent extends MessageContent {
   private final ChunkedStream chunkedStream;
   private final int size;
 
-  public InputStreamMessageContent(Supplier<InputStream> stream, int size, boolean applyDotStuffing) {
-    this(stream.get(), size, applyDotStuffing);
+  public InputStreamMessageContent(Supplier<InputStream> stream, int size, MessageContentEncoding encoding) {
+    this(stream.get(), size, encoding);
   }
 
-  public InputStreamMessageContent(ByteSource byteSource, int size, boolean applyDotStuffing) {
-    this(getStream(byteSource), size, applyDotStuffing);
+  public InputStreamMessageContent(ByteSource byteSource, int size, MessageContentEncoding encoding) {
+    this(getStream(byteSource), size, encoding);
   }
 
-  private InputStreamMessageContent(InputStream stream, int size, boolean applyDotStuffing) {
+  private InputStreamMessageContent(InputStream stream, int size, MessageContentEncoding encoding) {
     // note size is hard to predict if applyDotStuffing is true - the transformation might add
     // a few extra bytes
     this.size = size;
-    this.chunkedStream = applyDotStuffing ? new DotStuffingChunkedStream(stream, size) : new ChunkedStream(stream);
+    this.chunkedStream = encoding == MessageContentEncoding.REQUIRES_DOT_STUFFING ?
+        new DotStuffingChunkedStream(stream, size) : new ChunkedStream(stream);
   }
 
   private static Supplier<InputStream> getStream(ByteSource byteSource) {
