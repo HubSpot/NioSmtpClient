@@ -139,7 +139,7 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSession.html#send-io.netty.handler.codec.smtp.SmtpContent...-">send</a></span>(io.netty.handler.codec.smtp.SmtpContent...&nbsp;contents)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSession.html#send-com.hubspot.smtp.messages.MessageContent-">send</a></span>(<a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
@@ -147,7 +147,7 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>[]&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSession.html#sendPipelined-java.util.Collection-io.netty.handler.codec.smtp.SmtpRequest...-">sendPipelined</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;io.netty.handler.codec.smtp.SmtpContent&gt;&nbsp;contents,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSession.html#sendPipelined-com.hubspot.smtp.messages.MessageContent-io.netty.handler.codec.smtp.SmtpRequest...-">sendPipelined</a></span>(<a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content,
              io.netty.handler.codec.smtp.SmtpRequest...&nbsp;requests)</code>&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
@@ -198,13 +198,13 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;&nbsp;send(io.netty.handler.codec.smtp.SmtpRequest&nbsp;request)</pre>
 </li>
 </ul>
-<a name="send-io.netty.handler.codec.smtp.SmtpContent...-">
+<a name="send-com.hubspot.smtp.messages.MessageContent-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>send</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;&nbsp;send(io.netty.handler.codec.smtp.SmtpContent...&nbsp;contents)</pre>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;&nbsp;send(<a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</pre>
 </li>
 </ul>
 <a name="sendPipelined-io.netty.handler.codec.smtp.SmtpRequest...-">
@@ -216,13 +216,13 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>[]&gt;&nbsp;sendPipelined(io.netty.handler.codec.smtp.SmtpRequest...&nbsp;requests)</pre>
 </li>
 </ul>
-<a name="sendPipelined-java.util.Collection-io.netty.handler.codec.smtp.SmtpRequest...-">
+<a name="sendPipelined-com.hubspot.smtp.messages.MessageContent-io.netty.handler.codec.smtp.SmtpRequest...-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>sendPipelined</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>[]&gt;&nbsp;sendPipelined(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;io.netty.handler.codec.smtp.SmtpContent&gt;&nbsp;contents,
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>[]&gt;&nbsp;sendPipelined(<a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content,
                                                              io.netty.handler.codec.smtp.SmtpRequest...&nbsp;requests)</pre>
 </li>
 </ul>
