@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
@@ -54,6 +55,7 @@ class TestApp {
 
   private static void sendPipelinedEmails(int messageCount)  {
     ByteBuf messageBuffer = Unpooled.wrappedBuffer(TEST_EMAIL.getBytes(StandardCharsets.UTF_8));
+    Supplier<MessageContent> contentProvider = () -> MessageContent.of(messageBuffer);
 
     SmtpSessionConfig config = SmtpSessionConfig.forRemoteAddress(InetSocketAddress.createUnresolved("localhost", 9925));
 
@@ -63,10 +65,10 @@ class TestApp {
 
     for (int i = 1; i < messageCount; i++) {
       String recipient = "TO:person" + i + "@example.com";
-      future = future.thenCompose(r -> r[0].getSession().sendPipelined(MessageContent.of(messageBuffer), req(RSET), req(MAIL, "FROM:test@example.com"), req(RCPT, recipient), req(DATA)));
+      future = future.thenCompose(r -> r[0].getSession().sendPipelined(contentProvider.get(), req(RSET), req(MAIL, "FROM:test@example.com"), req(RCPT, recipient), req(DATA)));
     }
 
-    future.thenCompose(r -> r[0].getSession().sendPipelined(MessageContent.of(messageBuffer), req(QUIT)))
+    future.thenCompose(r -> r[0].getSession().sendPipelined(contentProvider.get(), req(QUIT)))
         .thenCompose(r -> r[0].getSession().close())
         .join();
   }
