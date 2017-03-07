@@ -2,45 +2,29 @@ package com.hubspot.smtp.client;
 
 import java.net.InetSocketAddress;
 
-public class SmtpSessionConfig {
-  private final InetSocketAddress remoteAddress;
-  private final InetSocketAddress localAddress;
+import org.immutables.value.Value.Default;
+import org.immutables.value.Value.Immutable;
 
-  private int readTimeoutSeconds = 30;
-  private String connectionId = "unidentified-connection";
+@Immutable
+public abstract class SmtpSessionConfig {
+  public abstract InetSocketAddress getRemoteAddress();
+  public abstract InetSocketAddress getLocalAddress();
+
+  @Default
+  public int getReadTimeoutSeconds() {
+    return 30;
+  }
+
+  @Default
+  public String getConnectionId() {
+    return "unidentified-connection";
+  }
+
+  public static SmtpSessionConfig forRemoteAddress(String host, int port) {
+    return forRemoteAddress(InetSocketAddress.createUnresolved(host, port));
+  }
 
   public static SmtpSessionConfig forRemoteAddress(InetSocketAddress remoteAddress) {
-    return new SmtpSessionConfig(remoteAddress, null);
-  }
-
-  public SmtpSessionConfig(InetSocketAddress remoteAddress, InetSocketAddress localAddress) {
-    this.remoteAddress = remoteAddress;
-    this.localAddress = localAddress;
-  }
-
-  public InetSocketAddress getRemoteAddress() {
-    return remoteAddress;
-  }
-
-  public InetSocketAddress getLocalAddress() {
-    return localAddress;
-  }
-
-  public int getReadTimeoutSeconds() {
-    return readTimeoutSeconds;
-  }
-
-  public SmtpSessionConfig setReadTimeoutSeconds(int readTimeoutSeconds) {
-    this.readTimeoutSeconds = readTimeoutSeconds;
-    return this;
-  }
-
-  public String getConnectionId() {
-    return connectionId;
-  }
-
-  public SmtpSessionConfig setConnectionId(String connectionId) {
-    this.connectionId = connectionId;
-    return this;
+    return ImmutableSmtpSessionConfig.builder().remoteAddress(remoteAddress).build();
   }
 }
