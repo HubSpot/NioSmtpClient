@@ -1,7 +1,6 @@
 package com.hubspot.smtp.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 
 import java.nio.charset.StandardCharsets;
 
@@ -19,63 +18,63 @@ public class ByteBufsTest {
 
   @Test
   public void itEnsuresBuffersAreTerminatedWithCRLFWithByteArrays() {
-    assertEquals(CRLF, dotStuffUsingByteArray(""));
-    assertEquals("abc" + CRLF, dotStuffUsingByteArray("abc"));
-    assertEquals("abc\r" + CRLF, dotStuffUsingByteArray("abc\r"));
-    assertEquals("abc\n" + CRLF, dotStuffUsingByteArray("abc\n"));
+    assertThat(dotStuffUsingByteArray("")).isEqualTo(CRLF);
+    assertThat(dotStuffUsingByteArray("abc")).isEqualTo("abc" + CRLF);
+    assertThat(dotStuffUsingByteArray("abc\r")).isEqualTo("abc\r" + CRLF);
+    assertThat(dotStuffUsingByteArray("abc\n")).isEqualTo("abc\n" + CRLF);
 
-    assertEquals("abc\r\n", dotStuffUsingByteArray("abc\r\n"));
+    assertThat(dotStuffUsingByteArray("abc\r\n")).isEqualTo("abc\r\n");
   }
 
   @Test
   public void itUsesDotStuffingWithByteArrays() {
     // adds
-    assertEquals(".." + CRLF, dotStuffUsingByteArray("."));
-    assertEquals("..abc" + CRLF, dotStuffUsingByteArray(".abc"));
-    assertEquals("\r\n..def" + CRLF, dotStuffUsingByteArray("\r\n.def"));
-    assertEquals("abc\r\n..def" + CRLF, dotStuffUsingByteArray("abc\r\n.def"));
-    assertEquals("abc\r\n.." + CRLF, dotStuffUsingByteArray("abc\r\n."));
-    assertEquals("abc\r\n..def\r\n..ghi\r\n.." + CRLF, dotStuffUsingByteArray("abc\r\n.def\r\n.ghi\r\n."));
+    assertThat(dotStuffUsingByteArray(".")).isEqualTo(".." + CRLF);
+    assertThat(dotStuffUsingByteArray(".abc")).isEqualTo("..abc" + CRLF);
+    assertThat(dotStuffUsingByteArray("\r\n.def")).isEqualTo("\r\n..def" + CRLF);
+    assertThat(dotStuffUsingByteArray("abc\r\n.def")).isEqualTo("abc\r\n..def" + CRLF);
+    assertThat(dotStuffUsingByteArray("abc\r\n.")).isEqualTo("abc\r\n.." + CRLF);
+    assertThat(dotStuffUsingByteArray("abc\r\n.def\r\n.ghi\r\n.")).isEqualTo("abc\r\n..def\r\n..ghi\r\n.." + CRLF);
 
     // does not add
-    assertEquals("abc\r\ndef." + CRLF, dotStuffUsingByteArray("abc\r\ndef."));
-    assertEquals("abc\r\nd.ef" + CRLF, dotStuffUsingByteArray("abc\r\nd.ef"));
-    assertEquals("abc\n.def" + CRLF, dotStuffUsingByteArray("abc\n.def"));
-    assertEquals("abc\r.def" + CRLF, dotStuffUsingByteArray("abc\r.def"));
+    assertThat(dotStuffUsingByteArray("abc\r\ndef.")).isEqualTo("abc\r\ndef." + CRLF);
+    assertThat(dotStuffUsingByteArray("abc\r\nd.ef")).isEqualTo("abc\r\nd.ef" + CRLF);
+    assertThat(dotStuffUsingByteArray("abc\n.def")).isEqualTo("abc\n.def" + CRLF);
+    assertThat(dotStuffUsingByteArray("abc\r.def")).isEqualTo("abc\r.def" + CRLF);
   }
 
   @Test
   public void itEnsuresBuffersAreTerminatedWithCRLFWithByteBufs() {
-    assertEquals(CRLF, dotStuffUsingByteBuf(""));
-    assertEquals("abc" + CRLF, dotStuffUsingByteBuf("abc"));
-    assertEquals("abc\r" + CRLF, dotStuffUsingByteBuf("abc\r"));
-    assertEquals("abc\n" + CRLF, dotStuffUsingByteBuf("abc\n"));
+    assertThat(dotStuffUsingByteBuf("")).isEqualTo(CRLF);
+    assertThat(dotStuffUsingByteBuf("abc")).isEqualTo("abc" + CRLF);
+    assertThat(dotStuffUsingByteBuf("abc\r")).isEqualTo("abc\r" + CRLF);
+    assertThat(dotStuffUsingByteBuf("abc\n")).isEqualTo("abc\n" + CRLF);
   }
 
   @Test
   public void itUsesDotStuffingWithByteBufs() {
     // adds
-    assertEquals("" + CRLF, dotStuffUsingByteBuf(""));
-    assertEquals(".." + CRLF, dotStuffUsingByteBuf("."));
-    assertEquals("..abc" + CRLF, dotStuffUsingByteBuf(".abc"));
-    assertEquals("\r\n..def" + CRLF, dotStuffUsingByteBuf("\r\n.def"));
-    assertEquals("abc\r\n..def" + CRLF, dotStuffUsingByteBuf("abc\r\n.def"));
-    assertEquals("abc\r\n.." + CRLF, dotStuffUsingByteBuf("abc\r\n."));
-    assertEquals("abc\r\n..def\r\n..ghi\r\n.." + CRLF, dotStuffUsingByteBuf("abc\r\n.def\r\n.ghi\r\n."));
+    assertThat(dotStuffUsingByteBuf("")).isEqualTo("" + CRLF);
+    assertThat(dotStuffUsingByteBuf(".")).isEqualTo(".." + CRLF);
+    assertThat(dotStuffUsingByteBuf(".abc")).isEqualTo("..abc" + CRLF);
+    assertThat(dotStuffUsingByteBuf("\r\n.def")).isEqualTo("\r\n..def" + CRLF);
+    assertThat(dotStuffUsingByteBuf("abc\r\n.def")).isEqualTo("abc\r\n..def" + CRLF);
+    assertThat(dotStuffUsingByteBuf("abc\r\n.")).isEqualTo("abc\r\n.." + CRLF);
+    assertThat(dotStuffUsingByteBuf("abc\r\n.def\r\n.ghi\r\n.")).isEqualTo("abc\r\n..def\r\n..ghi\r\n.." + CRLF);
 
     // does not add
-    assertEquals("abc\r\ndef." + CRLF, dotStuffUsingByteBuf("abc\r\ndef."));
-    assertEquals("abc\r\nd.ef" + CRLF, dotStuffUsingByteBuf("abc\r\nd.ef"));
-    assertEquals("abc\n.def" + CRLF, dotStuffUsingByteBuf("abc\n.def"));
-    assertEquals("abc\r.def" + CRLF, dotStuffUsingByteBuf("abc\r.def"));
+    assertThat(dotStuffUsingByteBuf("abc\r\ndef.")).isEqualTo("abc\r\ndef." + CRLF);
+    assertThat(dotStuffUsingByteBuf("abc\r\nd.ef")).isEqualTo("abc\r\nd.ef" + CRLF);
+    assertThat(dotStuffUsingByteBuf("abc\n.def")).isEqualTo("abc\n.def" + CRLF);
+    assertThat(dotStuffUsingByteBuf("abc\r.def")).isEqualTo("abc\r.def" + CRLF);
 
     // atStartOfLine
-    assertEquals("..\r\n..", dotStuffUsingByteBuf(".\r\n.", true, false));
-    assertEquals(".\r\n..", dotStuffUsingByteBuf(".\r\n.", false, false));
+    assertThat(dotStuffUsingByteBuf(".\r\n.", true, false)).isEqualTo("..\r\n..");
+    assertThat(dotStuffUsingByteBuf(".\r\n.", false, false)).isEqualTo(".\r\n..");
 
     // appendCRLF
-    assertEquals("x\r\n", dotStuffUsingByteBuf("x", true, true));
-    assertEquals("x", dotStuffUsingByteBuf("x", true, false));
+    assertThat(dotStuffUsingByteBuf("x", true, true)).isEqualTo("x\r\n");
+    assertThat(dotStuffUsingByteBuf("x", true, false)).isEqualTo("x");
   }
 
   @Test

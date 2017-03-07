@@ -1,6 +1,6 @@
 package com.hubspot.smtp.messages;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -32,18 +32,18 @@ public class DotStuffingChunkedStreamTest {
 
   private void assertDotStuffingWithChunkSize(int chunkSize) throws Exception {
     // adds
-    assertEquals(".." + CRLF, dotStuff(".", chunkSize));
-    assertEquals("..abc" + CRLF, dotStuff(".abc", chunkSize));
-    assertEquals("\r\n..def" + CRLF, dotStuff("\r\n.def", chunkSize));
-    assertEquals("abc\r\n..def" + CRLF, dotStuff("abc\r\n.def", chunkSize));
-    assertEquals("abc\r\n.." + CRLF, dotStuff("abc\r\n.", chunkSize));
-    assertEquals("abc\r\n..def\r\n..ghi\r\n.." + CRLF, dotStuff("abc\r\n.def\r\n.ghi\r\n.", chunkSize));
+    assertThat(dotStuff(".", chunkSize)).isEqualTo(".." + CRLF);
+    assertThat(dotStuff(".abc", chunkSize)).isEqualTo("..abc" + CRLF);
+    assertThat(dotStuff("\r\n.def", chunkSize)).isEqualTo("\r\n..def" + CRLF);
+    assertThat(dotStuff("abc\r\n.def", chunkSize)).isEqualTo("abc\r\n..def" + CRLF);
+    assertThat(dotStuff("abc\r\n.", chunkSize)).isEqualTo("abc\r\n.." + CRLF);
+    assertThat(dotStuff("abc\r\n.def\r\n.ghi\r\n.", chunkSize)).isEqualTo("abc\r\n..def\r\n..ghi\r\n.." + CRLF);
 
     // does not add
-    assertEquals("abc\r\ndef." + CRLF, dotStuff("abc\r\ndef.", chunkSize));
-    assertEquals("abc\r\nd.ef" + CRLF, dotStuff("abc\r\nd.ef", chunkSize));
-    assertEquals("abc\n.def" + CRLF, dotStuff("abc\n.def", chunkSize));
-    assertEquals("abc\r.def" + CRLF, dotStuff("abc\r.def", chunkSize));
+    assertThat(dotStuff("abc\r\ndef.", chunkSize)).isEqualTo("abc\r\ndef." + CRLF);
+    assertThat(dotStuff("abc\r\nd.ef", chunkSize)).isEqualTo("abc\r\nd.ef" + CRLF);
+    assertThat(dotStuff("abc\n.def", chunkSize)).isEqualTo("abc\n.def" + CRLF);
+    assertThat(dotStuff("abc\r.def", chunkSize)).isEqualTo("abc\r.def" + CRLF);
   }
 
   private String dotStuff(String testString, int chunkSize) throws Exception {
