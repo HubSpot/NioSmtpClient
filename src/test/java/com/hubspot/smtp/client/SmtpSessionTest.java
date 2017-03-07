@@ -1,11 +1,11 @@
 package com.hubspot.smtp.client;
 
+import static io.netty.handler.codec.smtp.LastSmtpContent.EMPTY_LAST_CONTENT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 import java.util.EnumSet;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -15,27 +15,23 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.hubspot.smtp.messages.MessageContent;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.DefaultChannelPromise;
-import io.netty.handler.codec.smtp.DefaultLastSmtpContent;
-import io.netty.handler.codec.smtp.DefaultSmtpContent;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.DefaultSmtpResponse;
 import io.netty.handler.codec.smtp.SmtpCommand;
-import io.netty.handler.codec.smtp.SmtpContent;
 import io.netty.handler.codec.smtp.SmtpRequest;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 
 public class SmtpSessionTest {
   private static final SmtpRequest SMTP_REQUEST = new DefaultSmtpRequest(SmtpCommand.NOOP);
-  private static final SmtpContent SMTP_CONTENT = new DefaultSmtpContent(Unpooled.copiedBuffer(new byte[1]));
-  private static final SmtpContent LAST_SMTP_CONTENT = new DefaultLastSmtpContent(Unpooled.copiedBuffer(new byte[2]));
+  private static final MessageContent SMTP_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]));
   private static final SmtpResponse SMTP_RESPONSE = new DefaultSmtpResponse(250, "OK");
   private static final SmtpRequest MAIL_REQUEST = new DefaultSmtpRequest(SmtpCommand.MAIL, "FROM:alice@example.com");
   private static final SmtpRequest RCPT_REQUEST = new DefaultSmtpRequest(SmtpCommand.RCPT, "FROM:bob@example.com");
@@ -71,10 +67,10 @@ public class SmtpSessionTest {
 
   @Test
   public void itSendsContents() {
-    session.send(SMTP_CONTENT, LAST_SMTP_CONTENT);
+    session.send(SMTP_CONTENT);
 
-    verify(channel).write(SMTP_CONTENT);
-    verify(channel).write(LAST_SMTP_CONTENT);
+    verify(channel).write(SMTP_CONTENT.get7BitEncodedContent());
+    verify(channel).write(EMPTY_LAST_CONTENT);
     verify(channel).flush();
   }
 
@@ -119,12 +115,11 @@ public class SmtpSessionTest {
 
   @Test
   public void itSendsPipelinedRequests() {
-    List<SmtpContent> contents = Lists.newArrayList(SMTP_CONTENT, LAST_SMTP_CONTENT);
-    session.sendPipelined(contents, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
+    session.sendPipelined(SMTP_CONTENT, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
 
     InOrder order = inOrder(channel);
-    order.verify(channel).write(SMTP_CONTENT);
-    order.verify(channel).write(LAST_SMTP_CONTENT);
+    order.verify(channel).write(SMTP_CONTENT.get7BitEncodedContent());
+    order.verify(channel).write(EMPTY_LAST_CONTENT);
     order.verify(channel).write(MAIL_REQUEST);
     order.verify(channel).write(RCPT_REQUEST);
     order.verify(channel).write(DATA_REQUEST);
@@ -159,8 +154,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itWrapsTheResponsesWhenPipelining() throws ExecutionException, InterruptedException {
-    List<SmtpContent> contents = Lists.newArrayList(SMTP_CONTENT, LAST_SMTP_CONTENT);
-    CompletableFuture<SmtpClientResponse[]> future = session.sendPipelined(contents, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
+    CompletableFuture<SmtpClientResponse[]> future = session.sendPipelined(SMTP_CONTENT, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
 
     SmtpResponse[] responses = {SMTP_RESPONSE, SMTP_RESPONSE, SMTP_RESPONSE, SMTP_RESPONSE};
     responseFuture.complete(responses);

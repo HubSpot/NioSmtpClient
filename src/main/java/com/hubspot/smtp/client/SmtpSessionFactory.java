@@ -21,6 +21,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.smtp.SmtpRequestEncoder;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.handler.codec.smtp.SmtpResponseDecoder;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
 public class SmtpSessionFactory implements Closeable  {
@@ -113,6 +114,7 @@ public class SmtpSessionFactory implements Closeable  {
       socketChannel.pipeline().addLast(
           new SmtpRequestEncoder(),
           new SmtpResponseDecoder(MAX_LINE_LENGTH),
+          new ChunkedWriteHandler(),
           responseHandler);
     }
   }

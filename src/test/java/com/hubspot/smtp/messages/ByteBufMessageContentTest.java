@@ -1,0 +1,52 @@
+package com.hubspot.smtp.messages;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.nio.charset.StandardCharsets;
+
+import org.junit.Test;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.util.CharsetUtil;
+
+public class ByteBufMessageContentTest {
+  @Test
+  public void itPerformsDotStuffingIfRequired() {
+    ByteBufMessageContent content = createContent(".abc", MessageContentEncoding.REQUIRES_DOT_STUFFING);
+    assertThat(extract(content.get8BitMimeEncodedContent())).isEqualTo("..abc\r\n");
+  }
+
+  @Test
+  public void itDoesNotPerformDotStuffingIfNotRequired() {
+    ByteBufMessageContent content = createContent(".abc", MessageContentEncoding.ASSUME_DOT_STUFFED);
+    assertThat(extract(content.get8BitMimeEncodedContent())).isEqualTo(".abc\r\n");
+  }
+
+  @Test
+  public void itAddsTerminationIfRequired() {
+    ByteBufMessageContent content = createContent("abc", MessageContentEncoding.REQUIRES_DOT_STUFFING);
+    assertThat(extract(content.get8BitMimeEncodedContent())).isEqualTo("abc\r\n");
+  }
+
+  @Test
+  public void itDoesNotAddTerminationIfAlreadyPresent() {
+    ByteBufMessageContent content = createContent("abc\r\n", MessageContentEncoding.REQUIRES_DOT_STUFFING);
+    assertThat(extract(content.get8BitMimeEncodedContent())).isEqualTo("abc\r\n");
+  }
+
+  private ByteBufMessageContent createContent(String testString, MessageContentEncoding encoding) {
+    ByteBuf sourceBuffer = Unpooled.wrappedBuffer(testString.getBytes(StandardCharsets.UTF_8));
+    return new ByteBufMessageContent(sourceBuffer, encoding);
+  }
+
+  private String extract(Object o) {
+    assertThat(o).isInstanceOf(ByteBuf.class);
+
+    ByteBuf buffer = (ByteBuf) o;
+
+    byte[] bytes = new byte[buffer.readableBytes()];
+    buffer.getBytes(0, bytes);
+    return new String(bytes, CharsetUtil.UTF_8);
+  }
+}

@@ -62,6 +62,11 @@
         <version>${netty41.version}</version>
       </dependency>
       <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-handler</artifactId>
+        <version>${netty41.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.immutables</groupId>
         <artifactId>value</artifactId>
         <version>${hubspot.immutables.version}</version>
@@ -85,6 +90,10 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-smtp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-handler</artifactId>
     </dependency>
 
     <dependency>
