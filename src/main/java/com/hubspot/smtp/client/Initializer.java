@@ -24,7 +24,7 @@ class Initializer extends ChannelInitializer<SocketChannel> {
         new SmtpRequestEncoder(),
         new SmtpResponseDecoder(MAX_LINE_LENGTH),
         new ChunkedWriteHandler(),
-        new ReadTimeoutHandler(config.getReadTimeoutSeconds()),
+        new ReadTimeoutHandler((int) config.getReadTimeout().getSeconds()),
         responseHandler);
   }
 }

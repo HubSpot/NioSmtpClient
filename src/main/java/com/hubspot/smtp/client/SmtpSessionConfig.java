@@ -1,6 +1,8 @@
 package com.hubspot.smtp.client;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
+import java.util.Optional;
 
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
@@ -8,11 +10,11 @@ import org.immutables.value.Value.Immutable;
 @Immutable
 public abstract class SmtpSessionConfig {
   public abstract InetSocketAddress getRemoteAddress();
-  public abstract InetSocketAddress getLocalAddress();
+  public abstract Optional<InetSocketAddress> getLocalAddress();
 
   @Default
-  public int getReadTimeoutSeconds() {
-    return 30;
+  public Duration getReadTimeout() {
+    return Duration.ofMinutes(2);
   }
 
   @Default

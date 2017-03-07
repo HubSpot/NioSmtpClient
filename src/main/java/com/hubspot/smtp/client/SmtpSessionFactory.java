@@ -41,7 +41,7 @@ public class SmtpSessionFactory implements Closeable  {
         .group(eventLoopGroup)
         .channel(NioSocketChannel.class)
         .remoteAddress(config.getRemoteAddress())
-        .localAddress(config.getLocalAddress())
+        .localAddress(config.getLocalAddress().orElse(null))
         .handler(new Initializer(responseHandler, config));
 
     CompletableFuture<SmtpClientResponse> connectFuture = new CompletableFuture<>();
