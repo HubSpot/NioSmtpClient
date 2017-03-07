@@ -13,6 +13,8 @@ before_install:
   - export M2_HOME=$PWD/apache-maven-3.3.9
   - export PATH=$M2_HOME/bin:$PATH
 
+script: mvn -B -q clean install
+
 cache:
   directories:
   - $HOME/.m2
