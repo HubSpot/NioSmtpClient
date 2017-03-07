@@ -8,7 +8,6 @@ import static io.netty.handler.codec.smtp.SmtpCommand.RCPT;
 import static io.netty.handler.codec.smtp.SmtpCommand.RSET;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
@@ -56,7 +55,7 @@ class TestApp {
     ByteBuf messageBuffer = Unpooled.wrappedBuffer(TEST_EMAIL.getBytes(StandardCharsets.UTF_8));
     Supplier<MessageContent> contentProvider = () -> MessageContent.of(messageBuffer);
 
-    SmtpSessionConfig config = SmtpSessionConfig.forRemoteAddress(InetSocketAddress.createUnresolved("localhost", 9925));
+    SmtpSessionConfig config = SmtpSessionConfig.forRemoteAddress("localhost", 9925);
 
     CompletableFuture<SmtpClientResponse[]> future = new SmtpSessionFactory(EVENT_LOOP_GROUP, EXECUTOR_SERVICE).connect(config)
         .thenCompose(r -> r.getSession().send(req(EHLO, "hubspot.com")))
@@ -79,7 +78,7 @@ class TestApp {
   private static void sendEmail(NioEventLoopGroup eventLoopGroup) throws InterruptedException, ExecutionException {
     SmtpClient client = new SmtpClient(eventLoopGroup, new SmtpSessionFactory(EVENT_LOOP_GROUP, EXECUTOR_SERVICE));
 
-    client.connect(SmtpSessionConfig.forRemoteAddress(InetSocketAddress.createUnresolved("localhost", 9925)))
+    client.connect(SmtpSessionConfig.forRemoteAddress("localhost", 9925))
         .thenCompose(r -> client.ehlo(r.getSession(), "hubspot.com"))
         .thenCompose(r -> client.mail(r.getSession(), "mobrien@hubspot.com"))
         .thenCompose(r -> client.rcpt(r.getSession(), "michael@mcobrien.org"))

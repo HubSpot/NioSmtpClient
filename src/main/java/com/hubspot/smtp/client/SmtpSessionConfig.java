@@ -1,25 +1,32 @@
 package com.hubspot.smtp.client;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
+import java.util.Optional;
 
-public class SmtpSessionConfig {
-  private final InetSocketAddress remoteAddress;
-  private final InetSocketAddress localAddress;
+import org.immutables.value.Value.Default;
+import org.immutables.value.Value.Immutable;
+
+@Immutable
+public abstract class SmtpSessionConfig {
+  public abstract InetSocketAddress getRemoteAddress();
+  public abstract Optional<InetSocketAddress> getLocalAddress();
+
+  @Default
+  public Duration getReadTimeout() {
+    return Duration.ofMinutes(2);
+  }
+
+  @Default
+  public String getConnectionId() {
+    return "unidentified-connection";
+  }
+
+  public static SmtpSessionConfig forRemoteAddress(String host, int port) {
+    return forRemoteAddress(InetSocketAddress.createUnresolved(host, port));
+  }
 
   public static SmtpSessionConfig forRemoteAddress(InetSocketAddress remoteAddress) {
-    return new SmtpSessionConfig(remoteAddress, null);
-  }
-
-  public SmtpSessionConfig(InetSocketAddress remoteAddress, InetSocketAddress localAddress) {
-    this.remoteAddress = remoteAddress;
-    this.localAddress = localAddress;
-  }
-
-  public InetSocketAddress getRemoteAddress() {
-    return remoteAddress;
-  }
-
-  public InetSocketAddress getLocalAddress() {
-    return localAddress;
+    return ImmutableSmtpSessionConfig.builder().remoteAddress(remoteAddress).build();
   }
 }

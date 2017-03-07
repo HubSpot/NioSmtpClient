@@ -18,13 +18,15 @@ import io.netty.handler.codec.smtp.SmtpResponse;
 public class ResponseHandlerTest {
   private static final DefaultSmtpResponse SMTP_RESPONSE = new DefaultSmtpResponse(250);
   private static final Supplier<String> DEBUG_STRING = () -> "debug";
+  private static final String CONNECTION_ID = "connection#1";
+  private static final String CONNECTION_ID_PREFIX = "[" + CONNECTION_ID + "] ";
 
   private ResponseHandler responseHandler;
   private ChannelHandlerContext context;
 
   @Before
   public void setup() {
-    responseHandler = new ResponseHandler();
+    responseHandler = new ResponseHandler(CONNECTION_ID);
     context = mock(ChannelHandlerContext.class);
   }
 
@@ -64,7 +66,7 @@ public class ResponseHandlerTest {
 
     assertThatThrownBy(() -> responseHandler.createResponseFuture(1, () -> "new"))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot wait for a response to [new] because we're still waiting for a response to [old]");
+        .hasMessage(CONNECTION_ID_PREFIX + "Cannot wait for a response to [new] because we're still waiting for a response to [old]");
   }
 
   @Test
@@ -73,7 +75,7 @@ public class ResponseHandlerTest {
 
     assertThatThrownBy(() -> responseHandler.createResponseFuture(1, () -> "new"))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Cannot wait for a response to [new] because we're still waiting for a response to [old]");
+        .hasMessage(CONNECTION_ID_PREFIX + "Cannot wait for a response to [new] because we're still waiting for a response to [old]");
   }
 
   @Test

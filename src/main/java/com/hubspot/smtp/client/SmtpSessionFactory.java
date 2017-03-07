@@ -12,21 +12,15 @@ import org.slf4j.LoggerFactory;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.smtp.SmtpRequestEncoder;
 import io.netty.handler.codec.smtp.SmtpResponse;
-import io.netty.handler.codec.smtp.SmtpResponseDecoder;
-import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
 public class SmtpSessionFactory implements Closeable  {
   private static final Logger LOG = LoggerFactory.getLogger(SmtpSessionFactory.class);
-  private static final int MAX_LINE_LENGTH = 200;
 
   private final NioEventLoopGroup eventLoopGroup;
   private final ExecutorService executorService;
@@ -40,15 +34,15 @@ public class SmtpSessionFactory implements Closeable  {
   }
 
   public CompletableFuture<SmtpClientResponse> connect(SmtpSessionConfig config) {
-    ResponseHandler responseHandler = new ResponseHandler();
+    ResponseHandler responseHandler = new ResponseHandler(config.getConnectionId());
     CompletableFuture<SmtpResponse[]> initialResponseFuture = responseHandler.createResponseFuture(1, () -> "initial response");
 
     Bootstrap bootstrap = new Bootstrap()
         .group(eventLoopGroup)
         .channel(NioSocketChannel.class)
         .remoteAddress(config.getRemoteAddress())
-        .localAddress(config.getLocalAddress())
-        .handler(new Initializer(responseHandler));
+        .localAddress(config.getLocalAddress().orElse(null))
+        .handler(new Initializer(responseHandler, config));
 
     CompletableFuture<SmtpClientResponse> connectFuture = new CompletableFuture<>();
 
@@ -102,20 +96,4 @@ public class SmtpSessionFactory implements Closeable  {
     return returnedFuture;
   }
 
-  private static class Initializer extends ChannelInitializer<SocketChannel> {
-    private final ResponseHandler responseHandler;
-
-    Initializer(ResponseHandler responseHandler) {
-      this.responseHandler = responseHandler;
-    }
-
-    @Override
-    protected void initChannel(SocketChannel socketChannel) throws Exception {
-      socketChannel.pipeline().addLast(
-          new SmtpRequestEncoder(),
-          new SmtpResponseDecoder(MAX_LINE_LENGTH),
-          new ChunkedWriteHandler(),
-          responseHandler);
-    }
-  }
 }
