@@ -2,8 +2,6 @@ package com.hubspot.smtp.messages;
 
 import java.io.InputStream;
 
-import com.hubspot.smtp.utils.ByteBufs;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.stream.ChunkedStream;
@@ -40,8 +38,8 @@ class DotStuffingChunkedStream extends ChunkedStream {
     boolean isLastChunk = bytesRead >= size;
     boolean appendCRLF = isLastChunk && !(trailingBytes[0] == CR && trailingBytes[1] == LF);
 
-    return ByteBufs.createDotStuffedBuffer(allocator, chunk, prevChunkTrailingBytes,
-        appendCRLF ? MessageTermination.ADD_CRLF_IF_NECESSARY : MessageTermination.DO_NOT_TERMINATE);
+    return DotStuffing.createDotStuffedBuffer(allocator, chunk, prevChunkTrailingBytes,
+        appendCRLF ? MessageTermination.ADD_CRLF : MessageTermination.DO_NOT_TERMINATE);
   }
 
   private void updateTrailingBytes(ByteBuf chunk) {

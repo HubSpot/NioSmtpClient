@@ -1,7 +1,5 @@
 package com.hubspot.smtp.messages;
 
-import com.hubspot.smtp.utils.ByteBufs;
-
 import io.netty.buffer.ByteBuf;
 
 public class ByteBufMessageContent extends MessageContent {
@@ -9,9 +7,16 @@ public class ByteBufMessageContent extends MessageContent {
   private final int size;
 
   public ByteBufMessageContent(ByteBuf buffer, MessageContentEncoding encoding) {
-    this.buffer = encoding == MessageContentEncoding.REQUIRES_DOT_STUFFING ?
-        ByteBufs.createDotStuffedBuffer(buffer.alloc(), buffer, null, MessageTermination.ADD_CRLF_IF_NECESSARY) : buffer;
-    size = this.buffer.readableBytes();
+    this.buffer = encoding == MessageContentEncoding.REQUIRES_DOT_STUFFING ? wrap(buffer) : buffer;
+    this.size = this.buffer.readableBytes();
+  }
+
+  private ByteBuf wrap(ByteBuf buffer) {
+    int length = buffer.readableBytes();
+    boolean isTerminated = length >= 2 && buffer.getByte(length - 2) == '\r' && buffer.getByte(length - 1) == '\n';
+
+    return DotStuffing.createDotStuffedBuffer(buffer.alloc(), buffer, null,
+        isTerminated ? MessageTermination.DO_NOT_TERMINATE : MessageTermination.ADD_CRLF);
   }
 
   @Override

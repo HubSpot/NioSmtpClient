@@ -1,4 +1,4 @@
-package com.hubspot.smtp.utils;
+package com.hubspot.smtp.messages;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -6,42 +6,13 @@ import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
 
-import com.hubspot.smtp.messages.MessageTermination;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.CharsetUtil;
 
-public class ByteBufsTest {
+public class DotStuffingTest {
   private static final String CRLF = "\r\n";
   private static final UnpooledByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(true);
-
-  @Test
-  public void itEnsuresBuffersAreTerminatedWithCRLFWithByteArrays() {
-    assertThat(dotStuffUsingByteArray("")).isEqualTo(CRLF);
-    assertThat(dotStuffUsingByteArray("abc")).isEqualTo("abc" + CRLF);
-    assertThat(dotStuffUsingByteArray("abc\r")).isEqualTo("abc\r" + CRLF);
-    assertThat(dotStuffUsingByteArray("abc\n")).isEqualTo("abc\n" + CRLF);
-
-    assertThat(dotStuffUsingByteArray("abc\r\n")).isEqualTo("abc\r\n");
-  }
-
-  @Test
-  public void itUsesDotStuffingWithByteArrays() {
-    // adds
-    assertThat(dotStuffUsingByteArray(".")).isEqualTo(".." + CRLF);
-    assertThat(dotStuffUsingByteArray(".abc")).isEqualTo("..abc" + CRLF);
-    assertThat(dotStuffUsingByteArray("\r\n.def")).isEqualTo("\r\n..def" + CRLF);
-    assertThat(dotStuffUsingByteArray("abc\r\n.def")).isEqualTo("abc\r\n..def" + CRLF);
-    assertThat(dotStuffUsingByteArray("abc\r\n.")).isEqualTo("abc\r\n.." + CRLF);
-    assertThat(dotStuffUsingByteArray("abc\r\n.def\r\n.ghi\r\n.")).isEqualTo("abc\r\n..def\r\n..ghi\r\n.." + CRLF);
-
-    // does not add
-    assertThat(dotStuffUsingByteArray("abc\r\ndef.")).isEqualTo("abc\r\ndef." + CRLF);
-    assertThat(dotStuffUsingByteArray("abc\r\nd.ef")).isEqualTo("abc\r\nd.ef" + CRLF);
-    assertThat(dotStuffUsingByteArray("abc\n.def")).isEqualTo("abc\n.def" + CRLF);
-    assertThat(dotStuffUsingByteArray("abc\r.def")).isEqualTo("abc\r.def" + CRLF);
-  }
 
   @Test
   public void itEnsuresBuffersAreTerminatedWithCRLFWithByteBufs() {
@@ -85,7 +56,7 @@ public class ByteBufsTest {
     sourceBuffer.writeBytes(testString.getBytes(StandardCharsets.UTF_8));
     assertThat(sourceBuffer.refCnt()).isEqualTo(1);
 
-    ByteBuf destBuffer = ByteBufs.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, null, MessageTermination.ADD_CRLF_IF_NECESSARY);
+    ByteBuf destBuffer = DotStuffing.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, null, MessageTermination.ADD_CRLF);
     assertThat(destBuffer.refCnt()).isEqualTo(1);
 
     // should be able to release both of these successfully
@@ -101,21 +72,13 @@ public class ByteBufsTest {
     sourceBuffer.writeBytes(testString.getBytes(StandardCharsets.UTF_8));
     assertThat(sourceBuffer.refCnt()).isEqualTo(1);
 
-    ByteBuf destBuffer = ByteBufs.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, null, MessageTermination.DO_NOT_TERMINATE);
+    ByteBuf destBuffer = DotStuffing.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, null, MessageTermination.DO_NOT_TERMINATE);
     assertThat(destBuffer).isSameAs(sourceBuffer);
     assertThat(sourceBuffer.refCnt()).isEqualTo(2);
 
     // should be able to release both of these successfully
     sourceBuffer.release();
     destBuffer.release();
-  }
-
-  private String dotStuffUsingByteArray(String testString) {
-    ByteBuf buffer = ByteBufs.createDotStuffedBuffer(testString.getBytes(StandardCharsets.UTF_8));
-
-    byte[] bytes = new byte[buffer.readableBytes()];
-    buffer.getBytes(0, bytes);
-    return new String(bytes, CharsetUtil.UTF_8);
   }
 
   private String dotStuffUsingByteBuf(String testString) {
@@ -127,8 +90,8 @@ public class ByteBufsTest {
     sourceBuffer.writeBytes(testString.getBytes(StandardCharsets.UTF_8));
 
     byte[] previousBytes = atStartOfLine ? null : new byte[] { 'x', 'y' };
-    ByteBuf destBuffer = ByteBufs.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, previousBytes,
-        appendCRLF ? MessageTermination.ADD_CRLF_IF_NECESSARY : MessageTermination.DO_NOT_TERMINATE);
+    ByteBuf destBuffer = DotStuffing.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, previousBytes,
+        appendCRLF ? MessageTermination.ADD_CRLF : MessageTermination.DO_NOT_TERMINATE);
 
     byte[] bytes = new byte[destBuffer.readableBytes()];
     destBuffer.getBytes(0, bytes);

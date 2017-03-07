@@ -1,9 +1,4 @@
-package com.hubspot.smtp.utils;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import com.hubspot.smtp.messages.MessageTermination;
+package com.hubspot.smtp.messages;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -11,16 +6,19 @@ import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ByteProcessor;
 
-public final class ByteBufs {
+final class DotStuffing {
   private static final byte CR = '\r';
   private static final byte LF = '\n';
   private static final byte DOT = '.';
   private static final byte[] DOT_DOT = {DOT, DOT};
   private static final byte[] NOT_CR_LF = {'x', 'x'};
   private static final byte[] CR_LF = {CR, LF};
-  private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
   private static final ByteBuf DOT_DOT_BUFFER = Unpooled.unreleasableBuffer(Unpooled.wrappedBuffer(DOT_DOT));
   private static final ByteBuf CR_LF_BUFFER = Unpooled.unreleasableBuffer(Unpooled.wrappedBuffer(CR_LF));
+
+  private DotStuffing() {
+    throw new AssertionError("Cannot create static utility class");
+  }
 
   /**
    * Returns a {@link CompositeByteBuf} that contains the same data as {@code sourceBuffer}, but with
@@ -44,7 +42,7 @@ public final class ByteBufs {
     int dotIndex = findDotAtBeginningOfLine(sourceBuffer, 0, normalisePreviousBytes(previousBytes));
 
     if (dotIndex == -1) {
-      if (termination == MessageTermination.ADD_CRLF_IF_NECESSARY) {
+      if (termination == MessageTermination.ADD_CRLF) {
         return allocator.compositeBuffer(2).addComponents(true, sourceBuffer.retainedSlice(), CR_LF_BUFFER.slice());
       } else {
         return sourceBuffer.retain();
@@ -63,7 +61,7 @@ public final class ByteBufs {
 
     compositeByteBuf.addComponent(true, sourceBuffer.retainedSlice(dotIndex + 1, sourceBuffer.readableBytes() - dotIndex - 1));
 
-    if (termination == MessageTermination.ADD_CRLF_IF_NECESSARY) {
+    if (termination == MessageTermination.ADD_CRLF) {
       compositeByteBuf.addComponent(true, CR_LF_BUFFER.slice());
     }
 
@@ -111,60 +109,5 @@ public final class ByteBufs {
     }
 
     return -1;
-  }
-
-  public static ByteBuf createDotStuffedBuffer(byte[] bytes) {
-    int dotIndex = findDotAtBeginningOfLine(bytes, 0);
-
-    if (dotIndex == -1) {
-      return Unpooled.wrappedBuffer(bytes, getTerminatingBytes(bytes));
-    }
-
-    // Build a CompositeByteBuf to avoid copying
-    List<ByteBuf> buffers = new ArrayList<>();
-    buffers.add(Unpooled.wrappedBuffer(bytes, 0, dotIndex));
-    buffers.add(Unpooled.wrappedBuffer(DOT_DOT));
-
-    int nextDotIndex;
-    while ((nextDotIndex = findDotAtBeginningOfLine(bytes, dotIndex + 1)) != -1) {
-      buffers.add(Unpooled.wrappedBuffer(bytes, dotIndex + 1, nextDotIndex - dotIndex - 1));
-      buffers.add(Unpooled.wrappedBuffer(DOT_DOT));
-
-      dotIndex = nextDotIndex;
-    }
-
-    buffers.add(Unpooled.wrappedBuffer(bytes, dotIndex + 1, bytes.length - dotIndex - 1));
-    buffers.add(Unpooled.wrappedBuffer(getTerminatingBytes(bytes)));
-
-    return Unpooled.wrappedBuffer(buffers.toArray(new ByteBuf[buffers.size()]));
-  }
-
-  private static int findDotAtBeginningOfLine(byte[] bytes, int startAt) {
-    for (int i = startAt; i < bytes.length; i++) {
-      if (bytes[i] == DOT) {
-        return i;
-      }
-
-      // advance to the end of the line
-      while (++i < bytes.length) {
-        if (bytes[i] == LF && bytes[i - 1] == CR) {
-          break;
-        }
-      }
-    }
-
-    return -1;
-  }
-
-  // SmtpRequestEncoder will add .CRLF but we need to ensure
-  // our messages end with CRLF
-  private static byte[] getTerminatingBytes(byte[] bytes) {
-    int length = bytes.length;
-
-    if (length >= 2 && bytes[length - 2] == CR && bytes[length - 1] == LF) {
-      return EMPTY_BYTE_ARRAY;
-    } else {
-      return CR_LF;
-    }
   }
 }

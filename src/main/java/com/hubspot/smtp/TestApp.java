@@ -28,7 +28,6 @@ import com.hubspot.smtp.client.SmtpSessionConfig;
 import com.hubspot.smtp.client.SmtpSessionFactory;
 import com.hubspot.smtp.client.SupportedExtensions;
 import com.hubspot.smtp.messages.MessageContent;
-import com.hubspot.smtp.utils.ByteBufs;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -80,13 +79,11 @@ class TestApp {
   private static void sendEmail(NioEventLoopGroup eventLoopGroup) throws InterruptedException, ExecutionException {
     SmtpClient client = new SmtpClient(eventLoopGroup, new SmtpSessionFactory(EVENT_LOOP_GROUP, EXECUTOR_SERVICE));
 
-    ByteBuf messageBuffer = ByteBufs.createDotStuffedBuffer(TEST_EMAIL.getBytes(StandardCharsets.UTF_8));
-
     client.connect(SmtpSessionConfig.forRemoteAddress(InetSocketAddress.createUnresolved("localhost", 9925)))
         .thenCompose(r -> client.ehlo(r.getSession(), "hubspot.com"))
         .thenCompose(r -> client.mail(r.getSession(), "mobrien@hubspot.com"))
         .thenCompose(r -> client.rcpt(r.getSession(), "michael@mcobrien.org"))
-        .thenCompose(r -> client.data(r.getSession(), messageBuffer))
+        .thenCompose(r -> client.data(r.getSession(), MessageContent.of(Unpooled.wrappedBuffer(TEST_EMAIL.getBytes(StandardCharsets.UTF_8)))))
         .thenCompose(r -> client.quit(r.getSession()))
         .thenCompose(r -> r.getSession().close())
         .get();
@@ -145,9 +142,9 @@ class TestApp {
       return send(session, request(RCPT, "TO:" + to));
     }
 
-    CompletableFuture<SmtpClientResponse> data(SmtpSession session, ByteBuf messageBuffer) {
+    CompletableFuture<SmtpClientResponse> data(SmtpSession session, MessageContent content) {
       return send(session, request(SmtpCommand.DATA))
-          .thenCompose(r -> send(session, MessageContent.of(messageBuffer)));
+          .thenCompose(r -> send(session, content));
     }
 
     CompletableFuture<SmtpClientResponse> quit(SmtpSession session) {
