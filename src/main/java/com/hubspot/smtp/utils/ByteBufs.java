@@ -3,6 +3,8 @@ package com.hubspot.smtp.utils;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.hubspot.smtp.messages.MessageTermination;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
@@ -36,13 +38,13 @@ public final class ByteBufs {
    * @param allocator the {@code ByteBufAllocator} to use for new {@code ByteBuf}s
    * @param sourceBuffer the source message data
    * @param previousBytes the previous two bytes of the message, or null
-   * @param appendCRLF whether to append CRLF to the end of the returned buffer
+   * @param termination whether to append CRLF to the end of the returned buffer
    */
-  public static ByteBuf createDotStuffedBuffer(ByteBufAllocator allocator, ByteBuf sourceBuffer, byte[] previousBytes, boolean appendCRLF) {
+  public static ByteBuf createDotStuffedBuffer(ByteBufAllocator allocator, ByteBuf sourceBuffer, byte[] previousBytes, MessageTermination termination) {
     int dotIndex = findDotAtBeginningOfLine(sourceBuffer, 0, normalisePreviousBytes(previousBytes));
 
     if (dotIndex == -1) {
-      if (appendCRLF) {
+      if (termination == MessageTermination.ADD_CRLF_IF_NECESSARY) {
         return allocator.compositeBuffer(2).addComponents(true, sourceBuffer.retainedSlice(), CR_LF_BUFFER.slice());
       } else {
         return sourceBuffer.retain();
@@ -61,7 +63,7 @@ public final class ByteBufs {
 
     compositeByteBuf.addComponent(true, sourceBuffer.retainedSlice(dotIndex + 1, sourceBuffer.readableBytes() - dotIndex - 1));
 
-    if (appendCRLF) {
+    if (termination == MessageTermination.ADD_CRLF_IF_NECESSARY) {
       compositeByteBuf.addComponent(true, CR_LF_BUFFER.slice());
     }
 
@@ -119,7 +121,7 @@ public final class ByteBufs {
     }
 
     // Build a CompositeByteBuf to avoid copying
-    List<ByteBuf> buffers = new ArrayList<ByteBuf>();
+    List<ByteBuf> buffers = new ArrayList<>();
     buffers.add(Unpooled.wrappedBuffer(bytes, 0, dotIndex));
     buffers.add(Unpooled.wrappedBuffer(DOT_DOT));
 

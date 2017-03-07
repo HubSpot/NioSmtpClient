@@ -10,7 +10,7 @@ public class ByteBufMessageContent extends MessageContent {
 
   public ByteBufMessageContent(ByteBuf buffer, MessageContentEncoding encoding) {
     this.buffer = encoding == MessageContentEncoding.REQUIRES_DOT_STUFFING ?
-        ByteBufs.createDotStuffedBuffer(buffer.alloc(), buffer, null, true) : buffer;
+        ByteBufs.createDotStuffedBuffer(buffer.alloc(), buffer, null, MessageTermination.ADD_CRLF_IF_NECESSARY) : buffer;
     size = this.buffer.readableBytes();
   }
 

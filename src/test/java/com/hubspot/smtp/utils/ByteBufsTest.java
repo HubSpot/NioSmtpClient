@@ -7,6 +7,8 @@ import java.nio.charset.StandardCharsets;
 
 import org.junit.Test;
 
+import com.hubspot.smtp.messages.MessageTermination;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.CharsetUtil;
@@ -84,7 +86,7 @@ public class ByteBufsTest {
     sourceBuffer.writeBytes(testString.getBytes(StandardCharsets.UTF_8));
     assertThat(sourceBuffer.refCnt()).isEqualTo(1);
 
-    ByteBuf destBuffer = ByteBufs.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, null, true);
+    ByteBuf destBuffer = ByteBufs.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, null, MessageTermination.ADD_CRLF_IF_NECESSARY);
     assertThat(destBuffer.refCnt()).isEqualTo(1);
 
     // should be able to release both of these successfully
@@ -100,7 +102,7 @@ public class ByteBufsTest {
     sourceBuffer.writeBytes(testString.getBytes(StandardCharsets.UTF_8));
     assertThat(sourceBuffer.refCnt()).isEqualTo(1);
 
-    ByteBuf destBuffer = ByteBufs.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, null, false);
+    ByteBuf destBuffer = ByteBufs.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, null, MessageTermination.DO_NOT_TERMINATE);
     assertThat(destBuffer).isSameAs(sourceBuffer);
     assertThat(sourceBuffer.refCnt()).isEqualTo(2);
 
@@ -126,7 +128,8 @@ public class ByteBufsTest {
     sourceBuffer.writeBytes(testString.getBytes(StandardCharsets.UTF_8));
 
     byte[] previousBytes = atStartOfLine ? null : new byte[] { 'x', 'y' };
-    ByteBuf destBuffer = ByteBufs.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, previousBytes, appendCRLF);
+    ByteBuf destBuffer = ByteBufs.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, previousBytes,
+        appendCRLF ? MessageTermination.ADD_CRLF_IF_NECESSARY : MessageTermination.DO_NOT_TERMINATE);
 
     byte[] bytes = new byte[destBuffer.readableBytes()];
     destBuffer.getBytes(0, bytes);

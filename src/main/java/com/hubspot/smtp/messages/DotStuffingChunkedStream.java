@@ -40,7 +40,8 @@ class DotStuffingChunkedStream extends ChunkedStream {
     boolean isLastChunk = bytesRead >= size;
     boolean appendCRLF = isLastChunk && !(trailingBytes[0] == CR && trailingBytes[1] == LF);
 
-    return ByteBufs.createDotStuffedBuffer(allocator, chunk, prevChunkTrailingBytes, appendCRLF);
+    return ByteBufs.createDotStuffedBuffer(allocator, chunk, prevChunkTrailingBytes,
+        appendCRLF ? MessageTermination.ADD_CRLF_IF_NECESSARY : MessageTermination.DO_NOT_TERMINATE);
   }
 
   private void updateTrailingBytes(ByteBuf chunk) {
