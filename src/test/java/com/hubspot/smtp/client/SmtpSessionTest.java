@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 import com.google.common.util.concurrent.MoreExecutors;
@@ -21,6 +22,10 @@ import com.hubspot.smtp.messages.MessageContent;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandler;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.DefaultChannelPromise;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.DefaultSmtpResponse;
@@ -41,21 +46,25 @@ public class SmtpSessionTest {
   private static final SmtpRequest HELO_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELO);
   private static final SmtpRequest HELP_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELP);
 
-  private static final ExecutorService EXECUTOR_SERVICE = MoreExecutors.sameThreadExecutor();
+  private static final ExecutorService EXECUTOR_SERVICE = MoreExecutors.newDirectExecutorService();
 
   private ResponseHandler responseHandler;
   private CompletableFuture<SmtpResponse[]> responseFuture;
   private Channel channel;
+  private ChannelPipeline pipeline;
   private SmtpSession session;
 
   @Before
   public void setup() {
     channel = mock(Channel.class);
+    pipeline = mock(ChannelPipeline.class);
     responseHandler = mock(ResponseHandler.class);
-    session = new SmtpSession(channel, responseHandler, EXECUTOR_SERVICE);
 
     responseFuture = new CompletableFuture<>();
     when(responseHandler.createResponseFuture(anyInt(), any())).thenReturn(responseFuture);
+    when(channel.pipeline()).thenReturn(pipeline);
+
+    session = new SmtpSession(channel, responseHandler, EXECUTOR_SERVICE);
   }
   
   @Test
@@ -193,5 +202,37 @@ public class SmtpSessionTest {
     channelPromise.setSuccess();
 
     assertThat(f.isDone());
+  }
+
+  @Test
+  public void itCompletesCloseFutureWhenTheConnectionIsClosed() throws Exception {
+    assertThat(session.getCloseFuture().isDone()).isFalse();
+
+    getErrorHandler().channelInactive(mock(ChannelHandlerContext.class));
+
+    assertThat(session.getCloseFuture().isDone()).isTrue();
+  }
+
+  @Test
+  public void itCompletesCloseFutureExceptionallyWhenTheConnectionIsClosed() throws Exception {
+    ChannelInboundHandler errorHandler = getErrorHandler();
+
+    Exception testException = new Exception();
+    ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+
+    errorHandler.exceptionCaught(context, testException);
+
+    verify(context).close();
+
+    errorHandler.channelInactive(context);
+
+    assertThat(session.getCloseFuture().isCompletedExceptionally()).isTrue();
+    assertThatThrownBy(() -> session.getCloseFuture().get()).hasCause(testException);
+  }
+
+  private ChannelInboundHandler getErrorHandler() {
+    ArgumentCaptor<ChannelHandler> captor = ArgumentCaptor.forClass(ChannelHandler.class);
+    verify(pipeline).addLast(captor.capture());
+    return (ChannelInboundHandler) captor.getValue();
   }
 }

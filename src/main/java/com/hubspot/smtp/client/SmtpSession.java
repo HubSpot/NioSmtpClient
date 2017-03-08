@@ -15,6 +15,8 @@ import com.google.common.collect.Sets;
 import com.hubspot.smtp.messages.MessageContent;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpRequest;
 import io.netty.handler.codec.smtp.SmtpResponse;
@@ -46,6 +48,7 @@ public class SmtpSession {
   private final Channel channel;
   private final ResponseHandler responseHandler;
   private final ExecutorService executorService;
+  private final CompletableFuture<Void> closeFuture;
 
   private volatile EnumSet<SupportedExtensions> supportedExtensions = EnumSet.noneOf(SupportedExtensions.class);
 
@@ -53,6 +56,13 @@ public class SmtpSession {
     this.channel = channel;
     this.responseHandler = responseHandler;
     this.executorService = executorService;
+    this.closeFuture = new CompletableFuture<>();
+
+    this.channel.pipeline().addLast(new ErrorHandler());
+  }
+
+  public CompletableFuture<Void> getCloseFuture() {
+    return closeFuture;
   }
 
   public CompletableFuture<Void> close() {
@@ -165,5 +175,26 @@ public class SmtpSession {
 
   public boolean isSupported(SupportedExtensions ext) {
     return supportedExtensions.contains(ext);
+  }
+
+  private class ErrorHandler extends ChannelInboundHandlerAdapter {
+    private Throwable cause;
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+      this.cause = cause;
+      ctx.close();
+    }
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+      if (cause != null) {
+        closeFuture.completeExceptionally(cause);
+      } else {
+        closeFuture.complete(null);
+      }
+
+      super.channelInactive(ctx);
+    }
   }
 }

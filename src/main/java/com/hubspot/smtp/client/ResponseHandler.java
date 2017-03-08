@@ -74,6 +74,8 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
     if (collector != null) {
       collector.completeExceptionally(cause);
     }
+
+    super.exceptionCaught(ctx, cause);
   }
 
   @Override

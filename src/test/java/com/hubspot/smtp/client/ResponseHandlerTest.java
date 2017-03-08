@@ -39,6 +39,8 @@ public class ResponseHandlerTest {
 
     assertThat(f.isCompletedExceptionally()).isTrue();
     assertThatThrownBy(f::get).isInstanceOf(ExecutionException.class).hasCause(testException);
+
+    verify(context).fireExceptionCaught(testException);
   }
 
   @Test

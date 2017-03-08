@@ -1,5 +1,6 @@
 package com.hubspot.smtp.client;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 import java.time.Duration;
@@ -19,6 +20,7 @@ import io.netty.handler.timeout.IdleStateEvent;
 public class KeepAliveHandlerTest {
   private static final String CONNECTION_ID = "connection";
   private static final SmtpResponse OK_RESPONSE = new DefaultSmtpResponse(250);
+  private static final SmtpResponse ERROR_RESPONSE = new DefaultSmtpResponse(400, "that didn't work");
 
   private ChannelHandlerContext context;
   private Channel channel;
@@ -63,6 +65,16 @@ public class KeepAliveHandlerTest {
   public void itDoesNotPropagateReadEventsIfExpectingANoopResponse() throws Exception {
     handler.triggerIdle();
     handler.channelRead(context, OK_RESPONSE);
+
+    verify(context, never()).fireChannelRead(any());
+  }
+
+  @Test
+  public void itThrowsAnExceptionIfTheNoopResponseIsAnError() throws Exception {
+    handler.triggerIdle();
+    assertThatThrownBy(() -> handler.channelRead(context, ERROR_RESPONSE))
+      .isInstanceOf(ErrorResponseException.class)
+      .hasMessageEndingWith("400 that didn't work");
 
     verify(context, never()).fireChannelRead(any());
   }
