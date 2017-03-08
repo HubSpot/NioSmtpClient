@@ -64,23 +64,6 @@ public class DotStuffingTest {
     destBuffer.release();
   }
 
-  @Test
-  public void itRetainsTheSourceByteIfNoProcessingIsRequired() {
-    String testString = "abc";
-
-    ByteBuf sourceBuffer = ALLOCATOR.buffer();
-    sourceBuffer.writeBytes(testString.getBytes(StandardCharsets.UTF_8));
-    assertThat(sourceBuffer.refCnt()).isEqualTo(1);
-
-    ByteBuf destBuffer = DotStuffing.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, null, MessageTermination.DO_NOT_TERMINATE);
-    assertThat(destBuffer).isSameAs(sourceBuffer);
-    assertThat(sourceBuffer.refCnt()).isEqualTo(2);
-
-    // should be able to release both of these successfully
-    sourceBuffer.release();
-    destBuffer.release();
-  }
-
   private String dotStuffUsingByteBuf(String testString) {
     return dotStuffUsingByteBuf(testString, true, true);
   }
