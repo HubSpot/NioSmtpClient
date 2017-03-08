@@ -18,15 +18,20 @@ public abstract class SmtpSessionConfig {
   }
 
   @Default
+  public Duration getKeepAliveTimeout() {
+    return Duration.ofSeconds(30);
+  }
+
+  @Default
   public String getConnectionId() {
     return "unidentified-connection";
   }
 
-  public static SmtpSessionConfig forRemoteAddress(String host, int port) {
+  public static ImmutableSmtpSessionConfig forRemoteAddress(String host, int port) {
     return forRemoteAddress(InetSocketAddress.createUnresolved(host, port));
   }
 
-  public static SmtpSessionConfig forRemoteAddress(InetSocketAddress remoteAddress) {
+  public static ImmutableSmtpSessionConfig forRemoteAddress(InetSocketAddress remoteAddress) {
     return ImmutableSmtpSessionConfig.builder().remoteAddress(remoteAddress).build();
   }
 }

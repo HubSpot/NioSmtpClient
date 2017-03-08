@@ -9,6 +9,7 @@ import static io.netty.handler.codec.smtp.SmtpCommand.RSET;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -45,10 +46,23 @@ class TestApp {
     Stopwatch stopwatch = Stopwatch.createStarted();
 
     sendPipelinedEmails(100_000);
+//    connectAndWait();
 
     System.out.println("Completed in " + stopwatch.elapsed(TimeUnit.MILLISECONDS));
 
     EVENT_LOOP_GROUP.shutdownGracefully().sync();
+  }
+
+  private static void connectAndWait() throws InterruptedException {
+    SmtpSessionConfig config = SmtpSessionConfig.forRemoteAddress("localhost", 9925)
+        .withReadTimeout(Duration.ofSeconds(10)).withKeepAliveTimeout(Duration.ofSeconds(3));
+
+    SmtpSessionFactory sessionFactory = new SmtpSessionFactory(EVENT_LOOP_GROUP, EXECUTOR_SERVICE);
+    sessionFactory.connect(config).thenCompose(r -> r.getSession().send(req(EHLO, "hubspot.com")));
+
+    while (true) {
+      Thread.sleep(500);
+    }
   }
 
   private static void sendPipelinedEmails(int messageCount)  {

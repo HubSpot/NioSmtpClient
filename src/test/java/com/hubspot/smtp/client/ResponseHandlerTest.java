@@ -146,4 +146,25 @@ public class ResponseHandlerTest {
 
     responseHandler.createResponseFuture(1, DEBUG_STRING);
   }
+
+  @Test
+  public void itCanTellWhenAResponseIsPending() {
+    assertThat(responseHandler.isResponsePending()).isFalse();
+
+    responseHandler.createResponseFuture(1, DEBUG_STRING);
+
+    assertThat(responseHandler.isResponsePending()).isTrue();
+  }
+
+  @Test
+  public void itCompletesExceptionallyIfTheChannelIsClosed() throws Exception {
+    CompletableFuture<SmtpResponse[]> f = responseHandler.createResponseFuture(1, DEBUG_STRING);
+
+    responseHandler.channelInactive(context);
+
+    assertThat(f.isCompletedExceptionally()).isTrue();
+    assertThatThrownBy(f::get)
+        .hasCauseInstanceOf(ChannelClosedException.class)
+        .hasMessageEndingWith(CONNECTION_ID_PREFIX + "Handled channelInactive while waiting for a response to [" + DEBUG_STRING.get() + "]");
+  }
 }

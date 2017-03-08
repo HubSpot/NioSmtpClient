@@ -18,7 +18,7 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
   private final AtomicReference<ResponseCollector> responseCollector = new AtomicReference<>();
   private final String connectionId;
 
-  public ResponseHandler(String connectionId) {
+  ResponseHandler(String connectionId) {
     this.connectionId = connectionId;
   }
 
@@ -40,6 +40,10 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
     // the compareAndSet call above has volatile semantics and
     // ensures the write will be visible
     return collector.getFuture();
+  }
+
+  boolean isResponsePending() {
+    return responseCollector.get() != null;
   }
 
   @Override
@@ -70,5 +74,16 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
     if (collector != null) {
       collector.completeExceptionally(cause);
     }
+  }
+
+  @Override
+  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    ResponseCollector collector = responseCollector.get();
+
+    if (collector != null) {
+      collector.completeExceptionally(new ChannelClosedException(connectionId, "Handled channelInactive while waiting for a response to [" + collector.getDebugString() + "]"));
+    }
+
+    super.channelInactive(ctx);
   }
 }
