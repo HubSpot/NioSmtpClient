@@ -1,5 +1,9 @@
 package com.hubspot.smtp.client;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.smtp.SmtpRequestEncoder;
@@ -20,12 +24,21 @@ class Initializer extends ChannelInitializer<SocketChannel> {
 
   @Override
   protected void initChannel(SocketChannel socketChannel) throws Exception {
-    socketChannel.pipeline().addLast(
-        new SmtpRequestEncoder(),
-        new SmtpResponseDecoder(MAX_LINE_LENGTH),
-        new ChunkedWriteHandler(),
-        new ReadTimeoutHandler((int) config.getReadTimeout().getSeconds()),
-        new KeepAliveHandler(responseHandler, config.getConnectionId(), config.getKeepAliveTimeout()),
-        responseHandler);
+    socketChannel.pipeline().addLast(getChannelHandlers());
+  }
+
+  private ChannelHandler[] getChannelHandlers() {
+    List<ChannelHandler> handlers = new ArrayList<>();
+
+    handlers.add(new SmtpRequestEncoder());
+    handlers.add(new SmtpResponseDecoder(MAX_LINE_LENGTH));
+    handlers.add(new ChunkedWriteHandler());
+    handlers.add(new ReadTimeoutHandler((int) config.getReadTimeout().getSeconds()));
+
+    config.getKeepAliveTimeout().ifPresent(timeout -> handlers.add(new KeepAliveHandler(responseHandler, config.getConnectionId(), timeout)));
+
+    handlers.add(responseHandler);
+
+    return handlers.toArray(new ChannelHandler[handlers.size()]);
   }
 }
