@@ -45,7 +45,7 @@ final class DotStuffing {
       if (termination == MessageTermination.ADD_CRLF) {
         return allocator.compositeBuffer(2).addComponents(true, sourceBuffer.retainedSlice(), CR_LF_BUFFER.slice());
       } else {
-        return sourceBuffer.retain();
+        return sourceBuffer;
       }
     }
 
