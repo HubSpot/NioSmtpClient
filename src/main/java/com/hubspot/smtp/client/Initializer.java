@@ -8,7 +8,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 
 class Initializer extends ChannelInitializer<SocketChannel> {
-  private static final int MAX_LINE_LENGTH = 200;
+  private static final int MAX_LINE_LENGTH = 1000;
 
   private final ResponseHandler responseHandler;
   private final SmtpSessionConfig config;
