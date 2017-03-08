@@ -33,7 +33,7 @@ class Initializer extends ChannelInitializer<SocketChannel> {
     handlers.add(new SmtpRequestEncoder());
     handlers.add(new SmtpResponseDecoder(MAX_LINE_LENGTH));
     handlers.add(new ChunkedWriteHandler());
-    handlers.add(new ReadTimeoutHandler((int) config.getReadTimeout().getSeconds()));
+    handlers.add(new ReadTimeoutHandler(Math.toIntExact(config.getReadTimeout().getSeconds())));
 
     config.getKeepAliveTimeout().ifPresent(timeout -> handlers.add(new KeepAliveHandler(responseHandler, config.getConnectionId(), timeout)));
 

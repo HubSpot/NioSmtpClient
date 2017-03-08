@@ -28,7 +28,7 @@ class KeepAliveHandler extends IdleStateHandler {
 
   KeepAliveHandler(ResponseHandler responseHandler, String connectionId, Duration idleTimeout) {
     // just track overall idle time; disable individual reader & writer timers by passing zero
-    super(0, 0, (int) idleTimeout.getSeconds());
+    super(0, 0, Math.toIntExact(idleTimeout.getSeconds()));
 
     this.responseHandler = responseHandler;
     this.connectionId = connectionId;
