@@ -14,6 +14,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import com.hubspot.smtp.messages.MessageContent;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -66,8 +67,7 @@ public class SmtpSession {
   }
 
   public CompletableFuture<Void> close() {
-    CompletableFuture<Void> closeFuture = new CompletableFuture<>();
-    this.channel.close().addListener(f -> closeFuture.complete(null));
+    this.channel.close();
     return closeFuture;
   }
 
@@ -187,6 +187,7 @@ public class SmtpSession {
     }
 
     @Override
+    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION") // https://github.com/findbugsproject/findbugs/issues/79
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
       if (cause != null) {
         closeFuture.completeExceptionally(cause);
