@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -17,10 +19,13 @@ import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hubspot.smtp.messages.MessageContent;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -42,6 +47,7 @@ public class SmtpSessionTest {
   private static final MessageContent SMTP_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]));
   private static final SmtpResponse OK_RESPONSE = new DefaultSmtpResponse(250, "OK");
   private static final SmtpResponse FAIL_RESPONSE = new DefaultSmtpResponse(400, "nope");
+  private static final SmtpResponse INTERMEDIATE_RESPONSE = new DefaultSmtpResponse(300, "... go on");
   private static final SmtpRequest MAIL_REQUEST = new DefaultSmtpRequest(SmtpCommand.MAIL, "FROM:alice@example.com");
   private static final SmtpRequest RCPT_REQUEST = new DefaultSmtpRequest(SmtpCommand.RCPT, "FROM:bob@example.com");
   private static final SmtpRequest DATA_REQUEST = new DefaultSmtpRequest(SmtpCommand.DATA);
@@ -68,9 +74,10 @@ public class SmtpSessionTest {
     responseFuture = new CompletableFuture<>();
     when(responseHandler.createResponseFuture(anyInt(), any())).thenReturn(responseFuture);
     when(channel.pipeline()).thenReturn(pipeline);
+    when(channel.alloc()).thenReturn(new PooledByteBufAllocator(false));
 
     session = new SmtpSession(channel, responseHandler, EXECUTOR_SERVICE, CONFIG);
-    session.setSupportedExtensions(Collections.singletonList("PIPELINING"));
+    session.setSupportedExtensions(Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN"));
   }
   
   @Test
@@ -238,6 +245,70 @@ public class SmtpSessionTest {
   }
 
   @Test
+  public void itWillNotAuthenticateWithAuthPlainUnlessTheServerSupportsIt() {
+    session.setSupportedExtensions(Collections.emptyList());
+
+    assertThatThrownBy(() -> session.authPlain("user", "password"))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Auth plain is not supported on this server");
+  }
+
+  @Test
+  public void itCanAuthenticateWithAuthPlain() {
+    String username = "user";
+    String password = "password";
+    String encoded = Base64.getEncoder().encodeToString(String.format("%s\0%s\0%s", username, username, password).getBytes());
+
+    session.authPlain(username, password);
+
+    verify(channel).writeAndFlush(new DefaultSmtpRequest("AUTH", "PLAIN", encoded));
+  }
+
+  @Test
+  public void itWillNotAuthenticateWithAuthLoginUnlessTheServerSupportsIt() {
+    session.setSupportedExtensions(Collections.emptyList());
+
+    assertThatThrownBy(() -> session.authLogin("user", "password"))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Auth login is not supported on this server");
+  }
+
+  @Test
+  public void itCanAuthenticateWithAuthLogin() throws Exception {
+    String username = "user";
+    String password = "password";
+
+    // do the initial request, which just includes the username
+    session.authLogin("user", "password");
+
+    verify(channel).writeAndFlush(new DefaultSmtpRequest("AUTH", "LOGIN", encodeBase64(username)));
+
+    // now the second request, which sends the password
+    responseFuture.complete(new SmtpResponse[] {INTERMEDIATE_RESPONSE});
+
+    // this is sent to the second invocation of writeAndFlush
+    ArgumentCaptor<Object> bufCaptor = ArgumentCaptor.forClass(Object.class);
+    verify(channel, times(2)).writeAndFlush(bufCaptor.capture());
+    ByteBuf capturedBuffer = (ByteBuf) bufCaptor.getAllValues().get(1);
+
+    String actualString = capturedBuffer.toString(0, capturedBuffer.readableBytes(), StandardCharsets.UTF_8);
+    assertThat(actualString).isEqualTo(encodeBase64(password) + "\r\n");
+  }
+
+  @Test
+  public void itReturnsTheResponseIfAuthLoginFailsAtTheFirstRequest() throws Exception {
+    CompletableFuture<SmtpClientResponse> f = session.authLogin("user", "password");
+
+    responseFuture.complete(new SmtpResponse[] {FAIL_RESPONSE});
+
+    assertThat(f.get().code()).isEqualTo(FAIL_RESPONSE.code());
+  }
+
+  private String encodeBase64(String s) {
+    return Base64.getEncoder().encodeToString(s.getBytes(StandardCharsets.UTF_8));
+  }
+
+  @Test
   public void itClosesTheUnderlyingChannel() {
     DefaultChannelPromise channelPromise = new DefaultChannelPromise(channel, ImmediateEventExecutor.INSTANCE);
     when(channel.close()).thenReturn(channelPromise);
@@ -293,7 +364,7 @@ public class SmtpSessionTest {
   }
 
   @Test
-  public void itReturnsTheFailureResponseWhenStartTlsIsCalledIfTheServerReturnsAnError() throws ExecutionException, InterruptedException {
+  public void itReturnsTheFailureResponseWhenStartTlsIsCalledIfTheServerReturnsAnError() throws Exception {
     CompletableFuture<SmtpClientResponse> f = session.startTls();
 
     responseFuture.complete(new SmtpResponse[] {FAIL_RESPONSE});
@@ -303,7 +374,7 @@ public class SmtpSessionTest {
   }
 
   @Test
-  public void itAddsAnSslHandlerToThePipelineIfTheStartTlsCommandSucceeds() throws ExecutionException, InterruptedException {
+  public void itAddsAnSslHandlerToThePipelineIfTheStartTlsCommandSucceeds() throws Exception {
     session.startTls();
 
     responseFuture.complete(new SmtpResponse[] {OK_RESPONSE});

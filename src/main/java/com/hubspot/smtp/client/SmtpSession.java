@@ -2,6 +2,8 @@ package com.hubspot.smtp.client;
 
 import static io.netty.handler.codec.smtp.LastSmtpContent.EMPTY_LAST_CONTENT;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -21,6 +23,7 @@ import com.hubspot.smtp.messages.MessageContent;
 import com.hubspot.smtp.utils.SmtpResponses;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -53,7 +56,12 @@ public class SmtpSession {
       SmtpCommand.NOOP);
 
   private static final Joiner COMMA_JOINER = Joiner.on(", ");
+  private static final Splitter WHITESPACE_SPLITTER = Splitter.on(CharMatcher.WHITESPACE);
   private static final SmtpCommand STARTTLS_COMMAND = SmtpCommand.valueOf("STARTTLS");
+  private static final SmtpCommand AUTH_COMMAND = SmtpCommand.valueOf("AUTH");
+  private static final String AUTH_PLAIN_MECHANISM = "PLAIN";
+  private static final String AUTH_LOGIN_MECHANISM = "LOGIN";
+  private static final String CRLF = "\r\n";
 
   private final Channel channel;
   private final ResponseHandler responseHandler;
@@ -171,6 +179,39 @@ public class SmtpSession {
     });
   }
 
+  public CompletableFuture<SmtpClientResponse> authPlain(String username, String password) {
+    Preconditions.checkState(isAuthPlainSupported, "Auth plain is not supported on this server");
+
+    String s = String.format("%s\0%s\0%s", username, username, password);
+    return send(new DefaultSmtpRequest(AUTH_COMMAND, AUTH_PLAIN_MECHANISM, encodeBase64(s)));
+  }
+
+  public CompletableFuture<SmtpClientResponse> authLogin(String username, String password) {
+    Preconditions.checkState(isAuthLoginSupported, "Auth login is not supported on this server");
+
+    return send(new DefaultSmtpRequest(AUTH_COMMAND, AUTH_LOGIN_MECHANISM, encodeBase64(username))).thenCompose(r -> {
+      if (SmtpResponses.isError(r)) {
+        return CompletableFuture.completedFuture(r);
+      } else {
+        return sendAuthLoginPassword(password);
+      }
+    });
+  }
+
+  private CompletionStage<SmtpClientResponse> sendAuthLoginPassword(String password) {
+    CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> "auth login password");
+
+    String passwordResponse = encodeBase64(password) + CRLF;
+    ByteBuf passwordBuffer = channel.alloc().buffer().writeBytes(passwordResponse.getBytes(StandardCharsets.UTF_8));
+    channel.writeAndFlush(passwordBuffer);
+
+    return applyOnExecutor(responseFuture, loginResponse -> new SmtpClientResponse(loginResponse[0], this));
+  }
+
+  private String encodeBase64(String s) {
+    return Base64.getEncoder().encodeToString(s.getBytes(StandardCharsets.UTF_8));
+  }
+
   public boolean isAuthPlainSupported() {
     return isAuthPlainSupported;
   }
@@ -205,10 +246,13 @@ public class SmtpSession {
 
   @VisibleForTesting
   void setSupportedExtensions(List<CharSequence> details) {
+    isAuthLoginSupported = false;
+    isAuthPlainSupported = false;
+
     EnumSet<SupportedExtensions> discoveredExtensions = EnumSet.noneOf(SupportedExtensions.class);
 
     for (CharSequence ext : details) {
-      List<String> parts = Splitter.on(CharMatcher.WHITESPACE).splitToList(ext);
+      List<String> parts = WHITESPACE_SPLITTER.splitToList(ext);
       SupportedExtensions.find(parts.get(0)).ifPresent(discoveredExtensions::add);
 
       if (parts.get(0).equalsIgnoreCase("auth") && parts.size() > 1) {

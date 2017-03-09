@@ -30,6 +30,7 @@ import org.apache.james.protocols.smtp.SMTPConfigurationImpl;
 import org.apache.james.protocols.smtp.SMTPProtocol;
 import org.apache.james.protocols.smtp.SMTPProtocolHandlerChain;
 import org.apache.james.protocols.smtp.SMTPSession;
+import org.apache.james.protocols.smtp.hook.AuthHook;
 import org.apache.james.protocols.smtp.hook.HookResult;
 import org.apache.james.protocols.smtp.hook.MessageHook;
 import org.junit.After;
@@ -55,6 +56,8 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
 public class IntegrationTest {
+  private static final String CORRECT_USERNAME = "smtp-user";
+  private static final String CORRECT_PASSWORD = "correct horse battery staple";
   private static final String RETURN_PATH = "return-path@example.com";
   private static final String RECIPIENT = "sender@example.com";
   private static final String MESSAGE_DATA = "From: <from@example.com>\r\n" +
@@ -70,6 +73,7 @@ public class IntegrationTest {
   private SmtpSessionFactory sessionFactory;
   private List<MailEnvelope> receivedMails;
   private Logger serverLog;
+  private boolean requireAuth;
 
   @Before
   public void setup() throws Exception {
@@ -83,7 +87,12 @@ public class IntegrationTest {
   }
 
   private NettyServer createAndStartSmtpServer(Logger log, InetSocketAddress address) throws Exception {
-    SMTPConfigurationImpl config = new SMTPConfigurationImpl();
+    SMTPConfigurationImpl config = new SMTPConfigurationImpl() {
+      @Override
+      public boolean isAuthRequired(String remoteIP) {
+        return requireAuth;
+      }
+    };
     SMTPProtocolHandlerChain chain = new SMTPProtocolHandlerChain(new CollectEmailsHook());
 
     NettyServer server = new NettyServer(new SMTPProtocol(chain, config, log), Encryption.createStartTls(FakeTlsContext.createContext()));
@@ -106,6 +115,36 @@ public class IntegrationTest {
           assertThat(r.getSession().isSupported(SupportedExtensions.PIPELINING)).isTrue();
           assertThat(r.getSession().isSupported(SupportedExtensions.EIGHT_BIT_MIME)).isTrue();
           return r.getSession().send(req(QUIT));
+        })
+        .thenCompose(r -> assertSuccess(r).close())
+        .get();
+  }
+
+  @Test
+  public void itCanAuthenticateWithAuthPlain() throws Exception {
+    requireAuth = true;
+
+    connect()
+        .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
+        .thenCompose(r -> {
+          assertThat(r.getSession().isSupported(SupportedExtensions.AUTH)).isTrue();
+          assertThat(r.getSession().isAuthPlainSupported()).isTrue();
+          return r.getSession().authPlain(CORRECT_USERNAME, CORRECT_PASSWORD);
+        })
+        .thenCompose(r -> assertSuccess(r).close())
+        .get();
+  }
+
+  @Test
+  public void itCanAuthenticateWithAuthLogin() throws Exception {
+    requireAuth = true;
+
+    connect()
+        .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
+        .thenCompose(r -> {
+          assertThat(r.getSession().isSupported(SupportedExtensions.AUTH)).isTrue();
+          assertThat(r.getSession().isAuthLoginSupported()).isTrue();
+          return r.getSession().authLogin(CORRECT_USERNAME, CORRECT_PASSWORD);
         })
         .thenCompose(r -> assertSuccess(r).close())
         .get();
@@ -260,11 +299,20 @@ public class IntegrationTest {
     return MessageContent.of(Unpooled.wrappedBuffer(MESSAGE_DATA.getBytes(StandardCharsets.UTF_8)));
   }
 
-  private class CollectEmailsHook implements MessageHook {
+  private class CollectEmailsHook implements MessageHook, AuthHook {
     @Override
     public synchronized HookResult onMessage(SMTPSession session, MailEnvelope mail) {
       receivedMails.add(mail);
       return HookResult.ok();
+    }
+
+    @Override
+    public HookResult doAuth(SMTPSession session, String username, String password) {
+      if (username.equals(CORRECT_USERNAME) && password.equals(CORRECT_PASSWORD)) {
+        return HookResult.ok();
+      } else {
+        return HookResult.deny();
+      }
     }
   }
 }
