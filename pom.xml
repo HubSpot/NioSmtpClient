@@ -37,6 +37,7 @@
     <project.build.targetJdk>1.8</project.build.targetJdk>
     <hubspot.immutables.version>2.2.10</hubspot.immutables.version>
     <netty41.version>4.1.8.Final</netty41.version>
+    <james.protocols.version>1.6.3</james.protocols.version>
   </properties>
 
   <dependencyManagement>
@@ -71,10 +72,26 @@
         <artifactId>value</artifactId>
         <version>${hubspot.immutables.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.apache.james.protocols</groupId>
+        <artifactId>protocols-api</artifactId>
+        <version>${james.protocols.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.james.protocols</groupId>
+        <artifactId>protocols-netty</artifactId>
+        <version>${james.protocols.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.james.protocols</groupId>
+        <artifactId>protocols-smtp</artifactId>
+        <version>${james.protocols.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
   <dependencies>
+    <!-- netty dependencies -->
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-buffer</artifactId>
@@ -96,6 +113,7 @@
       <artifactId>netty-handler</artifactId>
     </dependency>
 
+    <!-- other dependencies -->
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
@@ -110,6 +128,7 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- test dependencies -->
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
@@ -133,6 +152,21 @@
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
       <artifactId>annotations</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.james.protocols</groupId>
+      <artifactId>protocols-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.james.protocols</groupId>
+      <artifactId>protocols-netty</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.james.protocols</groupId>
+      <artifactId>protocols-smtp</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
