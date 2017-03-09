@@ -5,6 +5,7 @@ import static io.netty.handler.codec.smtp.LastSmtpContent.EMPTY_LAST_CONTENT;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
@@ -13,14 +14,17 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import com.hubspot.smtp.messages.MessageContent;
+import com.hubspot.smtp.utils.SmtpResponses;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpRequest;
 import io.netty.handler.codec.smtp.SmtpResponse;
+import io.netty.handler.ssl.SslHandler;
 
 public class SmtpSession {
   // https://tools.ietf.org/html/rfc2920#section-3.1
@@ -45,18 +49,21 @@ public class SmtpSession {
       SmtpCommand.NOOP);
 
   private static final Joiner COMMA_JOINER = Joiner.on(", ");
+  private static final SmtpCommand STARTTLS_COMMAND = SmtpCommand.valueOf("STARTTLS");
 
   private final Channel channel;
   private final ResponseHandler responseHandler;
   private final ExecutorService executorService;
+  private final SmtpSessionConfig config;
   private final CompletableFuture<Void> closeFuture;
 
   private volatile EnumSet<SupportedExtensions> supportedExtensions = EnumSet.noneOf(SupportedExtensions.class);
 
-  SmtpSession(Channel channel, ResponseHandler responseHandler, ExecutorService executorService) {
+  SmtpSession(Channel channel, ResponseHandler responseHandler, ExecutorService executorService, SmtpSessionConfig config) {
     this.channel = channel;
     this.responseHandler = responseHandler;
     this.executorService = executorService;
+    this.config = config;
     this.closeFuture = new CompletableFuture<>();
 
     this.channel.pipeline().addLast(new ErrorHandler());
@@ -69,6 +76,40 @@ public class SmtpSession {
   public CompletableFuture<Void> close() {
     this.channel.close();
     return closeFuture;
+  }
+
+  public CompletableFuture<SmtpClientResponse> startTls() {
+    Preconditions.checkState(!isEncrypted(), "This connection is already using TLS");
+
+    return send(new DefaultSmtpRequest(STARTTLS_COMMAND)).thenCompose(r -> {
+      if (SmtpResponses.isError(r)) {
+        return CompletableFuture.completedFuture(r);
+      } else {
+        return performTlsHandshake(r);
+      }
+    });
+  }
+
+  private CompletionStage<SmtpClientResponse> performTlsHandshake(SmtpClientResponse r) {
+    CompletableFuture<SmtpClientResponse> ourFuture = new CompletableFuture<>();
+
+    SslHandler sslHandler = new SslHandler(config.getSSLEngineSupplier().get());
+    channel.pipeline().addFirst(sslHandler);
+
+    sslHandler.handshakeFuture().addListener(nettyFuture -> {
+      if (nettyFuture.isSuccess()) {
+        ourFuture.complete(r);
+      } else {
+        ourFuture.completeExceptionally(nettyFuture.cause());
+        close();
+      }
+    });
+
+    return ourFuture;
+  }
+
+  public boolean isEncrypted() {
+    return channel.pipeline().get(SslHandler.class) != null;
   }
 
   public CompletableFuture<SmtpClientResponse> send(SmtpRequest request) {

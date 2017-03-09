@@ -19,8 +19,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Supplier;
 
+import javax.net.ssl.SSLEngine;
+
+import org.apache.james.protocols.api.Encryption;
 import org.apache.james.protocols.api.logger.Logger;
 import org.apache.james.protocols.netty.NettyServer;
 import org.apache.james.protocols.smtp.MailEnvelope;
@@ -42,11 +44,14 @@ import com.hubspot.smtp.client.SmtpSessionConfig;
 import com.hubspot.smtp.client.SmtpSessionFactory;
 import com.hubspot.smtp.messages.MessageContent;
 
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpRequest;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
 public class IntegrationTest {
   private static final String RETURN_PATH = "return-path@example.com";
@@ -55,8 +60,6 @@ public class IntegrationTest {
       "To: <recipient@example.com>\r\n" +
       "Subject: test mail\r\n\r\n" +
       "Hello!\r\n";
-
-  private static final MessageContent MESSAGE_CONTENT = MessageContent.of(Unpooled.wrappedBuffer(MESSAGE_DATA.getBytes()));
 
   private static final NioEventLoopGroup EVENT_LOOP_GROUP = new NioEventLoopGroup();
   private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
@@ -71,18 +74,22 @@ public class IntegrationTest {
   public void setup() throws Exception {
     receivedMails = Lists.newArrayList();
     serverAddress = new InetSocketAddress(getFreePort());
-
-    SMTPConfigurationImpl config = new SMTPConfigurationImpl();
-    SMTPProtocolHandlerChain chain = new SMTPProtocolHandlerChain(new CollectEmailsHook());
-
     serverLog = mock(Logger.class);
-    smtpServer = new NettyServer(new SMTPProtocol(chain, config, serverLog));
-    smtpServer.setListenAddresses(serverAddress);
-    smtpServer.bind();
-
+    smtpServer = createAndStartSmtpServer(serverLog, serverAddress);
     sessionFactory = new SmtpSessionFactory(EVENT_LOOP_GROUP, EXECUTOR_SERVICE);
 
     when(serverLog.isDebugEnabled()).thenReturn(true);
+  }
+
+  private NettyServer createAndStartSmtpServer(Logger log, InetSocketAddress address) throws Exception {
+    SMTPConfigurationImpl config = new SMTPConfigurationImpl();
+    SMTPProtocolHandlerChain chain = new SMTPProtocolHandlerChain(new CollectEmailsHook());
+
+    NettyServer server = new NettyServer(new SMTPProtocol(chain, config, log), Encryption.createStartTls(FakeTlsContext.createContext()));
+    server.setListenAddresses(address);
+    server.bind();
+
+    return server;
   }
 
   @After
@@ -97,7 +104,7 @@ public class IntegrationTest {
         .thenCompose(r -> assertSuccess(r).send(req(MAIL, "FROM:<" + RETURN_PATH + ">")))
         .thenCompose(r -> assertSuccess(r).send(req(RCPT, "TO:<" + RECIPIENT + ">")))
         .thenCompose(r -> assertSuccess(r).send(req(DATA)))
-        .thenCompose(r -> assertSuccess(r).send(MESSAGE_CONTENT))
+        .thenCompose(r -> assertSuccess(r).send(createMessageContent()))
         .thenCompose(r -> assertSuccess(r).send(req(QUIT)))
         .thenCompose(r -> assertSuccess(r).close())
         .get();
@@ -111,9 +118,33 @@ public class IntegrationTest {
   }
 
   @Test
-  public void itCanSendWithPipelining() throws Exception {
-    Supplier<MessageContent> contentProvider = () -> MessageContent.of(Unpooled.wrappedBuffer(MESSAGE_DATA.getBytes(StandardCharsets.UTF_8)));
+  public void itCanUseStartTlsToSendAnEmail() throws Exception {
+    connect()
+        .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
+        .thenCompose(r -> assertSuccess(r).startTls())
+        .thenCompose(r -> assertSuccess(r).send(req(MAIL, "FROM:<" + RETURN_PATH + ">")))
+        .thenCompose(r -> assertSuccess(r).send(req(RCPT, "TO:<" + RECIPIENT + ">")))
+        .thenCompose(r -> assertSuccess(r).send(req(DATA)))
+        .thenCompose(r -> assertSuccess(r).send(createMessageContent()))
+        .thenCompose(r -> assertSuccess(r).send(req(QUIT)))
+        .thenCompose(r -> assertSuccess(r).close())
+        .get();
 
+    assertThat(receivedMails.size()).isEqualTo(1);
+  }
+
+  @Test
+  public void itClosesTheConnectionIfTheTlsHandshakeFails() throws Exception {
+    // not using the insecure trust manager here so the connection will fail
+    CompletableFuture<SmtpClientResponse> f = connect(SmtpSessionConfig.forRemoteAddress(serverAddress))
+        .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
+        .thenCompose(r -> assertSuccess(r).startTls());
+
+    assertThat(f.isCompletedExceptionally());
+  }
+
+  @Test
+  public void itCanSendWithPipelining() throws Exception {
     // connect and send the initial message metadata
     CompletableFuture<SmtpClientResponse[]> future = connect()
         .thenCompose(r -> assertSuccess(r).send(req(EHLO, "example.com")))
@@ -122,11 +153,11 @@ public class IntegrationTest {
     // send the data for the current message and the metadata for the next one, nine times
     for (int i = 1; i < 10; i++) {
       String recipient = "TO:<person" + i + "@example.com>";
-      future = future.thenCompose(r -> assertSuccess(r[0]).sendPipelined(contentProvider.get(), req(RSET), req(MAIL, "FROM:<return-path@example.com>"), req(RCPT, recipient), req(DATA)));
+      future = future.thenCompose(r -> assertSuccess(r[0]).sendPipelined(createMessageContent(), req(RSET), req(MAIL, "FROM:<return-path@example.com>"), req(RCPT, recipient), req(DATA)));
     }
 
     // finally send the data for the tenth message and quit
-    future.thenCompose(r -> assertSuccess(r[0]).sendPipelined(contentProvider.get(), req(QUIT)))
+    future.thenCompose(r -> assertSuccess(r[0]).sendPipelined(createMessageContent(), req(QUIT)))
         .thenCompose(r -> assertSuccess(r[0]).close())
         .join();
 
@@ -135,7 +166,6 @@ public class IntegrationTest {
 
   @Test
   public void itCanSendMultipleEmailsAtOnce() throws Exception {
-    Supplier<MessageContent> contentProvider = () -> MessageContent.of(Unpooled.wrappedBuffer(MESSAGE_DATA.getBytes(StandardCharsets.UTF_8)));
     List<CompletableFuture<Void>> futures = Lists.newArrayList();
 
     for (int i = 0; i < 100; i++) {
@@ -144,7 +174,7 @@ public class IntegrationTest {
           .thenCompose(r -> assertSuccess(r).send(req(MAIL, "FROM:<" + RETURN_PATH + ">")))
           .thenCompose(r -> assertSuccess(r).send(req(RCPT, "TO:<" + RECIPIENT + ">")))
           .thenCompose(r -> assertSuccess(r).send(req(DATA)))
-          .thenCompose(r -> assertSuccess(r).send(contentProvider.get()))
+          .thenCompose(r -> assertSuccess(r).send(createMessageContent()))
           .thenCompose(r -> assertSuccess(r).send(req(QUIT)))
           .thenCompose(r -> assertSuccess(r).close()));
     }
@@ -174,7 +204,19 @@ public class IntegrationTest {
   }
 
   private CompletableFuture<SmtpClientResponse> connect() {
-    return connect(SmtpSessionConfig.forRemoteAddress(serverAddress));
+    return connect(SmtpSessionConfig.forRemoteAddress(serverAddress).withSSLEngineSupplier(this::createInsecureSSLEngine));
+  }
+
+  private SSLEngine createInsecureSSLEngine() {
+    try {
+      return SslContextBuilder
+          .forClient()
+          .trustManager(InsecureTrustManagerFactory.INSTANCE)
+          .build()
+          .newEngine(PooledByteBufAllocator.DEFAULT);
+    } catch (Exception e) {
+      throw new RuntimeException("Could not create SSLEngine", e);
+    }
   }
 
   private CompletableFuture<SmtpClientResponse> connect(SmtpSessionConfig config) {
@@ -198,6 +240,10 @@ public class IntegrationTest {
     }
 
     throw new RuntimeException("Could not find a port to listen on");
+  }
+
+  private MessageContent createMessageContent() {
+    return MessageContent.of(Unpooled.wrappedBuffer(MESSAGE_DATA.getBytes(StandardCharsets.UTF_8)));
   }
 
   private class CollectEmailsHook implements MessageHook {
