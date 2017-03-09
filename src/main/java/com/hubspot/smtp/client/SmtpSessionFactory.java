@@ -13,6 +13,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -41,6 +42,7 @@ public class SmtpSessionFactory implements Closeable  {
     Bootstrap bootstrap = new Bootstrap()
         .group(eventLoopGroup)
         .channel(NioSocketChannel.class)
+        .option(ChannelOption.ALLOCATOR, config.getAllocator())
         .remoteAddress(config.getRemoteAddress())
         .localAddress(config.getLocalAddress().orElse(null))
         .handler(new Initializer(responseHandler, config));
@@ -52,7 +54,7 @@ public class SmtpSessionFactory implements Closeable  {
         Channel channel = ((ChannelFuture) f).channel();
         allChannels.add(channel);
 
-        SmtpSession session = new SmtpSession(channel, responseHandler, executorService);
+        SmtpSession session = new SmtpSession(channel, responseHandler, executorService, config);
         applyOnExecutor(initialResponseFuture, r -> connectFuture.complete(new SmtpClientResponse(r[0], session)));
       } else {
         LOG.error("Could not connect to {}", config.getRemoteAddress(), f.cause());
