@@ -14,6 +14,7 @@ import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -64,7 +65,7 @@ public class IntegrationTest {
   private NettyServer smtpServer;
   private SmtpSessionFactory sessionFactory;
   private List<MailEnvelope> receivedMails;
-  private Logger logger;
+  private Logger serverLog;
 
   @Before
   public void setup() throws Exception {
@@ -74,14 +75,14 @@ public class IntegrationTest {
     SMTPConfigurationImpl config = new SMTPConfigurationImpl();
     SMTPProtocolHandlerChain chain = new SMTPProtocolHandlerChain(new CollectEmailsHook());
 
-    logger = mock(Logger.class);
-    smtpServer = new NettyServer(new SMTPProtocol(chain, config, logger));
+    serverLog = mock(Logger.class);
+    smtpServer = new NettyServer(new SMTPProtocol(chain, config, serverLog));
     smtpServer.setListenAddresses(serverAddress);
     smtpServer.bind();
 
     sessionFactory = new SmtpSessionFactory(EVENT_LOOP_GROUP, EXECUTOR_SERVICE);
 
-    when(logger.isDebugEnabled()).thenReturn(true);
+    when(serverLog.isDebugEnabled()).thenReturn(true);
   }
 
   @After
@@ -132,6 +133,37 @@ public class IntegrationTest {
     assertThat(receivedMails.size()).isEqualTo(10);
   }
 
+  @Test
+  public void itCanSendMultipleEmailsAtOnce() throws Exception {
+    Supplier<MessageContent> contentProvider = () -> MessageContent.of(Unpooled.wrappedBuffer(MESSAGE_DATA.getBytes(StandardCharsets.UTF_8)));
+    List<CompletableFuture<Void>> futures = Lists.newArrayList();
+
+    for (int i = 0; i < 100; i++) {
+      futures.add(connect()
+          .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
+          .thenCompose(r -> assertSuccess(r).send(req(MAIL, "FROM:<" + RETURN_PATH + ">")))
+          .thenCompose(r -> assertSuccess(r).send(req(RCPT, "TO:<" + RECIPIENT + ">")))
+          .thenCompose(r -> assertSuccess(r).send(req(DATA)))
+          .thenCompose(r -> assertSuccess(r).send(contentProvider.get()))
+          .thenCompose(r -> assertSuccess(r).send(req(QUIT)))
+          .thenCompose(r -> assertSuccess(r).close()));
+    }
+
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
+
+    assertThat(receivedMails.size()).isEqualTo(100);
+  }
+
+  @Test
+  public void itSendsKeepAliveCommands() throws Exception {
+    connect(SmtpSessionConfig.forRemoteAddress(serverAddress).withKeepAliveTimeout(Duration.ofSeconds(1)))
+        .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")));
+
+    Thread.sleep(3000);
+
+    verify(serverLog, atLeast(2)).debug(endsWith("received: NOOP"));
+  }
+
   private String readContents(MailEnvelope mail) throws IOException {
     return CharStreams.toString(new InputStreamReader(mail.getMessageInputStream()));
   }
@@ -142,7 +174,11 @@ public class IntegrationTest {
   }
 
   private CompletableFuture<SmtpClientResponse> connect() {
-    return sessionFactory.connect(SmtpSessionConfig.forRemoteAddress(serverAddress));
+    return connect(SmtpSessionConfig.forRemoteAddress(serverAddress));
+  }
+
+  private CompletableFuture<SmtpClientResponse> connect(SmtpSessionConfig config) {
+    return sessionFactory.connect(config);
   }
 
   private static SmtpRequest req(SmtpCommand command, CharSequence... arguments) {
@@ -166,7 +202,7 @@ public class IntegrationTest {
 
   private class CollectEmailsHook implements MessageHook {
     @Override
-    public HookResult onMessage(SMTPSession session, MailEnvelope mail) {
+    public synchronized HookResult onMessage(SMTPSession session, MailEnvelope mail) {
       receivedMails.add(mail);
       return HookResult.ok();
     }
