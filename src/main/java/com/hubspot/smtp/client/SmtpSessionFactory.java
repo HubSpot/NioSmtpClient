@@ -9,6 +9,7 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -82,6 +83,7 @@ public class SmtpSessionFactory implements Closeable  {
     }
   }
 
+  @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION") // https://github.com/findbugsproject/findbugs/issues/79
   public CompletableFuture<Void> closeAsync() {
     CompletableFuture<Void> returnedFuture = new CompletableFuture<>();
 

@@ -2,13 +2,11 @@ package com.hubspot.smtp.client;
 
 import java.util.List;
 
-import com.google.common.base.Joiner;
+import com.hubspot.smtp.utils.SmtpResponses;
 
 import io.netty.handler.codec.smtp.SmtpResponse;
 
 public class SmtpClientResponse implements SmtpResponse {
-  private static final Joiner SPACE_JOINER = Joiner.on(" ");
-
   private final SmtpResponse response;
   private final SmtpSession session;
 
@@ -27,18 +25,6 @@ public class SmtpClientResponse implements SmtpResponse {
     return response.details();
   }
 
-  public boolean isTransientError() {
-    return response.code() >= 400 && response.code() < 500;
-  }
-
-  public boolean isPermanentError() {
-    return response.code() >= 500;
-  }
-
-  public boolean isError() {
-    return isTransientError() || isPermanentError();
-  }
-
   public SmtpSession getSession() {
     return session;
   }
@@ -48,7 +34,7 @@ public class SmtpClientResponse implements SmtpResponse {
     if (response == null) {
       return super.toString();
     } else {
-      return code() + " " + SPACE_JOINER.join(details());
+      return SmtpResponses.toString(response);
     }
   }
 }
