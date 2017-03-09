@@ -20,6 +20,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.net.ssl.SSLEngine;
+
 import org.apache.james.protocols.api.Encryption;
 import org.apache.james.protocols.api.logger.Logger;
 import org.apache.james.protocols.netty.NettyServer;
@@ -42,11 +44,13 @@ import com.hubspot.smtp.client.SmtpSessionConfig;
 import com.hubspot.smtp.client.SmtpSessionFactory;
 import com.hubspot.smtp.messages.MessageContent;
 
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpRequest;
+import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
 public class IntegrationTest {
@@ -200,7 +204,19 @@ public class IntegrationTest {
   }
 
   private CompletableFuture<SmtpClientResponse> connect() {
-    return connect(SmtpSessionConfig.forRemoteAddress(serverAddress).withTrustManagerFactory(InsecureTrustManagerFactory.INSTANCE));
+    return connect(SmtpSessionConfig.forRemoteAddress(serverAddress).withSSLEngineSupplier(this::createInsecureSSLEngine));
+  }
+
+  private SSLEngine createInsecureSSLEngine() {
+    try {
+      return SslContextBuilder
+          .forClient()
+          .trustManager(InsecureTrustManagerFactory.INSTANCE)
+          .build()
+          .newEngine(PooledByteBufAllocator.DEFAULT);
+    } catch (Exception e) {
+      throw new RuntimeException("Could not create SSLEngine", e);
+    }
   }
 
   private CompletableFuture<SmtpClientResponse> connect(SmtpSessionConfig config) {

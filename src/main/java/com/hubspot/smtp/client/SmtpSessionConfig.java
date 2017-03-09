@@ -4,9 +4,9 @@ import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 
 import org.immutables.value.Value.Check;
@@ -41,14 +41,8 @@ public abstract class SmtpSessionConfig {
   }
 
   @Default
-  public TrustManagerFactory getTrustManagerFactory() {
-    try {
-      TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-      trustManagerFactory.init((KeyStore) null);
-      return trustManagerFactory;
-    } catch (Exception e) {
-      throw new RuntimeException("Could not create TrustManagerFactory", e);
-    }
+  public Supplier<SSLEngine> getSSLEngineSupplier() {
+    return this::createSSLEngine;
   }
 
   @Check
@@ -57,14 +51,17 @@ public abstract class SmtpSessionConfig {
         "keepAliveTimeout must not be zero; use Optional.empty() to disable keepalive");
   }
 
-  public SSLEngine createSSLEngine() {
+  private SSLEngine createSSLEngine() {
     try {
+      TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      trustManagerFactory.init((KeyStore) null);
+
       return SslContextBuilder
           .forClient()
-          .trustManager(getTrustManagerFactory())
+          .trustManager(trustManagerFactory)
           .build()
           .newEngine(getAllocator());
-    } catch (SSLException e) {
+    } catch (Exception e) {
       throw new RuntimeException("Could not create SSLEngine", e);
     }
   }

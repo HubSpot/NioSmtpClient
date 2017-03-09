@@ -93,7 +93,7 @@ public class SmtpSession {
   private CompletionStage<SmtpClientResponse> performTlsHandshake(SmtpClientResponse r) {
     CompletableFuture<SmtpClientResponse> ourFuture = new CompletableFuture<>();
 
-    SslHandler sslHandler = new SslHandler(config.createSSLEngine());
+    SslHandler sslHandler = new SslHandler(config.getSSLEngineSupplier().get());
     channel.pipeline().addFirst(sslHandler);
 
     sslHandler.handshakeFuture().addListener(nettyFuture -> {

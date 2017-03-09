@@ -239,14 +239,14 @@ public class SmtpSessionTest {
   public void itDeterminesEncryptionStatusByCheckingPipeline() {
     assertThat(session.isEncrypted()).isFalse();
 
-    when(pipeline.get(SslHandler.class)).thenReturn(new SslHandler(CONFIG.createSSLEngine()));
+    when(pipeline.get(SslHandler.class)).thenReturn(new SslHandler(CONFIG.getSSLEngineSupplier().get()));
 
     assertThat(session.isEncrypted()).isTrue();
   }
 
   @Test
   public void itThrowsWhenStartTlsIsCalledIfEncryptionIsActive() {
-    when(pipeline.get(SslHandler.class)).thenReturn(new SslHandler(CONFIG.createSSLEngine()));
+    when(pipeline.get(SslHandler.class)).thenReturn(new SslHandler(CONFIG.getSSLEngineSupplier().get()));
 
     assertThatThrownBy(() -> session.startTls())
         .isInstanceOf(IllegalStateException.class)
