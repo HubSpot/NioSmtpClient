@@ -10,8 +10,6 @@ import static io.netty.handler.codec.smtp.SmtpCommand.RSET;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.EnumSet;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -19,14 +17,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
 import com.hubspot.smtp.client.SmtpClientResponse;
 import com.hubspot.smtp.client.SmtpSession;
 import com.hubspot.smtp.client.SmtpSessionConfig;
 import com.hubspot.smtp.client.SmtpSessionFactory;
-import com.hubspot.smtp.client.SupportedExtensions;
 import com.hubspot.smtp.messages.MessageContent;
 
 import io.netty.buffer.ByteBuf;
@@ -129,22 +124,7 @@ class TestApp {
     }
 
     CompletableFuture<SmtpClientResponse> ehlo(SmtpSession session, String greetingName) {
-      return send(session, request(EHLO, greetingName)).whenComplete((response, cause) -> {
-        if (response != null) {
-          setSupportedExtensions(session, response.details());
-        }
-      });
-    }
-
-    private void setSupportedExtensions(SmtpSession session, List<CharSequence> details) {
-      EnumSet<SupportedExtensions> discoveredExtensions = EnumSet.noneOf(SupportedExtensions.class);
-
-      for (CharSequence ext : details) {
-        List<String> parts = Splitter.on(CharMatcher.WHITESPACE).splitToList(ext);
-        SupportedExtensions.find(parts.get(0)).ifPresent(discoveredExtensions::add);
-      }
-
-      session.setSupportedExtensions(discoveredExtensions);
+      return send(session, request(EHLO, greetingName));
     }
 
     CompletableFuture<SmtpClientResponse> mail(SmtpSession session, String from) {

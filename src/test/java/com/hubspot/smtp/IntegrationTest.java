@@ -42,6 +42,7 @@ import com.hubspot.smtp.client.SmtpClientResponse;
 import com.hubspot.smtp.client.SmtpSession;
 import com.hubspot.smtp.client.SmtpSessionConfig;
 import com.hubspot.smtp.client.SmtpSessionFactory;
+import com.hubspot.smtp.client.SupportedExtensions;
 import com.hubspot.smtp.messages.MessageContent;
 
 import io.netty.buffer.PooledByteBufAllocator;
@@ -95,6 +96,19 @@ public class IntegrationTest {
   @After
   public void after() {
     smtpServer.unbind();
+  }
+
+  @Test
+  public void itCanParseTheEhloResponse() throws Exception {
+    connect()
+        .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
+        .thenCompose(r -> {
+          assertThat(r.getSession().isSupported(SupportedExtensions.PIPELINING)).isTrue();
+          assertThat(r.getSession().isSupported(SupportedExtensions.EIGHT_BIT_MIME)).isTrue();
+          return r.getSession().send(req(QUIT));
+        })
+        .thenCompose(r -> assertSuccess(r).close())
+        .get();
   }
 
   @Test

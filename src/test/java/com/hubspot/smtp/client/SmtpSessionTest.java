@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-import java.util.EnumSet;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -70,6 +70,7 @@ public class SmtpSessionTest {
     when(channel.pipeline()).thenReturn(pipeline);
 
     session = new SmtpSession(channel, responseHandler, EXECUTOR_SERVICE, CONFIG);
+    session.setSupportedExtensions(Collections.singletonList("PIPELINING"));
   }
   
   @Test
@@ -101,6 +102,43 @@ public class SmtpSessionTest {
   }
 
   @Test
+  public void itParsesTheEhloResponse() {
+    session.send(EHLO_REQUEST);
+
+    responseFuture.complete(new SmtpResponse[] { new DefaultSmtpResponse(250,
+        "smtp.example.com Hello client.example.com",
+        "AUTH PLAIN LOGIN",
+        "8BITMIME",
+        "STARTTLS",
+        "SIZE") });
+
+    assertThat(session.isSupported(SupportedExtensions.EIGHT_BIT_MIME)).isTrue();
+    assertThat(session.isSupported(SupportedExtensions.STARTTLS)).isTrue();
+    assertThat(session.isSupported(SupportedExtensions.SIZE)).isTrue();
+
+    assertThat(session.isSupported(SupportedExtensions.PIPELINING)).isFalse();
+
+    assertThat(session.isAuthPlainSupported()).isTrue();
+    assertThat(session.isAuthLoginSupported()).isTrue();
+  }
+
+  @Test
+  public void itParsesAnEmptyEhloResponse() {
+    session.send(EHLO_REQUEST);
+
+    responseFuture.complete(new SmtpResponse[] { new DefaultSmtpResponse(250,
+        "smtp.example.com Hello client.example.com") });
+
+    assertThat(session.isSupported(SupportedExtensions.EIGHT_BIT_MIME)).isFalse();
+    assertThat(session.isSupported(SupportedExtensions.STARTTLS)).isFalse();
+    assertThat(session.isSupported(SupportedExtensions.SIZE)).isFalse();
+    assertThat(session.isSupported(SupportedExtensions.PIPELINING)).isFalse();
+
+    assertThat(session.isAuthPlainSupported()).isFalse();
+    assertThat(session.isAuthLoginSupported()).isFalse();
+  }
+
+  @Test
   public void itExecutesReturnedFuturesOnTheProvidedExecutor() {
     ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("SmtpSessionTestExecutor").build());
     SmtpSession session = new SmtpSession(channel, responseHandler, executorService, CONFIG);
@@ -125,6 +163,15 @@ public class SmtpSessionTest {
 
     responseFuture.completeExceptionally(new RuntimeException());
     assertionFuture.join();
+  }
+
+  @Test
+  public void itThrowsIllegalStateIfPipeliningIsNotSupported() {
+    session.setSupportedExtensions(Collections.emptyList());
+
+    assertThatThrownBy(() -> session.sendPipelined(SMTP_CONTENT, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Pipelining is not supported on this server");
   }
 
   @Test
@@ -188,14 +235,6 @@ public class SmtpSessionTest {
 
     // 1 response expected for each request
     verify(responseHandler).createResponseFuture(eq(2), any());
-  }
-
-  @Test
-  public void itRecordsSupportedExtensions() {
-    session.setSupportedExtensions(EnumSet.of(SupportedExtensions.EIGHT_BIT_MIME));
-
-    assertThat(session.isSupported(SupportedExtensions.EIGHT_BIT_MIME)).isTrue();
-    assertThat(session.isSupported(SupportedExtensions.PIPELINING)).isFalse();
   }
 
   @Test

@@ -3,14 +3,18 @@ package com.hubspot.smtp.client;
 import static io.netty.handler.codec.smtp.LastSmtpContent.EMPTY_LAST_CONTENT;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import com.hubspot.smtp.messages.MessageContent;
@@ -58,6 +62,8 @@ public class SmtpSession {
   private final CompletableFuture<Void> closeFuture;
 
   private volatile EnumSet<SupportedExtensions> supportedExtensions = EnumSet.noneOf(SupportedExtensions.class);
+  private volatile boolean isAuthPlainSupported;
+  private volatile boolean isAuthLoginSupported;
 
   SmtpSession(Channel channel, ResponseHandler responseHandler, ExecutorService executorService, SmtpSessionConfig config) {
     this.channel = channel;
@@ -116,6 +122,7 @@ public class SmtpSession {
     Preconditions.checkNotNull(request);
 
     CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> createDebugString(request));
+    responseFuture = interceptResponse(request, responseFuture);
     channel.writeAndFlush(request);
 
     return applyOnExecutor(responseFuture, r -> new SmtpClientResponse(r[0], this));
@@ -139,6 +146,7 @@ public class SmtpSession {
   }
 
   public CompletableFuture<SmtpClientResponse[]> sendPipelined(MessageContent content, SmtpRequest... requests) {
+    Preconditions.checkState(isSupported(SupportedExtensions.PIPELINING), "Pipelining is not supported on this server");
     Preconditions.checkNotNull(requests);
     checkValidPipelinedRequest(requests);
 
@@ -163,6 +171,14 @@ public class SmtpSession {
     });
   }
 
+  public boolean isAuthPlainSupported() {
+    return isAuthPlainSupported;
+  }
+
+  public boolean isAuthLoginSupported() {
+    return isAuthLoginSupported;
+  }
+
   private void writeContent(MessageContent content) {
     if (isSupported(SupportedExtensions.EIGHT_BIT_MIME)) {
       channel.write(content.get8BitMimeEncodedContent());
@@ -173,6 +189,40 @@ public class SmtpSession {
     // SmtpRequestEncoder requires that we send an SmtpContent instance after the DATA command
     // to unset its contentExpected state.
     channel.write(EMPTY_LAST_CONTENT);
+  }
+
+  private CompletableFuture<SmtpResponse[]> interceptResponse(SmtpRequest request, CompletableFuture<SmtpResponse[]> originalFuture) {
+    if (!request.command().equals(SmtpCommand.EHLO)) {
+      return originalFuture;
+    }
+
+    return originalFuture.whenComplete((response, ignored) -> {
+      if (response != null && response.length > 0) {
+        setSupportedExtensions(response[0].details());
+      }
+    });
+  }
+
+  @VisibleForTesting
+  void setSupportedExtensions(List<CharSequence> details) {
+    EnumSet<SupportedExtensions> discoveredExtensions = EnumSet.noneOf(SupportedExtensions.class);
+
+    for (CharSequence ext : details) {
+      List<String> parts = Splitter.on(CharMatcher.WHITESPACE).splitToList(ext);
+      SupportedExtensions.find(parts.get(0)).ifPresent(discoveredExtensions::add);
+
+      if (parts.get(0).equalsIgnoreCase("auth") && parts.size() > 1) {
+        for (int i = 1; i < parts.size(); i++) {
+          if (parts.get(i).equalsIgnoreCase("plain")) {
+            isAuthPlainSupported = true;
+          } else if (parts.get(i).equalsIgnoreCase("login")) {
+            isAuthLoginSupported = true;
+          }
+        }
+      }
+    }
+
+    this.supportedExtensions = discoveredExtensions;
   }
 
   private static String createDebugString(SmtpRequest... requests) {
@@ -208,10 +258,6 @@ public class SmtpSession {
 
       return mapper.apply(rs);
     }, executorService);
-  }
-
-  public void setSupportedExtensions(EnumSet<SupportedExtensions> supportedExtensions) {
-    this.supportedExtensions = supportedExtensions;
   }
 
   public boolean isSupported(SupportedExtensions ext) {

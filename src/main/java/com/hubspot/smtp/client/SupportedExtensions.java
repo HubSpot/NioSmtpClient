@@ -6,13 +6,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public enum SupportedExtensions {
-  PIPELINING("pipelining"),
-  EIGHT_BIT_MIME("8bitmime"),
   AUTH("auth"),
-  XCLIENT("xclient"),
-  XFORWARD("xforward"),
+  DSN("dsn"),
+  EIGHT_BIT_MIME("8bitmime"),
   ENHANCEDSTATUSCODES("enhancedstatuscodes"),
-  DSN("dsn");
+  PIPELINING("pipelining"),
+  SIZE("size"),
+  STARTTLS("starttls"),
+  XCLIENT("xclient"),
+  XFORWARD("xforward");
 
   private final String lowerCaseName;
 
