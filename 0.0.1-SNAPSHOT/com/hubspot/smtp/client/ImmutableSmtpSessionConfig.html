@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10};
+var methods = {"i0":9,"i1":9,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -181,77 +181,97 @@ extends <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" tit
 </td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code>io.netty.buffer.ByteBufAllocator</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#getAllocator--">getAllocator</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#getConnectionId--">getConnectionId</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#getKeepAliveTimeout--">getKeepAliveTimeout</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#getLocalAddress--">getLocalAddress</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#getReadTimeout--">getReadTimeout</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#getRemoteAddress--">getRemoteAddress</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#getSSLEngineSupplier--">getSSLEngineSupplier</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#hashCode--">hashCode</a></span>()</code>
-<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>readTimeout</code>, <code>connectionId</code>.</div>
+<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>readTimeout</code>, <code>connectionId</code>, <code>allocator</code>, <code>sSLEngineSupplier</code>.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#toString--">toString</a></span>()</code>
 <div class="block">Prints the immutable value <code>SmtpSessionConfig</code> with attribute values.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
+<td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#withAllocator-io.netty.buffer.ByteBufAllocator-">withAllocator</a></span>(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code>
+<div class="block">Copy the current immutable object by setting a value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getAllocator--"><code>allocator</code></a> attribute.</div>
+</td>
+</tr>
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#withConnectionId-java.lang.String-">withConnectionId</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;connectionId)</code>
 <div class="block">Copy the current immutable object by setting a value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getConnectionId--"><code>connectionId</code></a> attribute.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#withKeepAliveTimeout-java.time.Duration-">withKeepAliveTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;value)</code>
 <div class="block">Copy the current immutable object by setting a <i>present</i> value for the optional <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getKeepAliveTimeout--"><code>keepAliveTimeout</code></a> attribute.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#withKeepAliveTimeout-java.util.Optional-">withKeepAliveTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;optional)</code>
 <div class="block">Copy the current immutable object by setting an optional value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getKeepAliveTimeout--"><code>keepAliveTimeout</code></a> attribute.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#withLocalAddress-java.net.InetSocketAddress-">withLocalAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&nbsp;value)</code>
 <div class="block">Copy the current immutable object by setting a <i>present</i> value for the optional <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getLocalAddress--"><code>localAddress</code></a> attribute.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#withLocalAddress-java.util.Optional-">withLocalAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&gt;&nbsp;optional)</code>
 <div class="block">Copy the current immutable object by setting an optional value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getLocalAddress--"><code>localAddress</code></a> attribute.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#withReadTimeout-java.time.Duration-">withReadTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;readTimeout)</code>
 <div class="block">Copy the current immutable object by setting a value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getReadTimeout--"><code>readTimeout</code></a> attribute.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#withRemoteAddress-java.net.InetSocketAddress-">withRemoteAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&nbsp;remoteAddress)</code>
 <div class="block">Copy the current immutable object by setting a value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getRemoteAddress--"><code>remoteAddress</code></a> attribute.</div>
+</td>
+</tr>
+<tr id="i20" class="altColor">
+<td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html#withSSLEngineSupplier-java.util.function.Supplier-">withSSLEngineSupplier</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;&nbsp;sSLEngineSupplier)</code>
+<div class="block">Copy the current immutable object by setting a value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getSSLEngineSupplier--"><code>sSLEngineSupplier</code></a> attribute.</div>
 </td>
 </tr>
 </table>
@@ -355,6 +375,36 @@ extends <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" tit
 <dd><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getConnectionId--">getConnectionId</a></code>&nbsp;in class&nbsp;<code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>The value of the <code>connectionId</code> attribute</dd>
+</dl>
+</li>
+</ul>
+<a name="getAllocator--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getAllocator</h4>
+<pre>public&nbsp;io.netty.buffer.ByteBufAllocator&nbsp;getAllocator()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getAllocator--">getAllocator</a></code>&nbsp;in class&nbsp;<code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The value of the <code>allocator</code> attribute</dd>
+</dl>
+</li>
+</ul>
+<a name="getSSLEngineSupplier--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getSSLEngineSupplier</h4>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;&nbsp;getSSLEngineSupplier()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getSSLEngineSupplier--">getSSLEngineSupplier</a></code>&nbsp;in class&nbsp;<code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The value of the <code>sSLEngineSupplier</code> attribute</dd>
 </dl>
 </li>
 </ul>
@@ -475,6 +525,40 @@ extends <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" tit
 </dl>
 </li>
 </ul>
+<a name="withAllocator-io.netty.buffer.ByteBufAllocator-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>withAllocator</h4>
+<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig</a>&nbsp;withAllocator(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</pre>
+<div class="block">Copy the current immutable object by setting a value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getAllocator--"><code>allocator</code></a> attribute.
+ A shallow reference equality check is used to prevent copying of the same value by returning <code>this</code>.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>allocator</code> - A new value for allocator</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A modified copy of the <code>this</code> object</dd>
+</dl>
+</li>
+</ul>
+<a name="withSSLEngineSupplier-java.util.function.Supplier-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>withSSLEngineSupplier</h4>
+<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig</a>&nbsp;withSSLEngineSupplier(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;&nbsp;sSLEngineSupplier)</pre>
+<div class="block">Copy the current immutable object by setting a value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getSSLEngineSupplier--"><code>sSLEngineSupplier</code></a> attribute.
+ A shallow reference equality check is used to prevent copying of the same value by returning <code>this</code>.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>sSLEngineSupplier</code> - A new value for sSLEngineSupplier</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A modified copy of the <code>this</code> object</dd>
+</dl>
+</li>
+</ul>
 <a name="equals-java.lang.Object-">
 <!--   -->
 </a>
@@ -499,7 +583,7 @@ extends <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" tit
 <li class="blockList">
 <h4>hashCode</h4>
 <pre>public&nbsp;int&nbsp;hashCode()</pre>
-<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>readTimeout</code>, <code>connectionId</code>.</div>
+<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>readTimeout</code>, <code>connectionId</code>, <code>allocator</code>, <code>sSLEngineSupplier</code>.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a></code>&nbsp;in class&nbsp;<code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></dd>

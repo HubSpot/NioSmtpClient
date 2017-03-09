@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -140,57 +140,69 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#allocator-io.netty.buffer.ByteBufAllocator-">allocator</a></span>(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code>
+<div class="block">Initializes the value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getAllocator--"><code>allocator</code></a> attribute.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#build--">build</a></span>()</code>
 <div class="block">Builds a new <a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client"><code>ImmutableSmtpSessionConfig</code></a>.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#connectionId-java.lang.String-">connectionId</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;connectionId)</code>
 <div class="block">Initializes the value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getConnectionId--"><code>connectionId</code></a> attribute.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#from-com.hubspot.smtp.client.SmtpSessionConfig-">from</a></span>(<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;instance)</code>
 <div class="block">Fill a builder with attribute values from the provided <code>SmtpSessionConfig</code> instance.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#keepAliveTimeout-java.time.Duration-">keepAliveTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;keepAliveTimeout)</code>
 <div class="block">Initializes the optional value <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getKeepAliveTimeout--"><code>keepAliveTimeout</code></a> to keepAliveTimeout.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#keepAliveTimeout-java.util.Optional-">keepAliveTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;keepAliveTimeout)</code>
 <div class="block">Initializes the optional value <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getKeepAliveTimeout--"><code>keepAliveTimeout</code></a> to keepAliveTimeout.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#localAddress-java.net.InetSocketAddress-">localAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&nbsp;localAddress)</code>
 <div class="block">Initializes the optional value <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getLocalAddress--"><code>localAddress</code></a> to localAddress.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#localAddress-java.util.Optional-">localAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&gt;&nbsp;localAddress)</code>
 <div class="block">Initializes the optional value <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getLocalAddress--"><code>localAddress</code></a> to localAddress.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#readTimeout-java.time.Duration-">readTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;readTimeout)</code>
 <div class="block">Initializes the value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getReadTimeout--"><code>readTimeout</code></a> attribute.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#remoteAddress-java.net.InetSocketAddress-">remoteAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&nbsp;remoteAddress)</code>
 <div class="block">Initializes the value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getRemoteAddress--"><code>remoteAddress</code></a> attribute.</div>
+</td>
+</tr>
+<tr id="i10" class="altColor">
+<td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#sSLEngineSupplier-java.util.function.Supplier-">sSLEngineSupplier</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;&nbsp;sSLEngineSupplier)</code>
+<div class="block">Initializes the value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getSSLEngineSupplier--"><code>sSLEngineSupplier</code></a> attribute.</div>
 </td>
 </tr>
 </table>
@@ -342,6 +354,40 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>connectionId</code> - The value for connectionId</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>this</code> builder for use in a chained invocation</dd>
+</dl>
+</li>
+</ul>
+<a name="allocator-io.netty.buffer.ByteBufAllocator-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>allocator</h4>
+<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a>&nbsp;allocator(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</pre>
+<div class="block">Initializes the value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getAllocator--"><code>allocator</code></a> attribute.
+ <p><em>If not set, this attribute will have a default value as returned by the initializer of <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getAllocator--"><code>allocator</code></a>.</em></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>allocator</code> - The value for allocator</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>this</code> builder for use in a chained invocation</dd>
+</dl>
+</li>
+</ul>
+<a name="sSLEngineSupplier-java.util.function.Supplier-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>sSLEngineSupplier</h4>
+<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a>&nbsp;sSLEngineSupplier(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;&nbsp;sSLEngineSupplier)</pre>
+<div class="block">Initializes the value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getSSLEngineSupplier--"><code>sSLEngineSupplier</code></a> attribute.
+ <p><em>If not set, this attribute will have a default value as returned by the initializer of <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getSSLEngineSupplier--"><code>sSLEngineSupplier</code></a>.</em></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>sSLEngineSupplier</code> - The value for sSLEngineSupplier</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd><code>this</code> builder for use in a chained invocation</dd>
 </dl>

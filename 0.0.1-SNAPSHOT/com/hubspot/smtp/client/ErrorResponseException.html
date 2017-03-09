@@ -100,10 +100,15 @@
 <li><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Exception.html?is-external=true" title="class or interface in java.lang">java.lang.Exception</a></li>
 <li>
 <ul class="inheritance">
+<li><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/RuntimeException.html?is-external=true" title="class or interface in java.lang">java.lang.RuntimeException</a></li>
+<li>
+<ul class="inheritance">
 <li><a href="../../../../com/hubspot/smtp/client/SmtpException.html" title="class in com.hubspot.smtp.client">com.hubspot.smtp.client.SmtpException</a></li>
 <li>
 <ul class="inheritance">
 <li>com.hubspot.smtp.client.ErrorResponseException</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -146,7 +151,8 @@ extends <a href="../../../../com/hubspot/smtp/client/SmtpException.html" title="
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ErrorResponseException.html#ErrorResponseException-java.lang.String-java.lang.String-">ErrorResponseException</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;connectionId,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ErrorResponseException.html#ErrorResponseException-java.lang.String-io.netty.handler.codec.smtp.SmtpResponse-java.lang.String-">ErrorResponseException</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;connectionId,
+                      io.netty.handler.codec.smtp.SmtpResponse&nbsp;response,
                       <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;message)</code>&nbsp;</td>
 </tr>
 </table>
@@ -186,13 +192,14 @@ extends <a href="../../../../com/hubspot/smtp/client/SmtpException.html" title="
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="ErrorResponseException-java.lang.String-java.lang.String-">
+<a name="ErrorResponseException-java.lang.String-io.netty.handler.codec.smtp.SmtpResponse-java.lang.String-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>ErrorResponseException</h4>
 <pre>public&nbsp;ErrorResponseException(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;connectionId,
+                              io.netty.handler.codec.smtp.SmtpResponse&nbsp;response,
                               <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;message)</pre>
 </li>
 </ul>
