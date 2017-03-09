@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -50,7 +50,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../com/hubspot/smtp/client/SmtpException.html" title="class in com.hubspot.smtp.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?com/hubspot/smtp/client/SmtpClientResponse.html" target="_top">Frames</a></li>
@@ -147,18 +147,6 @@ implements io.netty.handler.codec.smtp.SmtpResponse</pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#getSession--">getSession</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#isError--">isError</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i4" class="altColor">
-<td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#isPermanentError--">isPermanentError</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i5" class="rowColor">
-<td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#isTransientError--">isTransientError</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
@@ -208,33 +196,6 @@ implements io.netty.handler.codec.smtp.SmtpResponse</pre>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code>details</code>&nbsp;in interface&nbsp;<code>io.netty.handler.codec.smtp.SmtpResponse</code></dd>
 </dl>
-</li>
-</ul>
-<a name="isTransientError--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>isTransientError</h4>
-<pre>public&nbsp;boolean&nbsp;isTransientError()</pre>
-</li>
-</ul>
-<a name="isPermanentError--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>isPermanentError</h4>
-<pre>public&nbsp;boolean&nbsp;isPermanentError()</pre>
-</li>
-</ul>
-<a name="isError--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>isError</h4>
-<pre>public&nbsp;boolean&nbsp;isError()</pre>
 </li>
 </ul>
 <a name="getSession--">
@@ -288,7 +249,7 @@ implements io.netty.handler.codec.smtp.SmtpResponse</pre>
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../com/hubspot/smtp/client/SmtpException.html" title="class in com.hubspot.smtp.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?com/hubspot/smtp/client/SmtpClientResponse.html" target="_top">Frames</a></li>

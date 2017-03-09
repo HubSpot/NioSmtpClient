@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -113,7 +113,8 @@ var activeTableTab = "activeTableTab";
 </dl>
 <hr>
 <br>
-<pre>public static final class <span class="typeNameLabel">ImmutableSmtpSessionConfig.Builder</span>
+<pre><a href="http://docs.oracle.com/javase/8/docs/api/javax/annotation/concurrent.NotThreadSafe.html?is-external=true" title="class or interface in javax.annotation">@NotThreadSafe</a>
+public static final class <span class="typeNameLabel">ImmutableSmtpSessionConfig.Builder</span>
 extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></pre>
 <div class="block">Builds instances of type <a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.html" title="class in com.hubspot.smtp.client"><code>ImmutableSmtpSessionConfig</code></a>.
  Initialize attributes and then invoke the <a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#build--"><code>build()</code></a> method to create an
@@ -158,23 +159,35 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#keepAliveTimeout-java.time.Duration-">keepAliveTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;keepAliveTimeout)</code>
+<div class="block">Initializes the optional value <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getKeepAliveTimeout--"><code>keepAliveTimeout</code></a> to keepAliveTimeout.</div>
+</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#keepAliveTimeout-java.util.Optional-">keepAliveTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;keepAliveTimeout)</code>
+<div class="block">Initializes the optional value <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getKeepAliveTimeout--"><code>keepAliveTimeout</code></a> to keepAliveTimeout.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#localAddress-java.net.InetSocketAddress-">localAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&nbsp;localAddress)</code>
 <div class="block">Initializes the optional value <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getLocalAddress--"><code>localAddress</code></a> to localAddress.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#localAddress-java.util.Optional-">localAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&gt;&nbsp;localAddress)</code>
 <div class="block">Initializes the optional value <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getLocalAddress--"><code>localAddress</code></a> to localAddress.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#readTimeout-java.time.Duration-">readTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;readTimeout)</code>
 <div class="block">Initializes the value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getReadTimeout--"><code>readTimeout</code></a> attribute.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html#remoteAddress-java.net.InetSocketAddress-">remoteAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&nbsp;remoteAddress)</code>
 <div class="block">Initializes the value for the <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getRemoteAddress--"><code>remoteAddress</code></a> attribute.</div>
@@ -263,6 +276,38 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>localAddress</code> - The value for localAddress</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>this</code> builder for use in a chained invocation</dd>
+</dl>
+</li>
+</ul>
+<a name="keepAliveTimeout-java.time.Duration-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>keepAliveTimeout</h4>
+<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a>&nbsp;keepAliveTimeout(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;keepAliveTimeout)</pre>
+<div class="block">Initializes the optional value <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getKeepAliveTimeout--"><code>keepAliveTimeout</code></a> to keepAliveTimeout.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>keepAliveTimeout</code> - The value for keepAliveTimeout</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>this</code> builder for chained invocation</dd>
+</dl>
+</li>
+</ul>
+<a name="keepAliveTimeout-java.util.Optional-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>keepAliveTimeout</h4>
+<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/ImmutableSmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">ImmutableSmtpSessionConfig.Builder</a>&nbsp;keepAliveTimeout(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;keepAliveTimeout)</pre>
+<div class="block">Initializes the optional value <a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getKeepAliveTimeout--"><code>keepAliveTimeout</code></a> to keepAliveTimeout.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>keepAliveTimeout</code> - The value for keepAliveTimeout</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd><code>this</code> builder for use in a chained invocation</dd>
 </dl>
