@@ -13,6 +13,8 @@ import javax.net.ssl.TrustManagerFactory;
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
+import org.immutables.value.Value.Style;
+import org.immutables.value.Value.Style.ImplementationVisibility;
 
 import com.google.common.base.Preconditions;
 
@@ -21,7 +23,8 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.ssl.SslContextBuilder;
 
 @Immutable
-public abstract class SmtpSessionConfig {
+@Style(typeImmutable = "*", visibility = ImplementationVisibility.PUBLIC)
+abstract class AbstractSmtpSessionConfig {
   public static final Executor DIRECT_EXECUTOR = Runnable::run;
 
   public abstract InetSocketAddress getRemoteAddress();
@@ -70,11 +73,11 @@ public abstract class SmtpSessionConfig {
     }
   }
 
-  public static ImmutableSmtpSessionConfig forRemoteAddress(String host, int port) {
+  public static SmtpSessionConfig forRemoteAddress(String host, int port) {
     return forRemoteAddress(InetSocketAddress.createUnresolved(host, port));
   }
 
-  public static ImmutableSmtpSessionConfig forRemoteAddress(InetSocketAddress remoteAddress) {
-    return ImmutableSmtpSessionConfig.builder().remoteAddress(remoteAddress).build();
+  public static SmtpSessionConfig forRemoteAddress(InetSocketAddress remoteAddress) {
+    return SmtpSessionConfig.builder().remoteAddress(remoteAddress).build();
   }
 }

@@ -57,7 +57,7 @@ public class SmtpSessionTest {
   private static final SmtpRequest HELO_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELO);
   private static final SmtpRequest HELP_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELP);
 
-  private static final ImmutableSmtpSessionConfig CONFIG = SmtpSessionConfig.forRemoteAddress("127.0.0.1", 25).withExecutor(SmtpSessionConfig.DIRECT_EXECUTOR);
+  private static final SmtpSessionConfig CONFIG = SmtpSessionConfig.forRemoteAddress("127.0.0.1", 25).withExecutor(SmtpSessionConfig.DIRECT_EXECUTOR);
 
   private ResponseHandler responseHandler;
   private CompletableFuture<SmtpResponse[]> responseFuture;
