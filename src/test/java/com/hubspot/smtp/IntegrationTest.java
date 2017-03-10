@@ -43,7 +43,7 @@ import com.hubspot.smtp.client.SmtpClientResponse;
 import com.hubspot.smtp.client.SmtpSession;
 import com.hubspot.smtp.client.SmtpSessionConfig;
 import com.hubspot.smtp.client.SmtpSessionFactory;
-import com.hubspot.smtp.client.SupportedExtensions;
+import com.hubspot.smtp.client.Extension;
 import com.hubspot.smtp.messages.MessageContent;
 
 import io.netty.buffer.PooledByteBufAllocator;
@@ -112,8 +112,8 @@ public class IntegrationTest {
     connect()
         .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
         .thenCompose(r -> {
-          assertThat(r.getSession().isSupported(SupportedExtensions.PIPELINING)).isTrue();
-          assertThat(r.getSession().isSupported(SupportedExtensions.EIGHT_BIT_MIME)).isTrue();
+          assertThat(r.getSession().isSupported(Extension.PIPELINING)).isTrue();
+          assertThat(r.getSession().isSupported(Extension.EIGHT_BIT_MIME)).isTrue();
           return r.getSession().send(req(QUIT));
         })
         .thenCompose(r -> assertSuccess(r).close())
@@ -127,7 +127,7 @@ public class IntegrationTest {
     connect()
         .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
         .thenCompose(r -> {
-          assertThat(r.getSession().isSupported(SupportedExtensions.AUTH)).isTrue();
+          assertThat(r.getSession().isSupported(Extension.AUTH)).isTrue();
           assertThat(r.getSession().isAuthPlainSupported()).isTrue();
           return r.getSession().authPlain(CORRECT_USERNAME, CORRECT_PASSWORD);
         })
@@ -142,7 +142,7 @@ public class IntegrationTest {
     connect()
         .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
         .thenCompose(r -> {
-          assertThat(r.getSession().isSupported(SupportedExtensions.AUTH)).isTrue();
+          assertThat(r.getSession().isSupported(Extension.AUTH)).isTrue();
           assertThat(r.getSession().isAuthLoginSupported()).isTrue();
           return r.getSession().authLogin(CORRECT_USERNAME, CORRECT_PASSWORD);
         })

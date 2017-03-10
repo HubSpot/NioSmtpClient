@@ -119,11 +119,11 @@ public class SmtpSessionTest {
         "STARTTLS",
         "SIZE") });
 
-    assertThat(session.isSupported(SupportedExtensions.EIGHT_BIT_MIME)).isTrue();
-    assertThat(session.isSupported(SupportedExtensions.STARTTLS)).isTrue();
-    assertThat(session.isSupported(SupportedExtensions.SIZE)).isTrue();
+    assertThat(session.isSupported(Extension.EIGHT_BIT_MIME)).isTrue();
+    assertThat(session.isSupported(Extension.STARTTLS)).isTrue();
+    assertThat(session.isSupported(Extension.SIZE)).isTrue();
 
-    assertThat(session.isSupported(SupportedExtensions.PIPELINING)).isFalse();
+    assertThat(session.isSupported(Extension.PIPELINING)).isFalse();
 
     assertThat(session.isAuthPlainSupported()).isTrue();
     assertThat(session.isAuthLoginSupported()).isTrue();
@@ -136,10 +136,10 @@ public class SmtpSessionTest {
     responseFuture.complete(new SmtpResponse[] { new DefaultSmtpResponse(250,
         "smtp.example.com Hello client.example.com") });
 
-    assertThat(session.isSupported(SupportedExtensions.EIGHT_BIT_MIME)).isFalse();
-    assertThat(session.isSupported(SupportedExtensions.STARTTLS)).isFalse();
-    assertThat(session.isSupported(SupportedExtensions.SIZE)).isFalse();
-    assertThat(session.isSupported(SupportedExtensions.PIPELINING)).isFalse();
+    assertThat(session.isSupported(Extension.EIGHT_BIT_MIME)).isFalse();
+    assertThat(session.isSupported(Extension.STARTTLS)).isFalse();
+    assertThat(session.isSupported(Extension.SIZE)).isFalse();
+    assertThat(session.isSupported(Extension.PIPELINING)).isFalse();
 
     assertThat(session.isAuthPlainSupported()).isFalse();
     assertThat(session.isAuthLoginSupported()).isFalse();

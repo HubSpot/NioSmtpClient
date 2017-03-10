@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public enum SupportedExtensions {
+public enum Extension {
   AUTH("auth"),
   DSN("dsn"),
   EIGHT_BIT_MIME("8bitmime"),
@@ -18,14 +18,14 @@ public enum SupportedExtensions {
 
   private final String lowerCaseName;
 
-  private static Map<String, SupportedExtensions> NAME_TO_EXTENSION = Arrays.stream(SupportedExtensions.values())
-      .collect(Collectors.toMap(SupportedExtensions::getLowerCaseName, v -> v));
+  private static Map<String, Extension> NAME_TO_EXTENSION = Arrays.stream(Extension.values())
+      .collect(Collectors.toMap(Extension::getLowerCaseName, v -> v));
 
-  public static Optional<SupportedExtensions> find(String name) {
+  public static Optional<Extension> find(String name) {
     return Optional.ofNullable(NAME_TO_EXTENSION.get(name.toLowerCase()));
   }
 
-  SupportedExtensions(String lowerCaseName) {
+  Extension(String lowerCaseName) {
     this.lowerCaseName = lowerCaseName;
   }
 

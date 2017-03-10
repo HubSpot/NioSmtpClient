@@ -71,7 +71,7 @@ public class SmtpSession {
   private final SmtpSessionConfig config;
   private final CompletableFuture<Void> closeFuture;
 
-  private volatile EnumSet<SupportedExtensions> supportedExtensions = EnumSet.noneOf(SupportedExtensions.class);
+  private volatile EnumSet<Extension> supportedExtensions = EnumSet.noneOf(Extension.class);
   private volatile boolean isAuthPlainSupported;
   private volatile boolean isAuthLoginSupported;
 
@@ -156,7 +156,7 @@ public class SmtpSession {
   }
 
   public CompletableFuture<SmtpClientResponse[]> sendPipelined(MessageContent content, SmtpRequest... requests) {
-    Preconditions.checkState(isSupported(SupportedExtensions.PIPELINING), "Pipelining is not supported on this server");
+    Preconditions.checkState(isSupported(Extension.PIPELINING), "Pipelining is not supported on this server");
     Preconditions.checkNotNull(requests);
     checkValidPipelinedRequest(requests);
 
@@ -223,7 +223,7 @@ public class SmtpSession {
   }
 
   private void writeContent(MessageContent content) {
-    if (isSupported(SupportedExtensions.EIGHT_BIT_MIME)) {
+    if (isSupported(Extension.EIGHT_BIT_MIME)) {
       channel.write(content.get8BitMimeEncodedContent());
     } else {
       channel.write(content.get7BitEncodedContent());
@@ -251,11 +251,11 @@ public class SmtpSession {
     isAuthLoginSupported = false;
     isAuthPlainSupported = false;
 
-    EnumSet<SupportedExtensions> discoveredExtensions = EnumSet.noneOf(SupportedExtensions.class);
+    EnumSet<Extension> discoveredExtensions = EnumSet.noneOf(Extension.class);
 
     for (CharSequence ext : details) {
       List<String> parts = WHITESPACE_SPLITTER.splitToList(ext);
-      SupportedExtensions.find(parts.get(0)).ifPresent(discoveredExtensions::add);
+      Extension.find(parts.get(0)).ifPresent(discoveredExtensions::add);
 
       if (parts.get(0).equalsIgnoreCase("auth") && parts.size() > 1) {
         for (int i = 1; i < parts.size(); i++) {
@@ -313,7 +313,7 @@ public class SmtpSession {
     }, executorService);
   }
 
-  public boolean isSupported(SupportedExtensions ext) {
+  public boolean isSupported(Extension ext) {
     return supportedExtensions.contains(ext);
   }
 
