@@ -21,7 +21,6 @@ import org.mockito.InOrder;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteSource;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hubspot.smtp.messages.MessageContent;
 import com.hubspot.smtp.messages.MessageContentEncoding;
@@ -58,8 +57,7 @@ public class SmtpSessionTest {
   private static final SmtpRequest HELO_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELO);
   private static final SmtpRequest HELP_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELP);
 
-  private static final ExecutorService EXECUTOR_SERVICE = MoreExecutors.newDirectExecutorService();
-  private static final SmtpSessionConfig CONFIG = SmtpSessionConfig.forRemoteAddress("127.0.0.1", 25);
+  private static final ImmutableSmtpSessionConfig CONFIG = SmtpSessionConfig.forRemoteAddress("127.0.0.1", 25).withExecutor(SmtpSessionConfig.DIRECT_EXECUTOR);
 
   private ResponseHandler responseHandler;
   private CompletableFuture<SmtpResponse[]> responseFuture;
@@ -78,7 +76,7 @@ public class SmtpSessionTest {
     when(channel.pipeline()).thenReturn(pipeline);
     when(channel.alloc()).thenReturn(new PooledByteBufAllocator(false));
 
-    session = new SmtpSession(channel, responseHandler, EXECUTOR_SERVICE, CONFIG);
+    session = new SmtpSession(channel, responseHandler, CONFIG);
     session.parseEhloResponse(Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN"));
   }
   
@@ -161,7 +159,7 @@ public class SmtpSessionTest {
   @Test
   public void itExecutesReturnedFuturesOnTheProvidedExecutor() {
     ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("SmtpSessionTestExecutor").build());
-    SmtpSession session = new SmtpSession(channel, responseHandler, executorService, CONFIG);
+    SmtpSession session = new SmtpSession(channel, responseHandler, CONFIG.withExecutor(executorService));
 
     CompletableFuture<SmtpClientResponse> future = session.send(SMTP_REQUEST);
     CompletableFuture<Void> assertionFuture = future.thenRun(() -> assertThat(Thread.currentThread().getName()).contains("SmtpSessionTestExecutor"));
@@ -173,7 +171,7 @@ public class SmtpSessionTest {
   @Test
   public void itExecutesReturnedExceptionalFuturesOnTheProvidedExecutor() {
     ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("SmtpSessionTestExecutor").build());
-    SmtpSession session = new SmtpSession(channel, responseHandler, executorService, CONFIG);
+    SmtpSession session = new SmtpSession(channel, responseHandler, CONFIG.withExecutor(executorService));
 
     CompletableFuture<SmtpClientResponse> future = session.send(SMTP_REQUEST);
     CompletableFuture<Boolean> assertionFuture = future.handle((r, e) -> {

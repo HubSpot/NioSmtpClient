@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 import javax.net.ssl.SSLEngine;
@@ -21,9 +22,12 @@ import io.netty.handler.ssl.SslContextBuilder;
 
 @Immutable
 public abstract class SmtpSessionConfig {
+  public static final Executor DIRECT_EXECUTOR = Runnable::run;
+
   public abstract InetSocketAddress getRemoteAddress();
   public abstract Optional<InetSocketAddress> getLocalAddress();
   public abstract Optional<Duration> getKeepAliveTimeout();
+  public abstract Optional<Executor> getExecutor();
 
   @Default
   public Duration getReadTimeout() {
