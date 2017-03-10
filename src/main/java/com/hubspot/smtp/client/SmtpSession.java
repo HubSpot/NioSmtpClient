@@ -3,6 +3,7 @@ package com.hubspot.smtp.client;
 import static io.netty.handler.codec.smtp.LastSmtpContent.EMPTY_LAST_CONTENT;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.EnumSet;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
@@ -269,8 +271,15 @@ public class SmtpSession {
     this.supportedExtensions = discoveredExtensions;
   }
 
-  private static String createDebugString(SmtpRequest... requests) {
-    return COMMA_JOINER.join(requests);
+  @VisibleForTesting
+  static String createDebugString(SmtpRequest... requests) {
+    return COMMA_JOINER.join(Arrays.stream(requests)
+        .map(r -> r.command().equals(AUTH_COMMAND) ? "<redacted-auth-command>" : requestToString(r))
+        .collect(Collectors.toList()));
+  }
+
+  private static  String requestToString(SmtpRequest request) {
+    return String.format("%s %s", request.command().name(), Joiner.on(" ").join(request.parameters()));
   }
 
   private static void checkValidPipelinedRequest(SmtpRequest[] requests) {

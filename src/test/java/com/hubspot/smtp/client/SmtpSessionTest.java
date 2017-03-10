@@ -304,6 +304,19 @@ public class SmtpSessionTest {
     assertThat(f.get().code()).isEqualTo(FAIL_RESPONSE.code());
   }
 
+  @Test
+  public void itRedactsAuthCommandsInTheDebugString() {
+    assertThat(SmtpSession.createDebugString(new DefaultSmtpRequest("AUTH", "super-secret")))
+        .isEqualTo("<redacted-auth-command>");
+  }
+
+  @Test
+  public void itIncludesCommandsAndArgsInTheDebugString() {
+    assertThat(SmtpSession.createDebugString(new DefaultSmtpRequest("EHLO", "example.com"), new DefaultSmtpRequest("AUTH", "super-secret")))
+        .isEqualTo("EHLO example.com, <redacted-auth-command>");
+
+  }
+
   private String encodeBase64(String s) {
     return Base64.getEncoder().encodeToString(s.getBytes(StandardCharsets.UTF_8));
   }
