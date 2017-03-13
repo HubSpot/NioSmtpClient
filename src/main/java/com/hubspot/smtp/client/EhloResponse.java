@@ -3,47 +3,59 @@ package com.hubspot.smtp.client;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
+import com.google.common.primitives.Longs;
 
 public class EhloResponse {
+  static final EhloResponse EMPTY = EhloResponse.parse(Collections.emptyList());
+
   private static final Splitter WHITESPACE_SPLITTER = Splitter.on(CharMatcher.WHITESPACE);
 
-  static final EhloResponse NULL_RESPONSE = EhloResponse.parse(Collections.emptyList());
-
-  private final EnumSet<Extension> supportedExtensions;
-  private final boolean isAuthPlainSupported;
-  private final boolean isAuthLoginSupported;
+  private EnumSet<Extension> supportedExtensions;
+  private Optional<Long> maxMessageSize = Optional.empty();
+  private boolean isAuthPlainSupported;
+  private boolean isAuthLoginSupported;
 
   public static EhloResponse parse(Iterable<CharSequence> lines) {
-    boolean isAuthLoginSupported = false;
-    boolean isAuthPlainSupported = false;
-
-    EnumSet<Extension> discoveredExtensions = EnumSet.noneOf(Extension.class);
-
-    for (CharSequence ext : lines) {
-      List<String> parts = WHITESPACE_SPLITTER.splitToList(ext);
-      Extension.find(parts.get(0)).ifPresent(discoveredExtensions::add);
-
-      if (parts.get(0).equalsIgnoreCase("auth") && parts.size() > 1) {
-        for (int i = 1; i < parts.size(); i++) {
-          if (parts.get(i).equalsIgnoreCase("plain")) {
-            isAuthPlainSupported = true;
-          } else if (parts.get(i).equalsIgnoreCase("login")) {
-            isAuthLoginSupported = true;
-          }
-        }
-      }
-    }
-
-    return new EhloResponse(discoveredExtensions, isAuthPlainSupported, isAuthLoginSupported);
+    return new EhloResponse(lines);
   }
 
-  private EhloResponse(EnumSet<Extension> supportedExtensions, boolean isAuthPlainSupported, boolean isAuthLoginSupported) {
-    this.supportedExtensions = supportedExtensions;
-    this.isAuthPlainSupported = isAuthPlainSupported;
-    this.isAuthLoginSupported = isAuthLoginSupported;
+  private EhloResponse(Iterable<CharSequence> lines) {
+    supportedExtensions = EnumSet.noneOf(Extension.class);
+
+    for (CharSequence line : lines) {
+      List<String> parts = WHITESPACE_SPLITTER.splitToList(line);
+
+      Extension.find(parts.get(0)).ifPresent(supportedExtensions::add);
+
+      switch (parts.get(0).toLowerCase()) {
+        case "auth":
+          parseAuth(parts);
+          break;
+        case "size":
+          parseSize(parts);
+          break;
+      }
+    }
+  }
+
+  private void parseSize(List<String> parts) {
+    if (parts.size() > 1) {
+      maxMessageSize = Optional.ofNullable(Longs.tryParse(parts.get(1)));
+    }
+  }
+
+  private void parseAuth(List<String> parts) {
+    for (String s : parts) {
+      if (s.equalsIgnoreCase("plain")) {
+        isAuthPlainSupported = true;
+      } else if (s.equalsIgnoreCase("login")) {
+        isAuthLoginSupported = true;
+      }
+    }
   }
 
   public boolean isSupported(Extension ext) {
@@ -56,5 +68,9 @@ public class EhloResponse {
 
   public boolean isAuthLoginSupported() {
     return isAuthLoginSupported;
+  }
+
+  public Optional<Long> getMaxMessageSize() {
+    return maxMessageSize;
   }
 }

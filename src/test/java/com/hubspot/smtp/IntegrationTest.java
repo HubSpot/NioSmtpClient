@@ -32,6 +32,7 @@ import org.apache.james.protocols.smtp.SMTPProtocolHandlerChain;
 import org.apache.james.protocols.smtp.SMTPSession;
 import org.apache.james.protocols.smtp.hook.AuthHook;
 import org.apache.james.protocols.smtp.hook.HookResult;
+import org.apache.james.protocols.smtp.hook.MailParametersHook;
 import org.apache.james.protocols.smtp.hook.MessageHook;
 import org.junit.After;
 import org.junit.Before;
@@ -40,11 +41,11 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteSource;
 import com.google.common.io.CharStreams;
+import com.hubspot.smtp.client.Extension;
 import com.hubspot.smtp.client.SmtpClientResponse;
 import com.hubspot.smtp.client.SmtpSession;
 import com.hubspot.smtp.client.SmtpSessionConfig;
 import com.hubspot.smtp.client.SmtpSessionFactory;
-import com.hubspot.smtp.client.Extension;
 import com.hubspot.smtp.messages.MessageContent;
 import com.hubspot.smtp.messages.MessageContentEncoding;
 
@@ -69,11 +70,13 @@ public class IntegrationTest {
 
   private static final NioEventLoopGroup EVENT_LOOP_GROUP = new NioEventLoopGroup();
   private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
+  private static final long MAX_MESSAGE_SIZE = 1234000L;
 
   private InetSocketAddress serverAddress;
   private NettyServer smtpServer;
   private SmtpSessionFactory sessionFactory;
   private List<MailEnvelope> receivedMails;
+  private String receivedMessageSize;
   private Logger serverLog;
   private boolean requireAuth;
 
@@ -93,6 +96,11 @@ public class IntegrationTest {
       @Override
       public boolean isAuthRequired(String remoteIP) {
         return requireAuth;
+      }
+
+      @Override
+      public long getMaxMessageSize() {
+        return MAX_MESSAGE_SIZE;
       }
     };
     SMTPProtocolHandlerChain chain = new SMTPProtocolHandlerChain(new CollectEmailsHook());
@@ -116,6 +124,8 @@ public class IntegrationTest {
         .thenCompose(r -> {
           assertThat(r.getSession().getEhloResponse().isSupported(Extension.PIPELINING)).isTrue();
           assertThat(r.getSession().getEhloResponse().isSupported(Extension.EIGHT_BIT_MIME)).isTrue();
+          assertThat(r.getSession().getEhloResponse().isSupported(Extension.SIZE)).isTrue();
+          assertThat(r.getSession().getEhloResponse().getMaxMessageSize()).contains(MAX_MESSAGE_SIZE);
           return r.getSession().send(req(QUIT));
         })
         .thenCompose(r -> assertSuccess(r).close())
@@ -156,7 +166,7 @@ public class IntegrationTest {
   public void itCanSendAnEmail() throws Exception {
     connect()
         .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
-        .thenCompose(r -> assertSuccess(r).send(req(MAIL, "FROM:<" + RETURN_PATH + ">")))
+        .thenCompose(r -> assertSuccess(r).send(req(MAIL, "FROM:<" + RETURN_PATH + ">", "SIZE=" + MESSAGE_DATA.length())))
         .thenCompose(r -> assertSuccess(r).send(req(RCPT, "TO:<" + RECIPIENT + ">")))
         .thenCompose(r -> assertSuccess(r).send(req(DATA)))
         .thenCompose(r -> assertSuccess(r).send(createMessageContent()))
@@ -170,6 +180,7 @@ public class IntegrationTest {
     assertThat(mail.getSender().toString()).isEqualTo(RETURN_PATH);
     assertThat(mail.getRecipients().get(0).toString()).isEqualTo(RECIPIENT);
     assertThat(readContents(mail)).contains(MESSAGE_DATA);
+    assertThat(receivedMessageSize).contains(Integer.toString(MESSAGE_DATA.length()));
   }
 
   @Test
@@ -328,7 +339,7 @@ public class IntegrationTest {
     return MessageContent.of(Unpooled.wrappedBuffer(MESSAGE_DATA.getBytes(StandardCharsets.UTF_8)));
   }
 
-  private class CollectEmailsHook implements MessageHook, AuthHook {
+  private class CollectEmailsHook implements MessageHook, MailParametersHook, AuthHook {
     @Override
     public synchronized HookResult onMessage(SMTPSession session, MailEnvelope mail) {
       receivedMails.add(mail);
@@ -342,6 +353,20 @@ public class IntegrationTest {
       } else {
         return HookResult.deny();
       }
+    }
+
+    @Override
+    public HookResult doMailParameter(SMTPSession session, String paramName, String paramValue) {
+      if (paramName.equalsIgnoreCase("size")) {
+        receivedMessageSize = paramValue;
+      }
+
+      return null;
+    }
+
+    @Override
+    public String[] getMailParamNames() {
+      return new String[] { "SIZE" };
     }
   }
 }

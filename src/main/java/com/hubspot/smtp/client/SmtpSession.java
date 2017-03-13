@@ -66,7 +66,7 @@ public class SmtpSession {
   private final SmtpSessionConfig config;
   private final CompletableFuture<Void> closeFuture;
 
-  private volatile EhloResponse ehloResponse = EhloResponse.NULL_RESPONSE;
+  private volatile EhloResponse ehloResponse = EhloResponse.EMPTY;
 
   SmtpSession(Channel channel, ResponseHandler responseHandler, ExecutorService executorService, SmtpSessionConfig config) {
     this.channel = channel;
