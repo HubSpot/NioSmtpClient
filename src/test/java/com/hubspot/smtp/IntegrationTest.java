@@ -37,12 +37,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteSource;
 import com.google.common.io.CharStreams;
 import com.hubspot.smtp.client.SmtpClientResponse;
 import com.hubspot.smtp.client.SmtpSession;
 import com.hubspot.smtp.client.SmtpSessionConfig;
 import com.hubspot.smtp.client.SmtpSessionFactory;
 import com.hubspot.smtp.messages.MessageContent;
+import com.hubspot.smtp.messages.MessageContentEncoding;
 
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -115,6 +117,33 @@ public class IntegrationTest {
     assertThat(mail.getSender().toString()).isEqualTo(RETURN_PATH);
     assertThat(mail.getRecipients().get(0).toString()).isEqualTo(RECIPIENT);
     assertThat(readContents(mail)).contains(MESSAGE_DATA);
+  }
+
+  @Test
+  public void itCanSendAnEmailUsingAStream() throws Exception {
+    String messageText = repeat(repeat("0123456789", 7) + "\r\n", 10_000);
+    MessageContent messageContent = MessageContent.of(ByteSource.wrap(messageText.getBytes()), messageText.length(), MessageContentEncoding.ASSUME_DOT_STUFFED);
+
+    connect()
+        .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
+        .thenCompose(r -> assertSuccess(r).send(req(MAIL, "FROM:<" + RETURN_PATH + ">")))
+        .thenCompose(r -> assertSuccess(r).send(req(RCPT, "TO:<" + RECIPIENT + ">")))
+        .thenCompose(r -> assertSuccess(r).send(req(DATA)))
+        .thenCompose(r -> assertSuccess(r).send(messageContent))
+        .thenCompose(r -> assertSuccess(r).send(req(QUIT)))
+        .thenCompose(r -> assertSuccess(r).close())
+        .get();
+
+    assertThat(receivedMails.size()).isEqualTo(1);
+    MailEnvelope mail = receivedMails.get(0);
+
+    assertThat(mail.getSender().toString()).isEqualTo(RETURN_PATH);
+    assertThat(mail.getRecipients().get(0).toString()).isEqualTo(RECIPIENT);
+    assertThat(readContents(mail)).contains(messageText);
+  }
+
+  private String repeat(String s, int n) {
+    return new String(new char[n]).replace("\0", s);
   }
 
   @Test
