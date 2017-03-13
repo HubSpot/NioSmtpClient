@@ -114,8 +114,8 @@ public class IntegrationTest {
     connect()
         .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
         .thenCompose(r -> {
-          assertThat(r.getSession().isSupported(Extension.PIPELINING)).isTrue();
-          assertThat(r.getSession().isSupported(Extension.EIGHT_BIT_MIME)).isTrue();
+          assertThat(r.getSession().getEhloResponse().isSupported(Extension.PIPELINING)).isTrue();
+          assertThat(r.getSession().getEhloResponse().isSupported(Extension.EIGHT_BIT_MIME)).isTrue();
           return r.getSession().send(req(QUIT));
         })
         .thenCompose(r -> assertSuccess(r).close())
@@ -129,8 +129,8 @@ public class IntegrationTest {
     connect()
         .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
         .thenCompose(r -> {
-          assertThat(r.getSession().isSupported(Extension.AUTH)).isTrue();
-          assertThat(r.getSession().isAuthPlainSupported()).isTrue();
+          assertThat(r.getSession().getEhloResponse().isSupported(Extension.AUTH)).isTrue();
+          assertThat(r.getSession().getEhloResponse().isAuthPlainSupported()).isTrue();
           return r.getSession().authPlain(CORRECT_USERNAME, CORRECT_PASSWORD);
         })
         .thenCompose(r -> assertSuccess(r).close())
@@ -144,8 +144,8 @@ public class IntegrationTest {
     connect()
         .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
         .thenCompose(r -> {
-          assertThat(r.getSession().isSupported(Extension.AUTH)).isTrue();
-          assertThat(r.getSession().isAuthLoginSupported()).isTrue();
+          assertThat(r.getSession().getEhloResponse().isSupported(Extension.AUTH)).isTrue();
+          assertThat(r.getSession().getEhloResponse().isAuthLoginSupported()).isTrue();
           return r.getSession().authLogin(CORRECT_USERNAME, CORRECT_PASSWORD);
         })
         .thenCompose(r -> assertSuccess(r).close())
