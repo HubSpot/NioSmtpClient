@@ -210,9 +210,12 @@ public class SmtpSession {
   }
 
   private void checkMessageSize(MessageContent content) {
-    if (content != null && ehloResponse.getMaxMessageSize().isPresent()) {
-      Preconditions.checkArgument(ehloResponse.getMaxMessageSize().get() > content.size(),
-          String.format("This message is too large to be sent (EHLO-advertised limit: %d)", ehloResponse.getMaxMessageSize().get()));
+    if (content == null || !ehloResponse.getMaxMessageSize().isPresent()) {
+      return;
+    }
+
+    if (ehloResponse.getMaxMessageSize().get() < content.size()) {
+      throw new MessageTooLargeException(config.getConnectionId(), ehloResponse.getMaxMessageSize().get());
     }
   }
 

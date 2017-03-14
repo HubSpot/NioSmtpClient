@@ -105,8 +105,8 @@ public class SmtpSessionTest {
     MessageContent largeMessage = MessageContent.of(ByteSource.wrap(new byte[0]), 1025, MessageContentEncoding.ASSUME_DOT_STUFFED);
 
     assertThatThrownBy(() -> session.send(largeMessage))
-      .isInstanceOf(IllegalArgumentException.class)
-      .hasMessage("This message is too large to be sent (EHLO-advertised limit: 1024)");
+      .isInstanceOf(MessageTooLargeException.class)
+      .hasMessage("[unidentified-connection] This message is too large to be sent (max size: 1024)");
   }
 
   @Test
