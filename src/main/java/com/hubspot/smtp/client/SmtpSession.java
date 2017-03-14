@@ -9,15 +9,20 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hubspot.smtp.messages.MessageContent;
 import com.hubspot.smtp.utils.SmtpResponses;
 
@@ -54,6 +59,13 @@ public class SmtpSession {
       SmtpCommand.QUIT,
       SmtpCommand.NOOP);
 
+  private static final Supplier<Executor> SHARED_DEFAULT_EXECUTOR = Suppliers.memoize(SmtpSession::getSharedExecutor);
+
+  private static ExecutorService getSharedExecutor() {
+    ThreadFactory threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("niosmtpclient-%d").build();
+    return Executors.newCachedThreadPool(threadFactory);
+  }
+
   private static final Joiner COMMA_JOINER = Joiner.on(", ");
   private static final SmtpCommand STARTTLS_COMMAND = SmtpCommand.valueOf("STARTTLS");
   private static final SmtpCommand AUTH_COMMAND = SmtpCommand.valueOf("AUTH");
@@ -73,7 +85,7 @@ public class SmtpSession {
     this.channel = channel;
     this.responseHandler = responseHandler;
     this.config = config;
-    this.executor = config.getExecutor().orElse(ForkJoinPool.commonPool());
+    this.executor = config.getExecutor().orElse(SHARED_DEFAULT_EXECUTOR.get());
     this.closeFuture = new CompletableFuture<>();
 
     this.channel.pipeline().addLast(new ErrorHandler());
