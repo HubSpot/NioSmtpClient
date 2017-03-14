@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 public class EhloResponseTest {
   @Test
@@ -30,6 +31,21 @@ public class EhloResponseTest {
 
     assertThat(response.isAuthPlainSupported()).isTrue();
     assertThat(response.isAuthLoginSupported()).isTrue();
+  }
+
+  @Test
+  public void itExposesSupportedExtensionsAsStrings() {
+    EhloResponse response = parse("smtp.example.com Hello client.example.com",
+        "AUTH PLAIN LOGIN",
+        "8BITMIME",
+        "STARTTLS",
+        "SIZE");
+
+    assertThat(response.getSupportedExtensions()).isEqualTo(Sets.newHashSet("smtp.example.com Hello client.example.com",
+        "AUTH PLAIN LOGIN",
+        "8BITMIME",
+        "STARTTLS",
+        "SIZE"));
   }
 
   @Test

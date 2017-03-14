@@ -4,17 +4,21 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.primitives.Longs;
 
 public class EhloResponse {
   static final EhloResponse EMPTY = EhloResponse.parse(Collections.emptyList());
 
   private static final Splitter WHITESPACE_SPLITTER = Splitter.on(CharMatcher.WHITESPACE);
+  private final ImmutableSet<String> supportedExtensions;
 
-  private EnumSet<Extension> supportedExtensions;
+  private EnumSet<Extension> extensions;
   private Optional<Long> maxMessageSize = Optional.empty();
   private boolean isAuthPlainSupported;
   private boolean isAuthLoginSupported;
@@ -24,12 +28,12 @@ public class EhloResponse {
   }
 
   private EhloResponse(Iterable<CharSequence> lines) {
-    supportedExtensions = EnumSet.noneOf(Extension.class);
+    extensions = EnumSet.noneOf(Extension.class);
 
     for (CharSequence line : lines) {
       List<String> parts = WHITESPACE_SPLITTER.splitToList(line);
 
-      Extension.find(parts.get(0)).ifPresent(supportedExtensions::add);
+      Extension.find(parts.get(0)).ifPresent(extensions::add);
 
       switch (parts.get(0).toLowerCase()) {
         case "auth":
@@ -38,8 +42,12 @@ public class EhloResponse {
         case "size":
           parseSize(parts);
           break;
+        default:
+          break;
       }
     }
+
+    supportedExtensions = ImmutableSet.copyOf(Iterables.transform(lines, CharSequence::toString));
   }
 
   private void parseSize(List<String> parts) {
@@ -59,7 +67,7 @@ public class EhloResponse {
   }
 
   public boolean isSupported(Extension ext) {
-    return supportedExtensions.contains(ext);
+    return extensions.contains(ext);
   }
 
   public boolean isAuthPlainSupported() {
@@ -72,5 +80,9 @@ public class EhloResponse {
 
   public Optional<Long> getMaxMessageSize() {
     return maxMessageSize;
+  }
+
+  public Set<String> getSupportedExtensions() {
+    return supportedExtensions;
   }
 }
