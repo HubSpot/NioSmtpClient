@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-import java.util.EnumSet;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -17,10 +19,13 @@ import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hubspot.smtp.messages.MessageContent;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -42,6 +47,7 @@ public class SmtpSessionTest {
   private static final MessageContent SMTP_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]));
   private static final SmtpResponse OK_RESPONSE = new DefaultSmtpResponse(250, "OK");
   private static final SmtpResponse FAIL_RESPONSE = new DefaultSmtpResponse(400, "nope");
+  private static final SmtpResponse INTERMEDIATE_RESPONSE = new DefaultSmtpResponse(300, "... go on");
   private static final SmtpRequest MAIL_REQUEST = new DefaultSmtpRequest(SmtpCommand.MAIL, "FROM:alice@example.com");
   private static final SmtpRequest RCPT_REQUEST = new DefaultSmtpRequest(SmtpCommand.RCPT, "FROM:bob@example.com");
   private static final SmtpRequest DATA_REQUEST = new DefaultSmtpRequest(SmtpCommand.DATA);
@@ -68,8 +74,10 @@ public class SmtpSessionTest {
     responseFuture = new CompletableFuture<>();
     when(responseHandler.createResponseFuture(anyInt(), any())).thenReturn(responseFuture);
     when(channel.pipeline()).thenReturn(pipeline);
+    when(channel.alloc()).thenReturn(new PooledByteBufAllocator(false));
 
     session = new SmtpSession(channel, responseHandler, EXECUTOR_SERVICE, CONFIG);
+    session.setSupportedExtensions(Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN"));
   }
   
   @Test
@@ -101,6 +109,43 @@ public class SmtpSessionTest {
   }
 
   @Test
+  public void itParsesTheEhloResponse() {
+    session.send(EHLO_REQUEST);
+
+    responseFuture.complete(new SmtpResponse[] { new DefaultSmtpResponse(250,
+        "smtp.example.com Hello client.example.com",
+        "AUTH PLAIN LOGIN",
+        "8BITMIME",
+        "STARTTLS",
+        "SIZE") });
+
+    assertThat(session.isSupported(Extension.EIGHT_BIT_MIME)).isTrue();
+    assertThat(session.isSupported(Extension.STARTTLS)).isTrue();
+    assertThat(session.isSupported(Extension.SIZE)).isTrue();
+
+    assertThat(session.isSupported(Extension.PIPELINING)).isFalse();
+
+    assertThat(session.isAuthPlainSupported()).isTrue();
+    assertThat(session.isAuthLoginSupported()).isTrue();
+  }
+
+  @Test
+  public void itParsesAnEmptyEhloResponse() {
+    session.send(EHLO_REQUEST);
+
+    responseFuture.complete(new SmtpResponse[] { new DefaultSmtpResponse(250,
+        "smtp.example.com Hello client.example.com") });
+
+    assertThat(session.isSupported(Extension.EIGHT_BIT_MIME)).isFalse();
+    assertThat(session.isSupported(Extension.STARTTLS)).isFalse();
+    assertThat(session.isSupported(Extension.SIZE)).isFalse();
+    assertThat(session.isSupported(Extension.PIPELINING)).isFalse();
+
+    assertThat(session.isAuthPlainSupported()).isFalse();
+    assertThat(session.isAuthLoginSupported()).isFalse();
+  }
+
+  @Test
   public void itExecutesReturnedFuturesOnTheProvidedExecutor() {
     ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("SmtpSessionTestExecutor").build());
     SmtpSession session = new SmtpSession(channel, responseHandler, executorService, CONFIG);
@@ -125,6 +170,15 @@ public class SmtpSessionTest {
 
     responseFuture.completeExceptionally(new RuntimeException());
     assertionFuture.join();
+  }
+
+  @Test
+  public void itThrowsIllegalStateIfPipeliningIsNotSupported() {
+    session.setSupportedExtensions(Collections.emptyList());
+
+    assertThatThrownBy(() -> session.sendPipelined(SMTP_CONTENT, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Pipelining is not supported on this server");
   }
 
   @Test
@@ -191,11 +245,80 @@ public class SmtpSessionTest {
   }
 
   @Test
-  public void itRecordsSupportedExtensions() {
-    session.setSupportedExtensions(EnumSet.of(SupportedExtensions.EIGHT_BIT_MIME));
+  public void itWillNotAuthenticateWithAuthPlainUnlessTheServerSupportsIt() {
+    session.setSupportedExtensions(Collections.emptyList());
 
-    assertThat(session.isSupported(SupportedExtensions.EIGHT_BIT_MIME)).isTrue();
-    assertThat(session.isSupported(SupportedExtensions.PIPELINING)).isFalse();
+    assertThatThrownBy(() -> session.authPlain("user", "password"))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Auth plain is not supported on this server");
+  }
+
+  @Test
+  public void itCanAuthenticateWithAuthPlain() {
+    String username = "user";
+    String password = "password";
+    String encoded = Base64.getEncoder().encodeToString(String.format("%s\0%s\0%s", username, username, password).getBytes());
+
+    session.authPlain(username, password);
+
+    verify(channel).writeAndFlush(new DefaultSmtpRequest("AUTH", "PLAIN", encoded));
+  }
+
+  @Test
+  public void itWillNotAuthenticateWithAuthLoginUnlessTheServerSupportsIt() {
+    session.setSupportedExtensions(Collections.emptyList());
+
+    assertThatThrownBy(() -> session.authLogin("user", "password"))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Auth login is not supported on this server");
+  }
+
+  @Test
+  public void itCanAuthenticateWithAuthLogin() throws Exception {
+    String username = "user";
+    String password = "password";
+
+    // do the initial request, which just includes the username
+    session.authLogin("user", "password");
+
+    verify(channel).writeAndFlush(new DefaultSmtpRequest("AUTH", "LOGIN", encodeBase64(username)));
+
+    // now the second request, which sends the password
+    responseFuture.complete(new SmtpResponse[] {INTERMEDIATE_RESPONSE});
+
+    // this is sent to the second invocation of writeAndFlush
+    ArgumentCaptor<Object> bufCaptor = ArgumentCaptor.forClass(Object.class);
+    verify(channel, times(2)).writeAndFlush(bufCaptor.capture());
+    ByteBuf capturedBuffer = (ByteBuf) bufCaptor.getAllValues().get(1);
+
+    String actualString = capturedBuffer.toString(0, capturedBuffer.readableBytes(), StandardCharsets.UTF_8);
+    assertThat(actualString).isEqualTo(encodeBase64(password) + "\r\n");
+  }
+
+  @Test
+  public void itReturnsTheResponseIfAuthLoginFailsAtTheFirstRequest() throws Exception {
+    CompletableFuture<SmtpClientResponse> f = session.authLogin("user", "password");
+
+    responseFuture.complete(new SmtpResponse[] {FAIL_RESPONSE});
+
+    assertThat(f.get().code()).isEqualTo(FAIL_RESPONSE.code());
+  }
+
+  @Test
+  public void itRedactsAuthCommandsInTheDebugString() {
+    assertThat(SmtpSession.createDebugString(new DefaultSmtpRequest("AUTH", "super-secret")))
+        .isEqualTo("<redacted-auth-command>");
+  }
+
+  @Test
+  public void itIncludesCommandsAndArgsInTheDebugString() {
+    assertThat(SmtpSession.createDebugString(new DefaultSmtpRequest("EHLO", "example.com"), new DefaultSmtpRequest("AUTH", "super-secret")))
+        .isEqualTo("EHLO example.com, <redacted-auth-command>");
+
+  }
+
+  private String encodeBase64(String s) {
+    return Base64.getEncoder().encodeToString(s.getBytes(StandardCharsets.UTF_8));
   }
 
   @Test
@@ -254,7 +377,7 @@ public class SmtpSessionTest {
   }
 
   @Test
-  public void itReturnsTheFailureResponseWhenStartTlsIsCalledIfTheServerReturnsAnError() throws ExecutionException, InterruptedException {
+  public void itReturnsTheFailureResponseWhenStartTlsIsCalledIfTheServerReturnsAnError() throws Exception {
     CompletableFuture<SmtpClientResponse> f = session.startTls();
 
     responseFuture.complete(new SmtpResponse[] {FAIL_RESPONSE});
@@ -264,7 +387,7 @@ public class SmtpSessionTest {
   }
 
   @Test
-  public void itAddsAnSslHandlerToThePipelineIfTheStartTlsCommandSucceeds() throws ExecutionException, InterruptedException {
+  public void itAddsAnSslHandlerToThePipelineIfTheStartTlsCommandSucceeds() throws Exception {
     session.startTls();
 
     responseFuture.complete(new SmtpResponse[] {OK_RESPONSE});
