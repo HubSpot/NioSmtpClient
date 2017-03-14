@@ -20,9 +20,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteSource;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hubspot.smtp.messages.MessageContent;
+import com.hubspot.smtp.messages.MessageContentEncoding;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -94,6 +96,17 @@ public class SmtpSessionTest {
     verify(channel).write(SMTP_CONTENT.get7BitEncodedContent());
     verify(channel).write(EMPTY_LAST_CONTENT);
     verify(channel).flush();
+  }
+
+  @Test
+  public void itThrowsIllegalArgumentIfTheSubmittedMessageSizeIsLargerThanTheMaximum() {
+    session.parseEhloResponse(Lists.newArrayList("SIZE 1024"));
+
+    MessageContent largeMessage = MessageContent.of(ByteSource.wrap(new byte[0]), 1025, MessageContentEncoding.ASSUME_DOT_STUFFED);
+
+    assertThatThrownBy(() -> session.send(largeMessage))
+      .isInstanceOf(IllegalArgumentException.class)
+      .hasMessage("This message is too large to be sent (EHLO-advertised limit: 1024)");
   }
 
   @Test

@@ -137,6 +137,7 @@ public class SmtpSession {
 
   public CompletableFuture<SmtpClientResponse> send(MessageContent content) {
     Preconditions.checkNotNull(content);
+    checkMessageSize(content);
 
     CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> "message contents");
 
@@ -156,6 +157,7 @@ public class SmtpSession {
     Preconditions.checkState(ehloResponse.isSupported(Extension.PIPELINING), "Pipelining is not supported on this server");
     Preconditions.checkNotNull(requests);
     checkValidPipelinedRequest(requests);
+    checkMessageSize(content);
 
     int expectedResponses = requests.length + (content == null ? 0 : 1);
     CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(expectedResponses, () -> createDebugString(requests));
@@ -205,6 +207,13 @@ public class SmtpSession {
     channel.writeAndFlush(passwordBuffer);
 
     return applyOnExecutor(responseFuture, loginResponse -> new SmtpClientResponse(loginResponse[0], this));
+  }
+
+  private void checkMessageSize(MessageContent content) {
+    if (content != null && ehloResponse.getMaxMessageSize().isPresent()) {
+      Preconditions.checkArgument(ehloResponse.getMaxMessageSize().get() > content.size(),
+          String.format("This message is too large to be sent (EHLO-advertised limit: %d)", ehloResponse.getMaxMessageSize().get()));
+    }
   }
 
   private String encodeBase64(String s) {
