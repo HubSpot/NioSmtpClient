@@ -8,15 +8,21 @@ import java.util.Base64;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hubspot.smtp.messages.MessageContent;
 import com.hubspot.smtp.utils.SmtpResponses;
 
@@ -53,6 +59,13 @@ public class SmtpSession {
       SmtpCommand.QUIT,
       SmtpCommand.NOOP);
 
+  private static final Supplier<Executor> SHARED_DEFAULT_EXECUTOR = Suppliers.memoize(SmtpSession::getSharedExecutor);
+
+  private static ExecutorService getSharedExecutor() {
+    ThreadFactory threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("niosmtpclient-%d").build();
+    return Executors.newCachedThreadPool(threadFactory);
+  }
+
   private static final Joiner COMMA_JOINER = Joiner.on(", ");
   private static final SmtpCommand STARTTLS_COMMAND = SmtpCommand.valueOf("STARTTLS");
   private static final SmtpCommand AUTH_COMMAND = SmtpCommand.valueOf("AUTH");
@@ -62,17 +75,17 @@ public class SmtpSession {
 
   private final Channel channel;
   private final ResponseHandler responseHandler;
-  private final ExecutorService executorService;
   private final SmtpSessionConfig config;
+  private final Executor executor;
   private final CompletableFuture<Void> closeFuture;
 
   private volatile EhloResponse ehloResponse = EhloResponse.EMPTY;
 
-  SmtpSession(Channel channel, ResponseHandler responseHandler, ExecutorService executorService, SmtpSessionConfig config) {
+  SmtpSession(Channel channel, ResponseHandler responseHandler, SmtpSessionConfig config) {
     this.channel = channel;
     this.responseHandler = responseHandler;
-    this.executorService = executorService;
     this.config = config;
+    this.executor = config.getExecutor().orElse(SHARED_DEFAULT_EXECUTOR.get());
     this.closeFuture = new CompletableFuture<>();
 
     this.channel.pipeline().addLast(new ErrorHandler());
@@ -284,6 +297,10 @@ public class SmtpSession {
   }
 
   private <R, T> CompletableFuture<R> applyOnExecutor(CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
+    if (executor == SmtpSessionConfig.DIRECT_EXECUTOR) {
+      return eventLoopFuture.thenApply(mapper);
+    }
+
     // use handleAsync to ensure exceptions and other callbacks are completed on the ExecutorService thread
     return eventLoopFuture.handleAsync((rs, e) -> {
       if (e != null) {
@@ -291,7 +308,7 @@ public class SmtpSession {
       }
 
       return mapper.apply(rs);
-    }, executorService);
+    }, executor);
   }
 
   private class ErrorHandler extends ChannelInboundHandlerAdapter {
