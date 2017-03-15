@@ -55,6 +55,9 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpRequest;
+import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.OpenSslEngine;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
@@ -115,6 +118,18 @@ public class IntegrationTest {
   @After
   public void after() {
     smtpServer.unbind();
+  }
+
+  @Test
+  public void itUsesNativeOpenSSL() {
+    assertThat(OpenSsl.isAvailable())
+        .withFailMessage("OpenSSL is not available").isTrue();
+
+    assertThat(SslContext.defaultClientProvider().name())
+        .withFailMessage("OpenSSL is not the default").isEqualTo("OPENSSL");
+
+    SmtpSessionConfig defaultConfig = SmtpSessionConfig.forRemoteAddress(serverAddress);
+    assertThat(defaultConfig.getSSLEngineSupplier().get()).isInstanceOf(OpenSslEngine.class);
   }
 
   @Test
