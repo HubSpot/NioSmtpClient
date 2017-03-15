@@ -20,9 +20,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteSource;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hubspot.smtp.messages.MessageContent;
+import com.hubspot.smtp.messages.MessageContentEncoding;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -77,7 +79,7 @@ public class SmtpSessionTest {
     when(channel.alloc()).thenReturn(new PooledByteBufAllocator(false));
 
     session = new SmtpSession(channel, responseHandler, EXECUTOR_SERVICE, CONFIG);
-    session.setSupportedExtensions(Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN"));
+    session.parseEhloResponse(Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN"));
   }
   
   @Test
@@ -94,6 +96,17 @@ public class SmtpSessionTest {
     verify(channel).write(SMTP_CONTENT.get7BitEncodedContent());
     verify(channel).write(EMPTY_LAST_CONTENT);
     verify(channel).flush();
+  }
+
+  @Test
+  public void itThrowsIllegalArgumentIfTheSubmittedMessageSizeIsLargerThanTheMaximum() {
+    session.parseEhloResponse(Lists.newArrayList("SIZE 1024"));
+
+    MessageContent largeMessage = MessageContent.of(ByteSource.wrap(new byte[0]), 1025, MessageContentEncoding.ASSUME_DOT_STUFFED);
+
+    assertThatThrownBy(() -> session.send(largeMessage))
+      .isInstanceOf(MessageTooLargeException.class)
+      .hasMessage("[unidentified-connection] This message is too large to be sent (max size: 1024)");
   }
 
   @Test
@@ -119,14 +132,14 @@ public class SmtpSessionTest {
         "STARTTLS",
         "SIZE") });
 
-    assertThat(session.isSupported(Extension.EIGHT_BIT_MIME)).isTrue();
-    assertThat(session.isSupported(Extension.STARTTLS)).isTrue();
-    assertThat(session.isSupported(Extension.SIZE)).isTrue();
+    assertThat(session.getEhloResponse().isSupported(Extension.EIGHT_BIT_MIME)).isTrue();
+    assertThat(session.getEhloResponse().isSupported(Extension.STARTTLS)).isTrue();
+    assertThat(session.getEhloResponse().isSupported(Extension.SIZE)).isTrue();
 
-    assertThat(session.isSupported(Extension.PIPELINING)).isFalse();
+    assertThat(session.getEhloResponse().isSupported(Extension.PIPELINING)).isFalse();
 
-    assertThat(session.isAuthPlainSupported()).isTrue();
-    assertThat(session.isAuthLoginSupported()).isTrue();
+    assertThat(session.getEhloResponse().isAuthPlainSupported()).isTrue();
+    assertThat(session.getEhloResponse().isAuthLoginSupported()).isTrue();
   }
 
   @Test
@@ -136,13 +149,13 @@ public class SmtpSessionTest {
     responseFuture.complete(new SmtpResponse[] { new DefaultSmtpResponse(250,
         "smtp.example.com Hello client.example.com") });
 
-    assertThat(session.isSupported(Extension.EIGHT_BIT_MIME)).isFalse();
-    assertThat(session.isSupported(Extension.STARTTLS)).isFalse();
-    assertThat(session.isSupported(Extension.SIZE)).isFalse();
-    assertThat(session.isSupported(Extension.PIPELINING)).isFalse();
+    assertThat(session.getEhloResponse().isSupported(Extension.EIGHT_BIT_MIME)).isFalse();
+    assertThat(session.getEhloResponse().isSupported(Extension.STARTTLS)).isFalse();
+    assertThat(session.getEhloResponse().isSupported(Extension.SIZE)).isFalse();
+    assertThat(session.getEhloResponse().isSupported(Extension.PIPELINING)).isFalse();
 
-    assertThat(session.isAuthPlainSupported()).isFalse();
-    assertThat(session.isAuthLoginSupported()).isFalse();
+    assertThat(session.getEhloResponse().isAuthPlainSupported()).isFalse();
+    assertThat(session.getEhloResponse().isAuthLoginSupported()).isFalse();
   }
 
   @Test
@@ -174,7 +187,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itThrowsIllegalStateIfPipeliningIsNotSupported() {
-    session.setSupportedExtensions(Collections.emptyList());
+    session.parseEhloResponse(Collections.emptyList());
 
     assertThatThrownBy(() -> session.sendPipelined(SMTP_CONTENT, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST))
         .isInstanceOf(IllegalStateException.class)
@@ -246,7 +259,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itWillNotAuthenticateWithAuthPlainUnlessTheServerSupportsIt() {
-    session.setSupportedExtensions(Collections.emptyList());
+    session.parseEhloResponse(Collections.emptyList());
 
     assertThatThrownBy(() -> session.authPlain("user", "password"))
         .isInstanceOf(IllegalStateException.class)
@@ -266,7 +279,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itWillNotAuthenticateWithAuthLoginUnlessTheServerSupportsIt() {
-    session.setSupportedExtensions(Collections.emptyList());
+    session.parseEhloResponse(Collections.emptyList());
 
     assertThatThrownBy(() -> session.authLogin("user", "password"))
         .isInstanceOf(IllegalStateException.class)
