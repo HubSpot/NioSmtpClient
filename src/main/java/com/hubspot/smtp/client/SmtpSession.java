@@ -29,6 +29,7 @@ import com.hubspot.smtp.utils.SmtpResponses;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
@@ -143,7 +144,7 @@ public class SmtpSession {
 
     CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> createDebugString(request));
     responseFuture = interceptResponse(request, responseFuture);
-    channel.writeAndFlush(request);
+    writeAndFlush(request);
 
     return applyOnExecutor(responseFuture, r -> new SmtpClientResponse(r[0], this));
   }
@@ -179,7 +180,7 @@ public class SmtpSession {
       writeContent(content);
     }
     for (SmtpRequest r : requests) {
-      channel.write(r);
+      write(r);
     }
 
     channel.flush();
@@ -217,7 +218,7 @@ public class SmtpSession {
 
     String passwordResponse = encodeBase64(password) + CRLF;
     ByteBuf passwordBuffer = channel.alloc().buffer().writeBytes(passwordResponse.getBytes(StandardCharsets.UTF_8));
-    channel.writeAndFlush(passwordBuffer);
+    writeAndFlush(passwordBuffer);
 
     return applyOnExecutor(responseFuture, loginResponse -> new SmtpClientResponse(loginResponse[0], this));
   }
@@ -238,14 +239,26 @@ public class SmtpSession {
 
   private void writeContent(MessageContent content) {
     if (ehloResponse.isSupported(Extension.EIGHT_BIT_MIME)) {
-      channel.write(content.get8BitMimeEncodedContent());
+      write(content.get8BitMimeEncodedContent());
     } else {
-      channel.write(content.get7BitEncodedContent());
+      write(content.get7BitEncodedContent());
     }
 
     // SmtpRequestEncoder requires that we send an SmtpContent instance after the DATA command
     // to unset its contentExpected state.
-    channel.write(EMPTY_LAST_CONTENT);
+    write(EMPTY_LAST_CONTENT);
+  }
+
+  private void write(Object obj) {
+    // adding ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE ensures we'll find out
+    // about errors that occur when writing
+    channel.write(obj).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+  }
+
+  private void writeAndFlush(Object obj) {
+    // adding ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE ensures we'll find out
+    // about errors that occur when writing
+    channel.writeAndFlush(obj).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
   }
 
   private CompletableFuture<SmtpResponse[]> interceptResponse(SmtpRequest request, CompletableFuture<SmtpResponse[]> originalFuture) {
