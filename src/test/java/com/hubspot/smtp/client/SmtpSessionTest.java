@@ -29,6 +29,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
@@ -64,6 +66,7 @@ public class SmtpSessionTest {
   private Channel channel;
   private ChannelPipeline pipeline;
   private SmtpSession session;
+  private ChannelFuture writeFuture;
 
   @Before
   public void setup() {
@@ -72,9 +75,12 @@ public class SmtpSessionTest {
     responseHandler = mock(ResponseHandler.class);
 
     responseFuture = new CompletableFuture<>();
+    writeFuture = mock(ChannelFuture.class);
     when(responseHandler.createResponseFuture(anyInt(), any())).thenReturn(responseFuture);
     when(channel.pipeline()).thenReturn(pipeline);
     when(channel.alloc()).thenReturn(new PooledByteBufAllocator(false));
+    when(channel.write(any())).thenReturn(writeFuture);
+    when(channel.writeAndFlush(any())).thenReturn(writeFuture);
 
     session = new SmtpSession(channel, responseHandler, CONFIG);
     session.parseEhloResponse(Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN"));
@@ -367,6 +373,32 @@ public class SmtpSessionTest {
 
     assertThat(session.getCloseFuture().isCompletedExceptionally()).isTrue();
     assertThatThrownBy(() -> session.getCloseFuture().get()).hasCause(testException);
+  }
+
+  @Test
+  public void itFiresExceptionsWhenSendingRequests() throws Exception {
+    session.send(SMTP_REQUEST);
+    assertExceptionsFiredOnFailure();
+  }
+
+  @Test
+  public void itFiresExceptionsWhenSendingContent() throws Exception {
+    session.send(SMTP_CONTENT);
+    assertExceptionsFiredOnFailure();
+  }
+
+  private void assertExceptionsFiredOnFailure() throws Exception {
+    // get the listener added when the channel was written to
+    ArgumentCaptor<ChannelFutureListener> captor = ArgumentCaptor.forClass(ChannelFutureListener.class);
+    verify(writeFuture, atLeast(1)).addListener(captor.capture());
+    ChannelFutureListener addedListener = captor.getValue();
+
+    // tell the listener the write failed
+    DefaultChannelPromise promise = new DefaultChannelPromise(channel, ImmediateEventExecutor.INSTANCE);
+    promise.setFailure(new Exception());
+    addedListener.operationComplete(promise);
+
+    verify(pipeline).fireExceptionCaught(promise.cause());
   }
 
   @Test
