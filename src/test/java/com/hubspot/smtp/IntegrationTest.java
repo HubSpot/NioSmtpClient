@@ -49,6 +49,7 @@ import com.hubspot.smtp.client.SmtpSessionFactory;
 import com.hubspot.smtp.messages.MessageContent;
 import com.hubspot.smtp.messages.MessageContentEncoding;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -103,9 +104,12 @@ public class IntegrationTest {
         return MAX_MESSAGE_SIZE;
       }
     };
-    SMTPProtocolHandlerChain chain = new SMTPProtocolHandlerChain(new CollectEmailsHook());
 
-    NettyServer server = new NettyServer(new SMTPProtocol(chain, config, log), Encryption.createStartTls(FakeTlsContext.createContext()));
+    SMTPProtocolHandlerChain chain = new SMTPProtocolHandlerChain(new CollectEmailsHook(), new ChunkingExtension());
+    SMTPProtocol protocol = new SMTPProtocol(chain, config, log);
+    Encryption encryption = Encryption.createStartTls(FakeTlsContext.createContext());
+
+    NettyServer server = new ExtensibleNettyServer(protocol, encryption);
     server.setListenAddresses(address);
     server.bind();
 
@@ -208,6 +212,25 @@ public class IntegrationTest {
 
   private String repeat(String s, int n) {
     return new String(new char[n]).replace("\0", s);
+  }
+
+  @Test
+  public void itCanSendMessagesWithChunking() throws Exception {
+    connect()
+        .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
+        .thenCompose(r -> assertSuccess(r).send(req(MAIL, "FROM:<" + RETURN_PATH + ">")))
+        .thenCompose(r -> assertSuccess(r).send(req(RCPT, "TO:<" + RECIPIENT + ">")))
+        .thenCompose(r -> assertSuccess(r).sendChunk(createBuffer(MESSAGE_DATA), true))
+        .thenCompose(r -> assertSuccess(r).send(req(QUIT)))
+        .thenCompose(r -> assertSuccess(r).close())
+        .get();
+
+    assertThat(receivedMails.size()).isEqualTo(1);
+    MailEnvelope mail = receivedMails.get(0);
+
+    assertThat(mail.getSender().toString()).isEqualTo(RETURN_PATH);
+    assertThat(mail.getRecipients().get(0).toString()).isEqualTo(RECIPIENT);
+    assertThat(readContents(mail)).contains(MESSAGE_DATA);
   }
 
   @Test
@@ -336,7 +359,11 @@ public class IntegrationTest {
   }
 
   private MessageContent createMessageContent() {
-    return MessageContent.of(Unpooled.wrappedBuffer(MESSAGE_DATA.getBytes(StandardCharsets.UTF_8)));
+    return MessageContent.of(createBuffer(MESSAGE_DATA));
+  }
+
+  private ByteBuf createBuffer(String s) {
+    return Unpooled.wrappedBuffer(s.getBytes(StandardCharsets.UTF_8));
   }
 
   private class CollectEmailsHook implements MessageHook, MailParametersHook, AuthHook {

@@ -12,6 +12,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -70,6 +71,7 @@ public class SmtpSession {
   private static final Joiner COMMA_JOINER = Joiner.on(", ");
   private static final SmtpCommand STARTTLS_COMMAND = SmtpCommand.valueOf("STARTTLS");
   private static final SmtpCommand AUTH_COMMAND = SmtpCommand.valueOf("AUTH");
+  private static final SmtpCommand BDAT_COMMAND = SmtpCommand.valueOf("BDAT");
   private static final String AUTH_PLAIN_MECHANISM = "PLAIN";
   private static final String AUTH_LOGIN_MECHANISM = "LOGIN";
   private static final String CRLF = "\r\n";
@@ -79,6 +81,7 @@ public class SmtpSession {
   private final SmtpSessionConfig config;
   private final Executor executor;
   private final CompletableFuture<Void> closeFuture;
+  private final AtomicInteger chunkedBytesSent = new AtomicInteger(0);
 
   private volatile EhloResponse ehloResponse = EhloResponse.EMPTY;
 
@@ -143,19 +146,51 @@ public class SmtpSession {
     Preconditions.checkNotNull(request);
 
     CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> createDebugString(request));
-    responseFuture = interceptResponse(request, responseFuture);
     writeAndFlush(request);
+
+    if (request.command().equals(SmtpCommand.EHLO)) {
+      responseFuture = responseFuture.whenComplete((response, ignored) -> {
+        if (response != null) {
+          parseEhloResponse(response[0].details());
+        }
+      });
+    }
 
     return applyOnExecutor(responseFuture, r -> new SmtpClientResponse(r[0], this));
   }
 
   public CompletableFuture<SmtpClientResponse> send(MessageContent content) {
     Preconditions.checkNotNull(content);
-    checkMessageSize(content);
+    checkMessageSize(content.size());
 
     CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> "message contents");
 
     writeContent(content);
+    channel.flush();
+
+    return applyOnExecutor(responseFuture, r -> new SmtpClientResponse(r[0], this));
+  }
+
+  public CompletableFuture<SmtpClientResponse> sendChunk(ByteBuf data, boolean isLast) {
+    Preconditions.checkState(ehloResponse.isSupported(Extension.CHUNKING), "Chunking is not supported on this server");
+    Preconditions.checkNotNull(data);
+    checkMessageSize(chunkedBytesSent.addAndGet(data.readableBytes()));
+
+    if (isLast) {
+      // reset the counter so we can send another mail over this connection
+      chunkedBytesSent.set(0);
+    }
+
+    CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> "BDAT message chunk");
+
+    String size = Integer.toString(data.readableBytes());
+    if (isLast) {
+      write(new DefaultSmtpRequest(BDAT_COMMAND, size, "LAST"));
+    } else {
+      write(new DefaultSmtpRequest(BDAT_COMMAND, size));
+    }
+
+    write(data);
     channel.flush();
 
     return applyOnExecutor(responseFuture, r -> new SmtpClientResponse(r[0], this));
@@ -171,7 +206,7 @@ public class SmtpSession {
     Preconditions.checkState(ehloResponse.isSupported(Extension.PIPELINING), "Pipelining is not supported on this server");
     Preconditions.checkNotNull(requests);
     checkValidPipelinedRequest(requests);
-    checkMessageSize(content);
+    checkMessageSize(content == null ? 0 : content.size());
 
     int expectedResponses = requests.length + (content == null ? 0 : 1);
     CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(expectedResponses, () -> createDebugString(requests));
@@ -223,12 +258,12 @@ public class SmtpSession {
     return applyOnExecutor(responseFuture, loginResponse -> new SmtpClientResponse(loginResponse[0], this));
   }
 
-  private void checkMessageSize(MessageContent content) {
-    if (content == null || !ehloResponse.getMaxMessageSize().isPresent()) {
+  private void checkMessageSize(int size) {
+    if (!ehloResponse.getMaxMessageSize().isPresent()) {
       return;
     }
 
-    if (ehloResponse.getMaxMessageSize().get() < content.size()) {
+    if (ehloResponse.getMaxMessageSize().get() < size) {
       throw new MessageTooLargeException(config.getConnectionId(), ehloResponse.getMaxMessageSize().get());
     }
   }
@@ -259,18 +294,6 @@ public class SmtpSession {
     // adding ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE ensures we'll find out
     // about errors that occur when writing
     channel.writeAndFlush(obj).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
-  }
-
-  private CompletableFuture<SmtpResponse[]> interceptResponse(SmtpRequest request, CompletableFuture<SmtpResponse[]> originalFuture) {
-    if (!request.command().equals(SmtpCommand.EHLO)) {
-      return originalFuture;
-    }
-
-    return originalFuture.whenComplete((response, ignored) -> {
-      if (response != null && response.length > 0) {
-        parseEhloResponse(response[0].details());
-      }
-    });
   }
 
   @VisibleForTesting

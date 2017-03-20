@@ -83,7 +83,7 @@ public class SmtpSessionTest {
     when(channel.writeAndFlush(any())).thenReturn(writeFuture);
 
     session = new SmtpSession(channel, responseHandler, CONFIG);
-    session.parseEhloResponse(Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN"));
+    session.parseEhloResponse(Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN", "CHUNKING"));
   }
   
   @Test
@@ -259,6 +259,57 @@ public class SmtpSessionTest {
 
     // 1 response expected for each request
     verify(responseHandler).createResponseFuture(eq(2), any());
+  }
+
+  @Test
+  public void itWillNotSendChunksUnlessTheServerSupportsIt() {
+    session.parseEhloResponse(Collections.emptyList());
+
+    assertThatThrownBy(() -> session.sendChunk(Unpooled.copiedBuffer(new byte[1]), true))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Chunking is not supported on this server");
+  }
+
+  @Test
+  public void itEnforcesMessageSizeForChunkedMessages() {
+    session.parseEhloResponse(Lists.newArrayList("CHUNKING", "SIZE 1024"));
+
+    // the first message should count towards the message size
+    session.sendChunk(Unpooled.copiedBuffer(new byte[1000]), false);
+
+    assertThatThrownBy(() -> session.sendChunk(Unpooled.copiedBuffer(new byte[500]), true))
+        .isInstanceOf(MessageTooLargeException.class)
+        .hasMessage("[unidentified-connection] This message is too large to be sent (max size: 1024)");
+  }
+
+  @Test
+  public void itResetsTheChunkedMessageSizeForTheLastChunk() {
+    session.parseEhloResponse(Lists.newArrayList("CHUNKING", "SIZE 1024"));
+
+    session.sendChunk(Unpooled.copiedBuffer(new byte[1000]), true);
+    session.sendChunk(Unpooled.copiedBuffer(new byte[1000]), true);
+  }
+
+  @Test
+  public void itWritesTheBdatCommandAndMessageDataWhenChunking() {
+    ByteBuf buffer = Unpooled.copiedBuffer(new byte[1000]);
+
+    session.sendChunk(buffer, false);
+
+    verify(channel).write(new DefaultSmtpRequest(SmtpCommand.valueOf("BDAT"), Integer.toString(buffer.readableBytes())));
+    verify(channel).write(buffer);
+    verify(channel).flush();
+  }
+
+  @Test
+  public void itIndicatesTheFinalChunkWhenChunking() {
+    ByteBuf buffer = Unpooled.copiedBuffer(new byte[1000]);
+
+    session.sendChunk(buffer, true);
+
+    verify(channel).write(new DefaultSmtpRequest(SmtpCommand.valueOf("BDAT"), Integer.toString(buffer.readableBytes()), "LAST"));
+    verify(channel).write(buffer);
+    verify(channel).flush();
   }
 
   @Test
