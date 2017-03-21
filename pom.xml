@@ -38,6 +38,7 @@
     <hubspot.immutables.version>2.2.10</hubspot.immutables.version>
     <netty41.version>4.1.8.Final</netty41.version>
     <james.protocols.version>1.6.3</james.protocols.version>
+    <james.netty.version>3.3.1.Final</james.netty.version>
   </properties>
 
   <dependencyManagement>
@@ -86,6 +87,11 @@
         <groupId>org.apache.james.protocols</groupId>
         <artifactId>protocols-smtp</artifactId>
         <version>${james.protocols.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty</artifactId>
+        <version>${james.netty.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -166,6 +172,11 @@
     <dependency>
       <groupId>org.apache.james.protocols</groupId>
       <artifactId>protocols-smtp</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
