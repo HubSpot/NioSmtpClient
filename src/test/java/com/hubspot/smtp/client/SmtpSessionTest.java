@@ -23,7 +23,6 @@ import com.google.common.collect.Lists;
 import com.google.common.io.ByteSource;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hubspot.smtp.messages.MessageContent;
-import com.hubspot.smtp.messages.MessageContentEncoding;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -97,7 +96,7 @@ public class SmtpSessionTest {
   public void itSendsContents() {
     session.send(SMTP_CONTENT);
 
-    verify(channel).write(SMTP_CONTENT.get7BitEncodedContent());
+    verify(channel).write(SMTP_CONTENT.getDotStuffedContent());
     verify(channel).write(EMPTY_LAST_CONTENT);
     verify(channel).flush();
   }
@@ -106,7 +105,7 @@ public class SmtpSessionTest {
   public void itThrowsIllegalArgumentIfTheSubmittedMessageSizeIsLargerThanTheMaximum() {
     session.parseEhloResponse(Lists.newArrayList("SIZE 1024"));
 
-    MessageContent largeMessage = MessageContent.of(ByteSource.wrap(new byte[0]), 1025, MessageContentEncoding.ASSUME_DOT_STUFFED);
+    MessageContent largeMessage = MessageContent.of(ByteSource.wrap(new byte[0]), 1025);
 
     assertThatThrownBy(() -> session.send(largeMessage))
       .isInstanceOf(MessageTooLargeException.class)
@@ -203,7 +202,7 @@ public class SmtpSessionTest {
     session.sendPipelined(SMTP_CONTENT, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
 
     InOrder order = inOrder(channel);
-    order.verify(channel).write(SMTP_CONTENT.get7BitEncodedContent());
+    order.verify(channel).write(SMTP_CONTENT.getDotStuffedContent());
     order.verify(channel).write(EMPTY_LAST_CONTENT);
     order.verify(channel).write(MAIL_REQUEST);
     order.verify(channel).write(RCPT_REQUEST);

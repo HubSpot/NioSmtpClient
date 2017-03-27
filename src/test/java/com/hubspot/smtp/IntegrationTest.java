@@ -190,7 +190,7 @@ public class IntegrationTest {
   @Test
   public void itCanSendAnEmailUsingAStream() throws Exception {
     String messageText = repeat(repeat("0123456789", 7) + "\r\n", 10_000);
-    MessageContent messageContent = MessageContent.of(ByteSource.wrap(messageText.getBytes()), messageText.length(), MessageContentEncoding.ASSUME_DOT_STUFFED);
+    MessageContent messageContent = MessageContent.of(ByteSource.wrap(messageText.getBytes()), messageText.length(), MessageContentEncoding.SEVEN_BIT);
 
     connect()
         .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))

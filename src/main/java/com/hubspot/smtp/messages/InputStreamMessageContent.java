@@ -9,23 +9,40 @@ import com.google.common.io.ByteSource;
 import io.netty.handler.stream.ChunkedStream;
 
 public class InputStreamMessageContent extends MessageContent {
-  private final ChunkedStream chunkedStream;
+  private final Supplier<InputStream> stream;
   private final int size;
+  private final MessageContentEncoding encoding;
 
   public InputStreamMessageContent(Supplier<InputStream> stream, int size, MessageContentEncoding encoding) {
-    this(stream.get(), size, encoding);
+    this.stream = stream;
+    this.size = size;
+    this.encoding = encoding;
   }
 
   public InputStreamMessageContent(ByteSource byteSource, int size, MessageContentEncoding encoding) {
     this(getStream(byteSource), size, encoding);
   }
 
-  private InputStreamMessageContent(InputStream stream, int size, MessageContentEncoding encoding) {
-    // note size is hard to predict if applyDotStuffing is true - the transformation might add
-    // a few extra bytes
-    this.size = size;
-    this.chunkedStream = encoding == MessageContentEncoding.REQUIRES_DOT_STUFFING ?
-        new DotStuffingChunkedStream(stream, size) : new ChunkedStream(stream);
+  @Override
+  public int size() {
+    return size;
+  }
+
+  @Override
+  public Object getContent() {
+    return new ChunkedStream(stream.get());
+  }
+
+  @Override
+  public Object getDotStuffedContent() {
+    // note: size is hard to predict for dot-stuffed content as
+    // the transformation might add a few extra bytes
+    return new DotStuffingChunkedStream(stream.get(), size);
+  }
+
+  @Override
+  public MessageContentEncoding getEncoding() {
+    return encoding;
   }
 
   private static Supplier<InputStream> getStream(ByteSource byteSource) {
@@ -36,15 +53,5 @@ public class InputStreamMessageContent extends MessageContent {
         throw new RuntimeException("Could not open stream", e);
       }
     };
-  }
-
-  @Override
-  public int size() {
-    return size;
-  }
-
-  @Override
-  public Object get8BitMimeEncodedContent() {
-    return chunkedStream;
   }
 }

@@ -1,6 +1,7 @@
 package com.hubspot.smtp.messages;
 
 public enum MessageContentEncoding {
-  ASSUME_DOT_STUFFED,
-  REQUIRES_DOT_STUFFING
+  SEVEN_BIT,
+  EIGHT_BIT,
+  UNKNOWN
 }

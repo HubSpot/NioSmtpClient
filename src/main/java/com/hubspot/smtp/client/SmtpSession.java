@@ -273,11 +273,7 @@ public class SmtpSession {
   }
 
   private void writeContent(MessageContent content) {
-    if (ehloResponse.isSupported(Extension.EIGHT_BIT_MIME)) {
-      write(content.get8BitMimeEncodedContent());
-    } else {
-      write(content.get7BitEncodedContent());
-    }
+    write(content.getDotStuffedContent());
 
     // SmtpRequestEncoder requires that we send an SmtpContent instance after the DATA command
     // to unset its contentExpected state.

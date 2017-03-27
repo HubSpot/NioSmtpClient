@@ -11,15 +11,32 @@ public class ByteBufMessageContent extends MessageContent {
 
   private final ByteBuf buffer;
   private final int size;
+  private final MessageContentEncoding encoding;
 
   public ByteBufMessageContent(ByteBuf buffer, MessageContentEncoding encoding) {
-    if (encoding == MessageContentEncoding.REQUIRES_DOT_STUFFING) {
-      this.buffer = dotStuff(buffer);
-    } else {
-      this.buffer = isTerminated(buffer) ? buffer : terminate(buffer);
-    }
+    this.buffer = buffer;
+    this.size = buffer.readableBytes();
+    this.encoding = encoding;
+  }
 
-    this.size = this.buffer.readableBytes();
+  @Override
+  public Object getContent() {
+    return isTerminated(buffer) ? buffer : terminate(buffer);
+  }
+
+  @Override
+  public Object getDotStuffedContent() {
+    return dotStuff(buffer);
+  }
+
+  @Override
+  public MessageContentEncoding getEncoding() {
+    return encoding;
+  }
+
+  @Override
+  public int size() {
+    return size;
   }
 
   private static ByteBuf terminate(ByteBuf buffer) {
@@ -28,23 +45,13 @@ public class ByteBufMessageContent extends MessageContent {
         .addComponents(true, buffer, CR_LF_BUFFER.slice());
   }
 
-  private static ByteBuf dotStuff(ByteBuf buffer) {
-    return DotStuffing.createDotStuffedBuffer(buffer.alloc(), buffer, null,
-        isTerminated(buffer) ? MessageTermination.DO_NOT_TERMINATE : MessageTermination.ADD_CRLF);
-  }
-
   private static boolean isTerminated(ByteBuf buffer) {
     int length = buffer.readableBytes();
     return length >= 2 && buffer.getByte(length - 2) == '\r' && buffer.getByte(length - 1) == '\n';
   }
 
-  @Override
-  public int size() {
-    return size;
-  }
-
-  @Override
-  public Object get8BitMimeEncodedContent() {
-    return buffer;
+  private static ByteBuf dotStuff(ByteBuf buffer) {
+    return DotStuffing.createDotStuffedBuffer(buffer.alloc(), buffer, null,
+        isTerminated(buffer) ? MessageTermination.DO_NOT_TERMINATE : MessageTermination.ADD_CRLF);
   }
 }

@@ -13,31 +13,31 @@ import io.netty.util.CharsetUtil;
 public class ByteBufMessageContentTest {
   @Test
   public void itPerformsDotStuffingIfRequired() {
-    ByteBufMessageContent content = createContent(".abc", MessageContentEncoding.REQUIRES_DOT_STUFFING);
-    assertThat(extract(content.get8BitMimeEncodedContent())).isEqualTo("..abc\r\n");
+    ByteBufMessageContent content = createContent(".abc");
+    assertThat(extract(content.getDotStuffedContent())).isEqualTo("..abc\r\n");
   }
 
   @Test
   public void itDoesNotPerformDotStuffingIfNotRequired() {
-    ByteBufMessageContent content = createContent(".abc", MessageContentEncoding.ASSUME_DOT_STUFFED);
-    assertThat(extract(content.get8BitMimeEncodedContent())).isEqualTo(".abc\r\n");
+    ByteBufMessageContent content = createContent(".abc");
+    assertThat(extract(content.getContent())).isEqualTo(".abc\r\n");
   }
 
   @Test
   public void itAddsTerminationIfRequired() {
-    ByteBufMessageContent content = createContent("abc", MessageContentEncoding.REQUIRES_DOT_STUFFING);
-    assertThat(extract(content.get8BitMimeEncodedContent())).isEqualTo("abc\r\n");
+    ByteBufMessageContent content = createContent("abc");
+    assertThat(extract(content.getContent())).isEqualTo("abc\r\n");
   }
 
   @Test
   public void itDoesNotAddTerminationIfAlreadyPresent() {
-    ByteBufMessageContent content = createContent("abc\r\n", MessageContentEncoding.REQUIRES_DOT_STUFFING);
-    assertThat(extract(content.get8BitMimeEncodedContent())).isEqualTo("abc\r\n");
+    ByteBufMessageContent content = createContent("abc\r\n");
+    assertThat(extract(content.getContent())).isEqualTo("abc\r\n");
   }
 
-  private ByteBufMessageContent createContent(String testString, MessageContentEncoding encoding) {
+  private ByteBufMessageContent createContent(String testString) {
     ByteBuf sourceBuffer = Unpooled.wrappedBuffer(testString.getBytes(StandardCharsets.UTF_8));
-    return new ByteBufMessageContent(sourceBuffer, encoding);
+    return new ByteBufMessageContent(sourceBuffer, MessageContentEncoding.UNKNOWN);
   }
 
   private String extract(Object o) {
