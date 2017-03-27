@@ -6,8 +6,6 @@ import java.util.function.Supplier;
 
 import com.google.common.io.ByteSource;
 
-import io.netty.handler.stream.ChunkedStream;
-
 public class InputStreamMessageContent extends MessageContent {
   private final Supplier<InputStream> stream;
   private final int size;
@@ -30,7 +28,7 @@ public class InputStreamMessageContent extends MessageContent {
 
   @Override
   public Object getContent() {
-    return new ChunkedStream(stream.get());
+    return new CrlfTerminatingChunkedStream(stream.get());
   }
 
   @Override
