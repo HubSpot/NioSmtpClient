@@ -42,4 +42,8 @@ public abstract class MessageContent {
   public abstract Object getDotStuffedContent();
 
   public abstract MessageContentEncoding getEncoding();
+
+  public abstract int count8bitCharacters();
+
+  public abstract String getContentAsString();
 }

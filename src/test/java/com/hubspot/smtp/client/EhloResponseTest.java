@@ -2,6 +2,8 @@ package com.hubspot.smtp.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.EnumSet;
+
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -31,6 +33,15 @@ public class EhloResponseTest {
 
     assertThat(response.isAuthPlainSupported()).isTrue();
     assertThat(response.isAuthLoginSupported()).isTrue();
+  }
+
+  @Test
+  public void itIgnoresDisabledExtensions() {
+    EhloResponse response = EhloResponse.parse(Lists.newArrayList("smtp.example.com Hello client.example.com", "8BITMIME", "STARTTLS"),
+        EnumSet.of(Extension.EIGHT_BIT_MIME));
+
+    assertThat(response.isSupported(Extension.EIGHT_BIT_MIME)).isFalse();
+    assertThat(response.isSupported(Extension.STARTTLS)).isTrue();
   }
 
   @Test

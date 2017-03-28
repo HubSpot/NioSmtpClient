@@ -12,19 +12,22 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hubspot.smtp.messages.MessageContent;
+import com.hubspot.smtp.messages.MessageContentEncoding;
 import com.hubspot.smtp.utils.SmtpResponses;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -35,9 +38,12 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.SmtpCommand;
+import io.netty.handler.codec.smtp.SmtpContent;
 import io.netty.handler.codec.smtp.SmtpRequest;
+import io.netty.handler.codec.smtp.SmtpRequests;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.stream.ChunkedInput;
 
 public class SmtpSession {
   // https://tools.ietf.org/html/rfc2920#section-3.1
@@ -61,7 +67,7 @@ public class SmtpSession {
       SmtpCommand.QUIT,
       SmtpCommand.NOOP);
 
-  private static final Supplier<Executor> SHARED_DEFAULT_EXECUTOR = Suppliers.memoize(SmtpSession::getSharedExecutor);
+  private static final Supplier<Executor> SHARED_DEFAULT_EXECUTOR = () -> Suppliers.memoize(SmtpSession::getSharedExecutor).get();
 
   private static ExecutorService getSharedExecutor() {
     ThreadFactory threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("niosmtpclient-%d").build();
@@ -82,6 +88,7 @@ public class SmtpSession {
   private final Executor executor;
   private final CompletableFuture<Void> closeFuture;
   private final AtomicInteger chunkedBytesSent = new AtomicInteger(0);
+  private final AtomicBoolean requiresRset = new AtomicBoolean(false);
 
   private volatile EhloResponse ehloResponse = EhloResponse.EMPTY;
 
@@ -142,6 +149,89 @@ public class SmtpSession {
     return channel.pipeline().get(SslHandler.class) != null;
   }
 
+  public CompletableFuture<SmtpClientResponse[]> send(String from, String to, MessageContent content) {
+    Preconditions.checkNotNull(from);
+    Preconditions.checkNotNull(to);
+    Preconditions.checkNotNull(content);
+    checkMessageSize(content.size());
+
+    if (ehloResponse.isSupported(Extension.CHUNKING)) {
+      return sendAsChunked(from, to, content);
+    }
+
+    if (content.getEncoding() == MessageContentEncoding.SEVEN_BIT) {
+      return sendAs7Bit(from, to, content);
+    }
+
+    if (ehloResponse.isSupported(Extension.EIGHT_BIT_MIME)) {
+      return sendAs8BitMime(from, to, content);
+    }
+
+    if (content.count8bitCharacters() == 0) {
+      return sendAs7Bit(from, to, content);
+    }
+
+    // this message is not 7 bit, but the server only supports 7 bit :(
+    return sendAs7Bit(from, to, encodeContentAs7Bit(content));
+  }
+
+  private CompletableFuture<SmtpClientResponse[]> sendAsChunked(String from, String to, MessageContent content) {
+    if (ehloResponse.isSupported(Extension.PIPELINING)) {
+      return beginSequence(3,
+          SmtpRequests.mail(from),
+          SmtpRequests.rcpt(to),
+          new DefaultSmtpRequest(BDAT_COMMAND, Integer.toString(content.size()), "LAST"),
+          content.getContent()
+      ).toResponses();
+
+    } else {
+      return beginSequence(1, SmtpRequests.mail(from))
+          .thenSend(SmtpRequests.rcpt(to))
+          .thenSend(new DefaultSmtpRequest(BDAT_COMMAND, Integer.toString(content.size()), "LAST"), content.getContent())
+          .toResponses();
+    }
+  }
+
+  private CompletableFuture<SmtpClientResponse[]> sendAs7Bit(String from, String to, MessageContent content) {
+    return sendPipelinedIfPossible(SmtpRequests.mail(from), SmtpRequests.rcpt(to), SmtpRequests.data())
+        .thenSend(content.getDotStuffedContent(), EMPTY_LAST_CONTENT)
+        .toResponses();
+  }
+
+  private CompletableFuture<SmtpClientResponse[]> sendAs8BitMime(String from, String to, MessageContent content) {
+    return sendPipelinedIfPossible(SmtpRequests.mail(from), SmtpRequests.rcpt(to), new DefaultSmtpRequest(SmtpCommand.DATA, "BODY=8BITMIME"))
+        .thenSend(content.getDotStuffedContent(), EMPTY_LAST_CONTENT)
+        .toResponses();
+  }
+
+  private SendSequence sendPipelinedIfPossible(SmtpRequest... requests) {
+    if (ehloResponse.isSupported(Extension.PIPELINING)) {
+      return beginSequence(requests.length, requests);
+    } else {
+      SendSequence s = beginSequence(1, requests[0]);
+
+      for (int i = 1; i < requests.length; i++) {
+        s.thenSend(requests[i]);
+      }
+
+      return s;
+    }
+  }
+
+  private SendSequence beginSequence(int expectedResponses, Object... objects) {
+    if (requiresRset.get()) {
+      return new SendSequence(expectedResponses + 1, ObjectArrays.concat(SmtpRequests.rset(), objects));
+    } else {
+      requiresRset.set(true);
+      return new SendSequence(expectedResponses, objects);
+    }
+  }
+
+  private MessageContent encodeContentAs7Bit(MessageContent content) {
+    // todo: implement rewriting 8 bit mails as 7 bit
+    return content;
+  }
+
   public CompletableFuture<SmtpClientResponse> send(SmtpRequest request) {
     Preconditions.checkNotNull(request);
 
@@ -156,7 +246,7 @@ public class SmtpSession {
       });
     }
 
-    return applyOnExecutor(responseFuture, r -> new SmtpClientResponse(r[0], this));
+    return applyOnExecutor(responseFuture, this::wrapFirstResponse);
   }
 
   public CompletableFuture<SmtpClientResponse> send(MessageContent content) {
@@ -168,7 +258,7 @@ public class SmtpSession {
     writeContent(content);
     channel.flush();
 
-    return applyOnExecutor(responseFuture, r -> new SmtpClientResponse(r[0], this));
+    return applyOnExecutor(responseFuture, this::wrapFirstResponse);
   }
 
   public CompletableFuture<SmtpClientResponse> sendChunk(ByteBuf data, boolean isLast) {
@@ -193,12 +283,10 @@ public class SmtpSession {
     write(data);
     channel.flush();
 
-    return applyOnExecutor(responseFuture, r -> new SmtpClientResponse(r[0], this));
+    return applyOnExecutor(responseFuture, this::wrapFirstResponse);
   }
 
   public CompletableFuture<SmtpClientResponse[]> sendPipelined(SmtpRequest... requests) {
-    Preconditions.checkNotNull(requests);
-
     return sendPipelined(null, requests);
   }
 
@@ -220,13 +308,21 @@ public class SmtpSession {
 
     channel.flush();
 
-    return applyOnExecutor(responseFuture, rs -> {
-      SmtpClientResponse[] smtpClientResponses = new SmtpClientResponse[rs.length];
-      for (int i = 0; i < smtpClientResponses.length; i++) {
-        smtpClientResponses[i] = new SmtpClientResponse(rs[i], this);
-      }
-      return smtpClientResponses;
-    });
+    return applyOnExecutor(responseFuture, this::wrapResponses);
+  }
+
+  private SmtpClientResponse[] wrapResponses(SmtpResponse[] responses) {
+    SmtpClientResponse[] smtpClientResponses = new SmtpClientResponse[responses.length];
+
+    for (int i = 0; i < responses.length; i++) {
+      smtpClientResponses[i] = new SmtpClientResponse(responses[i], this);
+    }
+
+    return smtpClientResponses;
+  }
+
+  private SmtpClientResponse wrapFirstResponse(SmtpResponse[] responses) {
+    return new SmtpClientResponse(responses[0], this);
   }
 
   public CompletableFuture<SmtpClientResponse> authPlain(String username, String password) {
@@ -294,18 +390,28 @@ public class SmtpSession {
 
   @VisibleForTesting
   void parseEhloResponse(Iterable<CharSequence> response) {
-    ehloResponse = EhloResponse.parse(response);
+    ehloResponse = EhloResponse.parse(response, config.getDisabledExtensions());
   }
 
   @VisibleForTesting
-  static String createDebugString(SmtpRequest... requests) {
-    return COMMA_JOINER.join(Arrays.stream(requests)
-        .map(r -> r.command().equals(AUTH_COMMAND) ? "<redacted-auth-command>" : requestToString(r))
-        .collect(Collectors.toList()));
+  static String createDebugString(Object... objects) {
+    return COMMA_JOINER.join(Arrays.stream(objects).map(SmtpSession::objectToString).collect(Collectors.toList()));
   }
 
-  private static  String requestToString(SmtpRequest request) {
-    return String.format("%s %s", request.command().name(), Joiner.on(" ").join(request.parameters()));
+  private static String objectToString(Object o) {
+    if (o instanceof SmtpRequest) {
+      SmtpRequest request = (SmtpRequest) o;
+
+      if (request.command().equals(AUTH_COMMAND)) {
+        return "<redacted-auth-command>";
+      } else {
+        return String.format("%s %s", request.command().name(), Joiner.on(" ").join(request.parameters()));
+      }
+    } else if (o instanceof SmtpContent || o instanceof ByteBuf || o instanceof ChunkedInput) {
+      return "[CONTENT]";
+    } else {
+      return o.toString();
+    }
   }
 
   private static void checkValidPipelinedRequest(SmtpRequest[] requests) {
@@ -341,6 +447,44 @@ public class SmtpSession {
 
       return mapper.apply(rs);
     }, executor);
+  }
+
+  private class SendSequence {
+    CompletableFuture<SmtpResponse[]> responseFuture;
+
+    SendSequence(int expectedResponses, Object... objects) {
+      responseFuture = createFuture(expectedResponses, objects);
+      writeObjects(objects);
+    }
+
+    SendSequence thenSend(Object... objects) {
+      responseFuture = responseFuture.thenCompose(responses -> {
+        if (SmtpResponses.isError(responses[responses.length - 1])) {
+          return CompletableFuture.completedFuture(responses);
+        }
+
+        CompletableFuture<SmtpResponse[]> nextFuture = createFuture(1, objects);
+        writeObjects(objects);
+        return nextFuture.thenApply(newResponses -> ObjectArrays.concat(responses, newResponses, SmtpResponse.class));
+      });
+
+      return this;
+    }
+
+    CompletableFuture<SmtpClientResponse[]> toResponses() {
+      return applyOnExecutor(responseFuture, SmtpSession.this::wrapResponses);
+    }
+
+    private void writeObjects(Object[] objects) {
+      for (Object obj : objects) {
+        write(obj);
+      }
+      channel.flush();
+    }
+
+    private CompletableFuture<SmtpResponse[]> createFuture(int expectedResponses, Object[] objects) {
+      return responseHandler.createResponseFuture(expectedResponses, () -> createDebugString(objects));
+    }
   }
 
   private class ErrorHandler extends ChannelInboundHandlerAdapter {

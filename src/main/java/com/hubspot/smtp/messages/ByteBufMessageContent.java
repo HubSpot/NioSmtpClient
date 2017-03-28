@@ -1,9 +1,13 @@
 package com.hubspot.smtp.messages;
 
+import java.nio.charset.StandardCharsets;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 public class ByteBufMessageContent extends MessageContent {
+  private static final long LONG_WITH_HIGH_BITS_SET = 0x8080808080808080L;
+  private static final int UNCOUNTED = -1;
   private static final byte CR = '\r';
   private static final byte LF = '\n';
   private static final byte[] CR_LF = {CR, LF};
@@ -12,6 +16,8 @@ public class ByteBufMessageContent extends MessageContent {
   private final ByteBuf buffer;
   private final int size;
   private final MessageContentEncoding encoding;
+
+  private int eightBitCharCount = UNCOUNTED;
 
   public ByteBufMessageContent(ByteBuf buffer, MessageContentEncoding encoding) {
     this.buffer = buffer;
@@ -37,6 +43,45 @@ public class ByteBufMessageContent extends MessageContent {
   @Override
   public int size() {
     return size;
+  }
+
+  @Override
+  public int count8bitCharacters() {
+    if (eightBitCharCount != UNCOUNTED) {
+      return eightBitCharCount;
+    }
+
+    eightBitCharCount = 0;
+    buffer.markReaderIndex();
+
+    // read content as longs for performance
+    while (buffer.readableBytes() >= 8) {
+      long bytes = buffer.readLong();
+
+      if (0 != (bytes & LONG_WITH_HIGH_BITS_SET)) {
+        for (int i = 0; i < 8; i++) {
+          if (0 != (bytes & (0x80 << i * 8))) {
+            eightBitCharCount++;
+          }
+        }
+      }
+    }
+
+    // read any remaining bytes
+    while (buffer.readableBytes() > 0) {
+      if (0 != (buffer.readByte() & 0x80)) {
+        eightBitCharCount++;
+      }
+    }
+
+    buffer.resetReaderIndex();
+
+    return eightBitCharCount;
+  }
+
+  @Override
+  public String getContentAsString() {
+    return buffer.toString(StandardCharsets.UTF_8);
   }
 
   private static ByteBuf terminate(ByteBuf buffer) {

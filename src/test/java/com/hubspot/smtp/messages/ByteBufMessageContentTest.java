@@ -10,7 +10,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 
-public class ByteBufMessageContentTest {
+public class ByteBufMessageContentTest extends MessageContentTest {
   @Test
   public void itPerformsDotStuffingIfRequired() {
     ByteBufMessageContent content = createContent(".abc");
@@ -38,6 +38,11 @@ public class ByteBufMessageContentTest {
   private ByteBufMessageContent createContent(String testString) {
     ByteBuf sourceBuffer = Unpooled.wrappedBuffer(testString.getBytes(StandardCharsets.UTF_8));
     return new ByteBufMessageContent(sourceBuffer, MessageContentEncoding.UNKNOWN);
+  }
+
+  @Override
+  protected ByteBufMessageContent createContent(byte[] bytes) {
+    return new ByteBufMessageContent(Unpooled.wrappedBuffer(bytes), MessageContentEncoding.UNKNOWN);
   }
 
   private String extract(Object o) {

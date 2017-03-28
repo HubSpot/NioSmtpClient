@@ -23,17 +23,29 @@ public class EhloResponse {
   private boolean isAuthPlainSupported;
   private boolean isAuthLoginSupported;
 
+
   public static EhloResponse parse(Iterable<CharSequence> lines) {
-    return new EhloResponse(lines);
+    return parse(lines, EnumSet.noneOf(Extension.class));
   }
 
-  private EhloResponse(Iterable<CharSequence> lines) {
+  public static EhloResponse parse(Iterable<CharSequence> lines, EnumSet<Extension> disabledExtensions) {
+    return new EhloResponse(lines, disabledExtensions);
+  }
+
+  private EhloResponse(Iterable<CharSequence> lines, EnumSet<Extension> disabledExtensions) {
     extensions = EnumSet.noneOf(Extension.class);
 
     for (CharSequence line : lines) {
       List<String> parts = WHITESPACE_SPLITTER.splitToList(line);
 
-      Extension.find(parts.get(0)).ifPresent(extensions::add);
+      Optional<Extension> ext = Extension.find(parts.get(0));
+      if (ext.isPresent()) {
+        if (disabledExtensions.contains(ext.get())) {
+          continue;
+        }
+
+        extensions.add(ext.get());
+      }
 
       switch (parts.get(0).toLowerCase()) {
         case "auth":
