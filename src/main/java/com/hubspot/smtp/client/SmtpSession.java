@@ -12,7 +12,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -88,8 +87,8 @@ public class SmtpSession {
   private final Executor executor;
   private final CompletableFuture<Void> closeFuture;
   private final AtomicInteger chunkedBytesSent = new AtomicInteger(0);
-  private final AtomicBoolean requiresRset = new AtomicBoolean(false);
 
+  private volatile boolean requiresRset = false;
   private volatile EhloResponse ehloResponse = EhloResponse.EMPTY;
 
   SmtpSession(Channel channel, ResponseHandler responseHandler, SmtpSessionConfig config) {
@@ -219,10 +218,10 @@ public class SmtpSession {
   }
 
   private SendSequence beginSequence(int expectedResponses, Object... objects) {
-    if (requiresRset.get()) {
+    if (requiresRset) {
       return new SendSequence(expectedResponses + 1, ObjectArrays.concat(SmtpRequests.rset(), objects));
     } else {
-      requiresRset.set(true);
+      requiresRset = true;
       return new SendSequence(expectedResponses, objects);
     }
   }
