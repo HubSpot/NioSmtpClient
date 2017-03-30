@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -347,20 +348,24 @@ public class IntegrationTest {
   public void itCanSendMultipleEmailsAtOnce() throws Exception {
     List<CompletableFuture<Void>> futures = Lists.newArrayList();
 
+    Executor executor = Executors.newFixedThreadPool(50);
+
+    // Don't use chunking because our James implementation is naive
+    SmtpSessionConfig pipeliningConfig = getDefaultConfig().withExecutor(executor).withDisabledExtensions(EnumSet.of(Extension.CHUNKING));
+    SmtpSessionConfig nonPipeliningConfig = pipeliningConfig.withDisabledExtensions(EnumSet.of(Extension.CHUNKING, Extension.PIPELINING));
+
     for (int i = 0; i < 100; i++) {
-      futures.add(connect()
+      futures.add(connect(i % 2 == 0 ? pipeliningConfig : nonPipeliningConfig)
           .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
-          .thenCompose(r -> assertSuccess(r).send(req(MAIL, "FROM:<" + RETURN_PATH + ">")))
-          .thenCompose(r -> assertSuccess(r).send(req(RCPT, "TO:<" + RECIPIENT + ">")))
-          .thenCompose(r -> assertSuccess(r).send(req(DATA)))
-          .thenCompose(r -> assertSuccess(r).send(createMessageContent()))
+          .thenCompose(r -> assertSuccess(r).send(RETURN_PATH, RECIPIENT, createMessageContent()))
+          .thenCompose(r -> assertSuccess(r).send(RETURN_PATH, RECIPIENT, createMessageContent()))
           .thenCompose(r -> assertSuccess(r).send(req(QUIT)))
           .thenCompose(r -> assertSuccess(r).close()));
     }
 
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
 
-    assertThat(receivedMails.size()).isEqualTo(100);
+    assertThat(receivedMails.size()).isEqualTo(200);
   }
 
   @Test
