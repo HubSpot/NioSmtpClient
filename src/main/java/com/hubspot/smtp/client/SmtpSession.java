@@ -14,12 +14,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ObjectArrays;
@@ -66,7 +66,7 @@ public class SmtpSession {
       SmtpCommand.QUIT,
       SmtpCommand.NOOP);
 
-  private static final Supplier<Executor> SHARED_DEFAULT_EXECUTOR = () -> Suppliers.memoize(SmtpSession::getSharedExecutor).get();
+  private static final Supplier<Executor> SHARED_DEFAULT_EXECUTOR = Suppliers.memoize(SmtpSession::getSharedExecutor);
 
   private static ExecutorService getSharedExecutor() {
     ThreadFactory threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("niosmtpclient-%d").build();
