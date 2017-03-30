@@ -67,6 +67,12 @@ public class EhloResponseTest {
   }
 
   @Test
+  public void itParsesChunking() {
+    EhloResponse response = parse("smtp.example.com Hello client.example.com", "CHUNKING");
+    assertThat(response.isSupported(Extension.CHUNKING)).isTrue();
+  }
+
+  @Test
   public void itParsesAuth() {
     EhloResponse response = parse("smtp.example.com Hello client.example.com", "AUTH PLAIN LOGIN");
     assertThat(response.isAuthPlainSupported()).isTrue();

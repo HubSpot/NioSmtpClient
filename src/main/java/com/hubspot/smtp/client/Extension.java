@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 public enum Extension {
   AUTH("auth"),
+  CHUNKING("chunking"),
   DSN("dsn"),
   EIGHT_BIT_MIME("8bitmime"),
   ENHANCEDSTATUSCODES("enhancedstatuscodes"),
