@@ -9,11 +9,23 @@ import io.netty.buffer.ByteBuf;
 
 public abstract class MessageContent {
   public static MessageContent of(ByteBuf messageBuffer) {
-    return new ByteBufMessageContent(messageBuffer, MessageContentEncoding.REQUIRES_DOT_STUFFING);
+    return of(messageBuffer, MessageContentEncoding.UNKNOWN);
+  }
+
+  public static MessageContent of(ByteBuf messageBuffer, MessageContentEncoding encoding) {
+    return new ByteBufMessageContent(messageBuffer, encoding);
+  }
+
+  public static MessageContent of(Supplier<InputStream> messageStream, int size) {
+    return of(messageStream, size, MessageContentEncoding.UNKNOWN);
   }
 
   public static MessageContent of(Supplier<InputStream> messageStream, int size, MessageContentEncoding encoding) {
     return new InputStreamMessageContent(messageStream, size, encoding);
+  }
+
+  public static MessageContent of(ByteSource byteSource, int size) {
+    return of(byteSource, size, MessageContentEncoding.UNKNOWN);
   }
 
   public static MessageContent of(ByteSource byteSource, int size, MessageContentEncoding encoding) {
@@ -22,13 +34,16 @@ public abstract class MessageContent {
 
   public abstract int size();
 
-  // only allow subclasses from this package because only certain objects can be returned from
-  // get8BitMimeEncodedContent / get7BitEncodedContent
+  // only allow subclasses from this package because only certain objects can be returned from getContent
   MessageContent() {}
 
-  public abstract Object get8BitMimeEncodedContent();
+  public abstract Object getContent();
 
-  public Object get7BitEncodedContent() {
-    return get8BitMimeEncodedContent();
-  }
+  public abstract Object getDotStuffedContent();
+
+  public abstract MessageContentEncoding getEncoding();
+
+  public abstract int count8bitCharacters();
+
+  public abstract String getContentAsString();
 }

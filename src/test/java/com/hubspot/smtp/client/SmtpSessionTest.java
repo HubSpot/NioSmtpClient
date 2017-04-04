@@ -6,12 +6,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -46,23 +48,32 @@ import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 
 public class SmtpSessionTest {
+  private static final String ALICE = "alice@example.com";
+  private static final String BOB = "bob@example.com";
+
   private static final SmtpRequest SMTP_REQUEST = new DefaultSmtpRequest(SmtpCommand.NOOP);
   private static final MessageContent SMTP_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]));
+  private static final MessageContent SEVEN_BIT_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]), MessageContentEncoding.SEVEN_BIT);
+  private static final MessageContent EIGHT_BIT_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]), MessageContentEncoding.EIGHT_BIT);
+  private static final MessageContent UNKNOWN_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]), MessageContentEncoding.UNKNOWN);
   private static final SmtpResponse OK_RESPONSE = new DefaultSmtpResponse(250, "OK");
   private static final SmtpResponse FAIL_RESPONSE = new DefaultSmtpResponse(400, "nope");
   private static final SmtpResponse INTERMEDIATE_RESPONSE = new DefaultSmtpResponse(300, "... go on");
-  private static final SmtpRequest MAIL_REQUEST = new DefaultSmtpRequest(SmtpCommand.MAIL, "FROM:alice@example.com");
-  private static final SmtpRequest RCPT_REQUEST = new DefaultSmtpRequest(SmtpCommand.RCPT, "FROM:bob@example.com");
+  private static final SmtpRequest MAIL_REQUEST = new DefaultSmtpRequest(SmtpCommand.MAIL, "FROM:" + ALICE);
+  private static final SmtpRequest RCPT_REQUEST = new DefaultSmtpRequest(SmtpCommand.RCPT, "FROM:" + BOB);
   private static final SmtpRequest DATA_REQUEST = new DefaultSmtpRequest(SmtpCommand.DATA);
   private static final SmtpRequest EHLO_REQUEST = new DefaultSmtpRequest(SmtpCommand.EHLO);
   private static final SmtpRequest NOOP_REQUEST = new DefaultSmtpRequest(SmtpCommand.NOOP);
   private static final SmtpRequest HELO_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELO);
   private static final SmtpRequest HELP_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELP);
 
+  private static final SmtpCommand BDAT = SmtpCommand.valueOf("BDAT");
+
   private static final SmtpSessionConfig CONFIG = SmtpSessionConfig.forRemoteAddress("127.0.0.1", 25).withExecutor(SmtpSessionConfig.DIRECT_EXECUTOR);
 
   private ResponseHandler responseHandler;
   private CompletableFuture<SmtpResponse[]> responseFuture;
+  private CompletableFuture<SmtpResponse[]> secondResponseFuture;
   private Channel channel;
   private ChannelPipeline pipeline;
   private SmtpSession session;
@@ -75,8 +86,10 @@ public class SmtpSessionTest {
     responseHandler = mock(ResponseHandler.class);
 
     responseFuture = new CompletableFuture<>();
+    secondResponseFuture = new CompletableFuture<>();
     writeFuture = mock(ChannelFuture.class);
-    when(responseHandler.createResponseFuture(anyInt(), any())).thenReturn(responseFuture);
+    when(responseHandler.createResponseFuture(anyInt(), any())).thenReturn(responseFuture, secondResponseFuture);
+
     when(channel.pipeline()).thenReturn(pipeline);
     when(channel.alloc()).thenReturn(new PooledByteBufAllocator(false));
     when(channel.write(any())).thenReturn(writeFuture);
@@ -97,7 +110,7 @@ public class SmtpSessionTest {
   public void itSendsContents() {
     session.send(SMTP_CONTENT);
 
-    verify(channel).write(SMTP_CONTENT.get7BitEncodedContent());
+    verify(channel).write(SMTP_CONTENT.getDotStuffedContent());
     verify(channel).write(EMPTY_LAST_CONTENT);
     verify(channel).flush();
   }
@@ -106,7 +119,7 @@ public class SmtpSessionTest {
   public void itThrowsIllegalArgumentIfTheSubmittedMessageSizeIsLargerThanTheMaximum() {
     session.parseEhloResponse(Lists.newArrayList("SIZE 1024"));
 
-    MessageContent largeMessage = MessageContent.of(ByteSource.wrap(new byte[0]), 1025, MessageContentEncoding.ASSUME_DOT_STUFFED);
+    MessageContent largeMessage = MessageContent.of(ByteSource.wrap(new byte[0]), 1025);
 
     assertThatThrownBy(() -> session.send(largeMessage))
       .isInstanceOf(MessageTooLargeException.class)
@@ -203,7 +216,7 @@ public class SmtpSessionTest {
     session.sendPipelined(SMTP_CONTENT, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
 
     InOrder order = inOrder(channel);
-    order.verify(channel).write(SMTP_CONTENT.get7BitEncodedContent());
+    order.verify(channel).write(SMTP_CONTENT.getDotStuffedContent());
     order.verify(channel).write(EMPTY_LAST_CONTENT);
     order.verify(channel).write(MAIL_REQUEST);
     order.verify(channel).write(RCPT_REQUEST);
@@ -379,6 +392,155 @@ public class SmtpSessionTest {
   }
 
   @Test
+  public void itSendsEmailsUsingChunkingIfItIsSupported() throws Exception {
+    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, BOB, SMTP_CONTENT);
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).write(req(BDAT, Integer.toString(SMTP_CONTENT.size()), "LAST"));
+    order.verify(channel).write(SMTP_CONTENT.getContent());
+    order.verify(channel).flush();
+
+    assertResponsesMapped(3, future);
+  }
+
+  @Test
+  public void itSendsRsetBetweenSends() {
+    session.send(ALICE, BOB, SMTP_CONTENT);
+    session.send(ALICE, BOB, SMTP_CONTENT);
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).write(req(BDAT, Integer.toString(SMTP_CONTENT.size()), "LAST"));
+    order.verify(channel).write(SMTP_CONTENT.getContent());
+    order.verify(channel).flush();
+
+    order.verify(channel).write(req(SmtpCommand.RSET));
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).write(req(BDAT, Integer.toString(SMTP_CONTENT.size()), "LAST"));
+    order.verify(channel).write(SMTP_CONTENT.getContent());
+    order.verify(channel).flush();
+  }
+
+  @Test
+  public void itSendsEmailsUsingChunkingIfItIsSupportedWithoutPipelining() throws Exception {
+    setExtensions(Extension.CHUNKING);
+
+    when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(new SmtpResponse[]{OK_RESPONSE}));
+
+    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, BOB, SMTP_CONTENT);
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).write(req(BDAT, Integer.toString(SMTP_CONTENT.size()), "LAST"));
+    order.verify(channel).write(SMTP_CONTENT.getContent());
+    order.verify(channel).flush();
+
+    assertThat(future.isDone());
+    assertThat(future.get().length).isEqualTo(3);
+  }
+
+  @Test
+  public void itSendsEmailsUsingDataIfTheContentIs7Bit() throws Exception {
+    setExtensions(Extension.PIPELINING);
+
+    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, BOB, SEVEN_BIT_CONTENT);
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).write(req(SmtpCommand.DATA));
+
+    responseFuture.complete(new SmtpResponse[] { OK_RESPONSE, OK_RESPONSE, OK_RESPONSE });
+
+    order.verify(channel).write(SEVEN_BIT_CONTENT.getDotStuffedContent());
+    order.verify(channel).write(EMPTY_LAST_CONTENT);
+    order.verify(channel).flush();
+
+    secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
+
+    assertThat(future.isDone()).isTrue();
+    assertThat(future.get().length).isEqualTo(4);
+  }
+
+  @Test
+  public void itSendsEmailsUsing8BitMimeIfItIsSupported() throws Exception {
+    setExtensions(Extension.EIGHT_BIT_MIME, Extension.PIPELINING);
+
+    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, BOB, UNKNOWN_CONTENT);
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).write(req(SmtpCommand.DATA, "BODY=8BITMIME"));
+
+    responseFuture.complete(new SmtpResponse[] { OK_RESPONSE, OK_RESPONSE, OK_RESPONSE });
+
+    order.verify(channel).write(SMTP_CONTENT.getDotStuffedContent());
+    order.verify(channel).write(EMPTY_LAST_CONTENT);
+    order.verify(channel).flush();
+
+    secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
+
+    assertThat(future.isDone()).isTrue();
+    assertThat(future.get().length).isEqualTo(4);
+  }
+
+  @Test
+  public void itSendsEmailsUsingDataIfTheyAreDetectedToBe7BitSafe() throws Exception {
+    setExtensions(Extension.PIPELINING);
+
+    String sevenBitMessage = "This has no special characters";
+    MessageContent content = MessageContent.of(Unpooled.copiedBuffer(sevenBitMessage.getBytes()), MessageContentEncoding.UNKNOWN);
+
+    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, BOB, content);
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).write(req(SmtpCommand.DATA));
+
+    responseFuture.complete(new SmtpResponse[] { OK_RESPONSE, OK_RESPONSE, OK_RESPONSE });
+
+    order.verify(channel).write(content.getDotStuffedContent());
+    order.verify(channel).write(EMPTY_LAST_CONTENT);
+    order.verify(channel).flush();
+
+    secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
+
+    assertThat(future.isDone()).isTrue();
+    assertThat(future.get().length).isEqualTo(4);
+  }
+
+  private void setExtensions(Extension... extensions) {
+    session.parseEhloResponse(Arrays.stream(extensions).map(Extension::getLowerCaseName).collect(Collectors.toList()));
+  }
+
+  private void assertResponsesMapped(int responsesExpected, CompletableFuture<SmtpClientResponse[]> future) throws Exception {
+    SmtpResponse[] responses = new SmtpResponse[responsesExpected];
+    for (int i = 0; i < responsesExpected; i++) {
+      responses[i] = new DefaultSmtpResponse(250 + i, "OK " + i);
+    }
+
+    responseFuture.complete(responses);
+
+    verify(responseHandler).createResponseFuture(eq(responsesExpected), any());
+
+    assertThat(future.isDone()).isTrue();
+    assertThat(future.get().length).isEqualTo(responses.length);
+
+    for (int i = 0; i < responsesExpected; i++) {
+      assertThat(future.get()[i].getSession()).isEqualTo(session);
+      assertThat(future.get()[i].code()).isEqualTo(responses[i].code());
+      assertThat(future.get()[i].details()).isEqualTo(responses[i].details());
+    }
+  }
+
+  @Test
   public void itIncludesCommandsAndArgsInTheDebugString() {
     assertThat(SmtpSession.createDebugString(new DefaultSmtpRequest("EHLO", "example.com"), new DefaultSmtpRequest("AUTH", "super-secret")))
         .isEqualTo("EHLO example.com, <redacted-auth-command>");
@@ -540,5 +702,9 @@ public class SmtpSessionTest {
     ArgumentCaptor<ChannelHandler> captor = ArgumentCaptor.forClass(ChannelHandler.class);
     verify(pipeline).addLast(captor.capture());
     return (ChannelInboundHandler) captor.getValue();
+  }
+
+  private SmtpRequest req(SmtpCommand command, CharSequence... parameters) {
+    return new DefaultSmtpRequest(command, parameters);
   }
 }

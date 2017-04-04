@@ -15,14 +15,18 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.net.ssl.SSLEngine;
 
 import org.apache.james.protocols.api.Encryption;
+import org.apache.james.protocols.api.Response;
+import org.apache.james.protocols.api.handler.ProtocolHandler;
 import org.apache.james.protocols.api.logger.Logger;
 import org.apache.james.protocols.netty.NettyServer;
 import org.apache.james.protocols.smtp.MailEnvelope;
@@ -30,6 +34,7 @@ import org.apache.james.protocols.smtp.SMTPConfigurationImpl;
 import org.apache.james.protocols.smtp.SMTPProtocol;
 import org.apache.james.protocols.smtp.SMTPProtocolHandlerChain;
 import org.apache.james.protocols.smtp.SMTPSession;
+import org.apache.james.protocols.smtp.core.DataCmdHandler;
 import org.apache.james.protocols.smtp.hook.AuthHook;
 import org.apache.james.protocols.smtp.hook.HookResult;
 import org.apache.james.protocols.smtp.hook.MailParametersHook;
@@ -105,7 +110,30 @@ public class IntegrationTest {
       }
     };
 
-    SMTPProtocolHandlerChain chain = new SMTPProtocolHandlerChain(new CollectEmailsHook(), new ChunkingExtension());
+    SMTPProtocolHandlerChain chain = new SMTPProtocolHandlerChain(new CollectEmailsHook(), new ChunkingExtension()) {
+      @Override
+      protected List<ProtocolHandler> initDefaultHandlers() {
+        List<ProtocolHandler> protocolHandlers = super.initDefaultHandlers();
+
+        // James says it supports 8bitmime but fails if you pass BODY=8BITMIME with the DATA
+        // command which is required by the spec https://tools.ietf.org/html/rfc6152#section-4
+        for (int i = 0; i < protocolHandlers.size(); i++) {
+          if (protocolHandlers.get(i) instanceof DataCmdHandler) {
+            protocolHandlers.set(i, new DataCmdHandler() {
+              @Override
+              protected Response doDATAFilter(SMTPSession session, String argument) {
+                argument = "BODY=8BITMIME".equals(argument) ? null : argument;
+                return super.doDATAFilter(session, argument);
+              }
+            });
+            break;
+          }
+        }
+
+        return protocolHandlers;
+      }
+    };
+
     SMTPProtocol protocol = new SMTPProtocol(chain, config, log);
     Encryption encryption = Encryption.createStartTls(FakeTlsContext.createContext());
 
@@ -188,9 +216,45 @@ public class IntegrationTest {
   }
 
   @Test
+  public void itCanSendAnEmailUsingTheFacadeUsingChunking() throws Exception {
+    // pipelining doesn't work with our James implementation of chunking
+    assertCanSendWithFacade(getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.PIPELINING)));
+  }
+
+  @Test
+  public void itCanSendAnEmailUsingTheFacadeUsing8bitMime() throws Exception {
+    assertCanSendWithFacade(getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.CHUNKING)));
+    assertCanSendWithFacade(getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.CHUNKING, Extension.PIPELINING)));
+  }
+
+  @Test
+  public void itCanSendAnEmailUsingTheFacadeUsing7Bit() throws Exception {
+    assertCanSendWithFacade(getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.CHUNKING, Extension.EIGHT_BIT_MIME)));
+    assertCanSendWithFacade(getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.CHUNKING, Extension.EIGHT_BIT_MIME, Extension.PIPELINING)));
+  }
+
+  private void assertCanSendWithFacade(SmtpSessionConfig config) throws Exception {
+    receivedMails.clear();
+
+    connect(config)
+        .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
+        .thenCompose(r -> assertSuccess(r).send(RETURN_PATH, RECIPIENT, createMessageContent()))
+        .thenCompose(r -> assertSuccess(r).send(req(QUIT)))
+        .thenCompose(r -> assertSuccess(r).close())
+        .get();
+
+    assertThat(receivedMails.size()).isEqualTo(1);
+    MailEnvelope mail = receivedMails.get(0);
+
+    assertThat(mail.getSender().toString()).isEqualTo(RETURN_PATH);
+    assertThat(mail.getRecipients().get(0).toString()).isEqualTo(RECIPIENT);
+    assertThat(readContents(mail)).contains(MESSAGE_DATA);
+  }
+
+  @Test
   public void itCanSendAnEmailUsingAStream() throws Exception {
     String messageText = repeat(repeat("0123456789", 7) + "\r\n", 10_000);
-    MessageContent messageContent = MessageContent.of(ByteSource.wrap(messageText.getBytes()), messageText.length(), MessageContentEncoding.ASSUME_DOT_STUFFED);
+    MessageContent messageContent = MessageContent.of(ByteSource.wrap(messageText.getBytes()), messageText.length(), MessageContentEncoding.SEVEN_BIT);
 
     connect()
         .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
@@ -284,20 +348,24 @@ public class IntegrationTest {
   public void itCanSendMultipleEmailsAtOnce() throws Exception {
     List<CompletableFuture<Void>> futures = Lists.newArrayList();
 
+    Executor executor = Executors.newFixedThreadPool(50);
+
+    // Don't use chunking because our James implementation is naive
+    SmtpSessionConfig pipeliningConfig = getDefaultConfig().withExecutor(executor).withDisabledExtensions(EnumSet.of(Extension.CHUNKING));
+    SmtpSessionConfig nonPipeliningConfig = pipeliningConfig.withDisabledExtensions(EnumSet.of(Extension.CHUNKING, Extension.PIPELINING));
+
     for (int i = 0; i < 100; i++) {
-      futures.add(connect()
+      futures.add(connect(i % 2 == 0 ? pipeliningConfig : nonPipeliningConfig)
           .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
-          .thenCompose(r -> assertSuccess(r).send(req(MAIL, "FROM:<" + RETURN_PATH + ">")))
-          .thenCompose(r -> assertSuccess(r).send(req(RCPT, "TO:<" + RECIPIENT + ">")))
-          .thenCompose(r -> assertSuccess(r).send(req(DATA)))
-          .thenCompose(r -> assertSuccess(r).send(createMessageContent()))
+          .thenCompose(r -> assertSuccess(r).send(RETURN_PATH, RECIPIENT, createMessageContent()))
+          .thenCompose(r -> assertSuccess(r).send(RETURN_PATH, RECIPIENT, createMessageContent()))
           .thenCompose(r -> assertSuccess(r).send(req(QUIT)))
           .thenCompose(r -> assertSuccess(r).close()));
     }
 
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
 
-    assertThat(receivedMails.size()).isEqualTo(100);
+    assertThat(receivedMails.size()).isEqualTo(200);
   }
 
   @Test
@@ -319,8 +387,19 @@ public class IntegrationTest {
     return r.getSession();
   }
 
+  private SmtpSession assertSuccess(SmtpClientResponse[] rs) {
+    for (SmtpClientResponse r : rs) {
+      assertThat(r.code() < 400).withFailMessage("Received error: " + r).isTrue();
+    }
+    return rs[0].getSession();
+  }
+
   private CompletableFuture<SmtpClientResponse> connect() {
-    return connect(SmtpSessionConfig.forRemoteAddress(serverAddress).withSSLEngineSupplier(this::createInsecureSSLEngine));
+    return connect(getDefaultConfig());
+  }
+
+  private SmtpSessionConfig getDefaultConfig() {
+    return SmtpSessionConfig.forRemoteAddress(serverAddress).withSSLEngineSupplier(this::createInsecureSSLEngine);
   }
 
   private SSLEngine createInsecureSSLEngine() {

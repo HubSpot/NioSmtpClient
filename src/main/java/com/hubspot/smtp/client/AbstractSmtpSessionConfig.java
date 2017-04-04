@@ -3,6 +3,7 @@ package com.hubspot.smtp.client;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -35,6 +36,11 @@ abstract class AbstractSmtpSessionConfig {
   @Default
   public Duration getReadTimeout() {
     return Duration.ofMinutes(2);
+  }
+
+  @Default
+  public EnumSet<Extension> getDisabledExtensions() {
+    return EnumSet.noneOf(Extension.class);
   }
 
   @Default

@@ -1,9 +1,13 @@
 package com.hubspot.smtp.messages;
 
+import java.nio.charset.StandardCharsets;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 public class ByteBufMessageContent extends MessageContent {
+  private static final long LONG_WITH_HIGH_BITS_SET = 0x8080808080808080L;
+  private static final int UNCOUNTED = -1;
   private static final byte CR = '\r';
   private static final byte LF = '\n';
   private static final byte[] CR_LF = {CR, LF};
@@ -11,31 +15,29 @@ public class ByteBufMessageContent extends MessageContent {
 
   private final ByteBuf buffer;
   private final int size;
+  private final MessageContentEncoding encoding;
+
+  private int eightBitCharCount = UNCOUNTED;
 
   public ByteBufMessageContent(ByteBuf buffer, MessageContentEncoding encoding) {
-    if (encoding == MessageContentEncoding.REQUIRES_DOT_STUFFING) {
-      this.buffer = dotStuff(buffer);
-    } else {
-      this.buffer = isTerminated(buffer) ? buffer : terminate(buffer);
-    }
-
-    this.size = this.buffer.readableBytes();
+    this.buffer = buffer;
+    this.size = buffer.readableBytes();
+    this.encoding = encoding;
   }
 
-  private static ByteBuf terminate(ByteBuf buffer) {
-    return buffer.alloc()
-        .compositeBuffer(2)
-        .addComponents(true, buffer, CR_LF_BUFFER.slice());
+  @Override
+  public Object getContent() {
+    return isTerminated(buffer) ? buffer : terminate(buffer);
   }
 
-  private static ByteBuf dotStuff(ByteBuf buffer) {
-    return DotStuffing.createDotStuffedBuffer(buffer.alloc(), buffer, null,
-        isTerminated(buffer) ? MessageTermination.DO_NOT_TERMINATE : MessageTermination.ADD_CRLF);
+  @Override
+  public Object getDotStuffedContent() {
+    return dotStuff(buffer);
   }
 
-  private static boolean isTerminated(ByteBuf buffer) {
-    int length = buffer.readableBytes();
-    return length >= 2 && buffer.getByte(length - 2) == '\r' && buffer.getByte(length - 1) == '\n';
+  @Override
+  public MessageContentEncoding getEncoding() {
+    return encoding;
   }
 
   @Override
@@ -44,7 +46,57 @@ public class ByteBufMessageContent extends MessageContent {
   }
 
   @Override
-  public Object get8BitMimeEncodedContent() {
-    return buffer;
+  public int count8bitCharacters() {
+    if (eightBitCharCount != UNCOUNTED) {
+      return eightBitCharCount;
+    }
+
+    eightBitCharCount = 0;
+    buffer.markReaderIndex();
+
+    // read content as longs for performance
+    while (buffer.readableBytes() >= 8) {
+      long bytes = buffer.readLong();
+
+      if (0 != (bytes & LONG_WITH_HIGH_BITS_SET)) {
+        for (int i = 0; i < 8; i++) {
+          if (0 != (bytes & (0x80 << i * 8))) {
+            eightBitCharCount++;
+          }
+        }
+      }
+    }
+
+    // read any remaining bytes
+    while (buffer.readableBytes() > 0) {
+      if (0 != (buffer.readByte() & 0x80)) {
+        eightBitCharCount++;
+      }
+    }
+
+    buffer.resetReaderIndex();
+
+    return eightBitCharCount;
+  }
+
+  @Override
+  public String getContentAsString() {
+    return buffer.toString(StandardCharsets.UTF_8);
+  }
+
+  private static ByteBuf terminate(ByteBuf buffer) {
+    return buffer.alloc()
+        .compositeBuffer(2)
+        .addComponents(true, buffer, CR_LF_BUFFER.slice());
+  }
+
+  private static boolean isTerminated(ByteBuf buffer) {
+    int length = buffer.readableBytes();
+    return length >= 2 && buffer.getByte(length - 2) == '\r' && buffer.getByte(length - 1) == '\n';
+  }
+
+  private static ByteBuf dotStuff(ByteBuf buffer) {
+    return DotStuffing.createDotStuffedBuffer(buffer.alloc(), buffer, null,
+        isTerminated(buffer) ? MessageTermination.DO_NOT_TERMINATE : MessageTermination.ADD_CRLF);
   }
 }
