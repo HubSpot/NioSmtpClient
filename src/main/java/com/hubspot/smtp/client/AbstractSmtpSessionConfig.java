@@ -54,7 +54,7 @@ abstract class AbstractSmtpSessionConfig {
   }
 
   @Default
-  public Supplier<SSLEngine> getSSLEngineSupplier() {
+  public Supplier<SSLEngine> getSslEngineSupplier() {
     return this::createSSLEngine;
   }
 

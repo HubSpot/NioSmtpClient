@@ -399,7 +399,7 @@ public class IntegrationTest {
   }
 
   private SmtpSessionConfig getDefaultConfig() {
-    return SmtpSessionConfig.forRemoteAddress(serverAddress).withSSLEngineSupplier(this::createInsecureSSLEngine);
+    return SmtpSessionConfig.forRemoteAddress(serverAddress).withSslEngineSupplier(this::createInsecureSSLEngine);
   }
 
   private SSLEngine createInsecureSSLEngine() {
