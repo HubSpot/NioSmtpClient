@@ -216,6 +216,24 @@ public class IntegrationTest {
   }
 
   @Test
+  public void itCanSendEmailsWithMultipleRecipients() throws Exception {
+    connect(getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.CHUNKING)))
+        .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
+        .thenCompose(r -> assertSuccess(r).send(RETURN_PATH, Lists.newArrayList("a@example.com", "b@example.com"), createMessageContent()))
+        .thenCompose(r -> assertSuccess(r).send(req(QUIT)))
+        .thenCompose(r -> assertSuccess(r).close())
+        .get();
+
+    assertThat(receivedMails.size()).isEqualTo(1);
+    MailEnvelope mail = receivedMails.get(0);
+
+    assertThat(mail.getSender().toString()).isEqualTo(RETURN_PATH);
+    assertThat(mail.getRecipients().get(0).toString()).isEqualTo("a@example.com");
+    assertThat(mail.getRecipients().get(1).toString()).isEqualTo("b@example.com");
+    assertThat(readContents(mail)).contains(MESSAGE_DATA);
+  }
+
+  @Test
   public void itCanSendAnEmailUsingTheFacadeUsingChunking() throws Exception {
     // pipelining doesn't work with our James implementation of chunking
     assertCanSendWithFacade(getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.PIPELINING)));

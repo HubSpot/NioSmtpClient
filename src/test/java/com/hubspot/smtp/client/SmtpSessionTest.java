@@ -50,11 +50,11 @@ import io.netty.util.concurrent.ImmediateEventExecutor;
 public class SmtpSessionTest {
   private static final String ALICE = "alice@example.com";
   private static final String BOB = "bob@example.com";
+  private static final String CAROL = "carol@example.com";
 
   private static final SmtpRequest SMTP_REQUEST = new DefaultSmtpRequest(SmtpCommand.NOOP);
   private static final MessageContent SMTP_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]));
   private static final MessageContent SEVEN_BIT_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]), MessageContentEncoding.SEVEN_BIT);
-  private static final MessageContent EIGHT_BIT_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]), MessageContentEncoding.EIGHT_BIT);
   private static final MessageContent UNKNOWN_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]), MessageContentEncoding.UNKNOWN);
   private static final SmtpResponse OK_RESPONSE = new DefaultSmtpResponse(250, "OK");
   private static final SmtpResponse FAIL_RESPONSE = new DefaultSmtpResponse(400, "nope");
@@ -393,16 +393,17 @@ public class SmtpSessionTest {
 
   @Test
   public void itSendsEmailsUsingChunkingIfItIsSupported() throws Exception {
-    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, BOB, SMTP_CONTENT);
+    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), SMTP_CONTENT);
 
     InOrder order = inOrder(channel);
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + CAROL + ">"));
     order.verify(channel).write(req(BDAT, Integer.toString(SMTP_CONTENT.size()), "LAST"));
     order.verify(channel).write(SMTP_CONTENT.getContent());
     order.verify(channel).flush();
 
-    assertResponsesMapped(3, future);
+    assertResponsesMapped(4, future);
   }
 
   @Test
@@ -445,6 +446,26 @@ public class SmtpSessionTest {
   }
 
   @Test
+  public void itSendsEmailsUsingChunkingIfItIsSupportedWithoutPipeliningAndMultipleRecipients() throws Exception {
+    setExtensions(Extension.CHUNKING);
+
+    when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(new SmtpResponse[]{OK_RESPONSE}));
+
+    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), SMTP_CONTENT);
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + CAROL + ">"));
+    order.verify(channel).write(req(BDAT, Integer.toString(SMTP_CONTENT.size()), "LAST"));
+    order.verify(channel).write(SMTP_CONTENT.getContent());
+    order.verify(channel).flush();
+
+    assertThat(future.isDone());
+    assertThat(future.get().length).isEqualTo(4);
+  }
+
+  @Test
   public void itSendsEmailsUsingDataIfTheContentIs7Bit() throws Exception {
     setExtensions(Extension.PIPELINING);
 
@@ -465,6 +486,54 @@ public class SmtpSessionTest {
 
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().length).isEqualTo(4);
+  }
+
+  @Test
+  public void itSendsEmailsUsingDataIfTheContentIs7BitWithoutPipeliningAndMultipleRecipients() throws Exception {
+    session.parseEhloResponse(Collections.emptyList());
+
+    when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(new SmtpResponse[]{OK_RESPONSE}));
+
+    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), SEVEN_BIT_CONTENT);
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + CAROL + ">"));
+    order.verify(channel).write(req(SmtpCommand.DATA));
+
+    order.verify(channel).write(SEVEN_BIT_CONTENT.getDotStuffedContent());
+    order.verify(channel).write(EMPTY_LAST_CONTENT);
+    order.verify(channel).flush();
+
+    secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
+
+    assertThat(future.isDone()).isTrue();
+    assertThat(future.get().length).isEqualTo(5);
+  }
+
+  @Test
+  public void itSendsEmailsUsingDataIfTheContentIs7BitAndThereAreMultipleRecipients() throws Exception {
+    setExtensions(Extension.PIPELINING);
+
+    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), SEVEN_BIT_CONTENT);
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + CAROL + ">"));
+    order.verify(channel).write(req(SmtpCommand.DATA));
+
+    responseFuture.complete(new SmtpResponse[] { OK_RESPONSE, OK_RESPONSE, OK_RESPONSE, OK_RESPONSE });
+
+    order.verify(channel).write(SEVEN_BIT_CONTENT.getDotStuffedContent());
+    order.verify(channel).write(EMPTY_LAST_CONTENT);
+    order.verify(channel).flush();
+
+    secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
+
+    assertThat(future.isDone()).isTrue();
+    assertThat(future.get().length).isEqualTo(5);
   }
 
   @Test
