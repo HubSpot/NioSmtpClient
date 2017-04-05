@@ -41,6 +41,7 @@ import org.apache.james.protocols.smtp.hook.MailParametersHook;
 import org.apache.james.protocols.smtp.hook.MessageHook;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -65,6 +66,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
 public class IntegrationTest {
+  private static final long MAX_MESSAGE_SIZE = 1234000L;
   private static final String CORRECT_USERNAME = "smtp-user";
   private static final String CORRECT_PASSWORD = "correct horse battery staple";
   private static final String RETURN_PATH = "return-path@example.com";
@@ -76,7 +78,6 @@ public class IntegrationTest {
 
   private static final NioEventLoopGroup EVENT_LOOP_GROUP = new NioEventLoopGroup();
   private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
-  private static final long MAX_MESSAGE_SIZE = 1234000L;
 
   private InetSocketAddress serverAddress;
   private NettyServer smtpServer;
@@ -234,6 +235,7 @@ public class IntegrationTest {
   }
 
   @Test
+  @Ignore("This can hang on Linux because our James chunking implementation isn't great")
   public void itCanSendAnEmailUsingTheFacadeUsingChunking() throws Exception {
     // pipelining doesn't work with our James implementation of chunking
     assertCanSendWithFacade(getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.PIPELINING)));
@@ -297,6 +299,7 @@ public class IntegrationTest {
   }
 
   @Test
+  @Ignore("This can hang on Linux because our James chunking implementation isn't great")
   public void itCanSendMessagesWithChunking() throws Exception {
     connect()
         .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
