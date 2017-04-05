@@ -5,6 +5,9 @@ import static io.netty.handler.codec.smtp.LastSmtpContent.EMPTY_LAST_CONTENT;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -22,6 +25,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.ObjectArrays;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -149,72 +153,92 @@ public class SmtpSession {
   }
 
   public CompletableFuture<SmtpClientResponse[]> send(String from, String to, MessageContent content) {
+    return send(from, Collections.singleton(to), content);
+  }
+
+  public CompletableFuture<SmtpClientResponse[]> send(String from, Collection<String> recipients, MessageContent content) {
     Preconditions.checkNotNull(from);
-    Preconditions.checkNotNull(to);
+    Preconditions.checkNotNull(recipients);
+    Preconditions.checkArgument(!recipients.isEmpty(), "recipients must be > 0");
     Preconditions.checkNotNull(content);
     checkMessageSize(content.size());
 
     if (ehloResponse.isSupported(Extension.CHUNKING)) {
-      return sendAsChunked(from, to, content);
+      return sendAsChunked(from, recipients, content);
     }
 
     if (content.getEncoding() == MessageContentEncoding.SEVEN_BIT) {
-      return sendAs7Bit(from, to, content);
+      return sendAs7Bit(from, recipients, content);
     }
 
     if (ehloResponse.isSupported(Extension.EIGHT_BIT_MIME)) {
-      return sendAs8BitMime(from, to, content);
+      return sendAs8BitMime(from, recipients, content);
     }
 
     if (content.count8bitCharacters() == 0) {
-      return sendAs7Bit(from, to, content);
+      return sendAs7Bit(from, recipients, content);
     }
 
     // this message is not 7 bit, but the server only supports 7 bit :(
-    return sendAs7Bit(from, to, encodeContentAs7Bit(content));
+    return sendAs7Bit(from, recipients, encodeContentAs7Bit(content));
   }
 
-  private CompletableFuture<SmtpClientResponse[]> sendAsChunked(String from, String to, MessageContent content) {
+  private CompletableFuture<SmtpClientResponse[]> sendAsChunked(String from, Collection<String> recipients, MessageContent content) {
     if (ehloResponse.isSupported(Extension.PIPELINING)) {
-      return beginSequence(3,
-          SmtpRequests.mail(from),
-          SmtpRequests.rcpt(to),
-          new DefaultSmtpRequest(BDAT_COMMAND, Integer.toString(content.size()), "LAST"),
-          content.getContent()
-      ).toResponses();
+      List<Object> objects = Lists.newArrayListWithExpectedSize(3 + recipients.size());
+      objects.add(SmtpRequests.mail(from));
+      objects.addAll(rpctCommands(recipients));
+      objects.add(new DefaultSmtpRequest(BDAT_COMMAND, Integer.toString(content.size()), "LAST"));
+      objects.add(content.getContent());
+
+      return beginSequence(objects.size() - 1, objects.toArray()).toResponses();
 
     } else {
-      return beginSequence(1, SmtpRequests.mail(from))
-          .thenSend(SmtpRequests.rcpt(to))
+      SendSequence sequence = beginSequence(1, SmtpRequests.mail(from));
+
+      for (String recipient : recipients) {
+        sequence.thenSend(SmtpRequests.rcpt(recipient));
+      }
+
+      return sequence
           .thenSend(new DefaultSmtpRequest(BDAT_COMMAND, Integer.toString(content.size()), "LAST"), content.getContent())
           .toResponses();
     }
   }
 
-  private CompletableFuture<SmtpClientResponse[]> sendAs7Bit(String from, String to, MessageContent content) {
-    return sendPipelinedIfPossible(SmtpRequests.mail(from), SmtpRequests.rcpt(to), SmtpRequests.data())
+  private CompletableFuture<SmtpClientResponse[]> sendAs7Bit(String from, Collection<String> recipients, MessageContent content) {
+    return sendPipelinedIfPossible(SmtpRequests.mail(from), recipients, SmtpRequests.data())
         .thenSend(content.getDotStuffedContent(), EMPTY_LAST_CONTENT)
         .toResponses();
   }
 
-  private CompletableFuture<SmtpClientResponse[]> sendAs8BitMime(String from, String to, MessageContent content) {
-    return sendPipelinedIfPossible(SmtpRequests.mail(from), SmtpRequests.rcpt(to), new DefaultSmtpRequest(SmtpCommand.DATA, "BODY=8BITMIME"))
+  private CompletableFuture<SmtpClientResponse[]> sendAs8BitMime(String from, Collection<String> recipients, MessageContent content) {
+    return sendPipelinedIfPossible(SmtpRequests.mail(from), recipients, new DefaultSmtpRequest(SmtpCommand.DATA, "BODY=8BITMIME"))
         .thenSend(content.getDotStuffedContent(), EMPTY_LAST_CONTENT)
         .toResponses();
   }
 
-  private SendSequence sendPipelinedIfPossible(SmtpRequest... requests) {
+  private SendSequence sendPipelinedIfPossible(SmtpRequest mailRequest, Collection<String> recipients, SmtpRequest dataRequest) {
+    List<SmtpRequest> requests = Lists.newArrayListWithExpectedSize(2 + recipients.size());
+    requests.add(mailRequest);
+    requests.addAll(rpctCommands(recipients));
+    requests.add(dataRequest);
+
     if (ehloResponse.isSupported(Extension.PIPELINING)) {
-      return beginSequence(requests.length, requests);
+      return beginSequence(requests.size(), requests.toArray());
     } else {
-      SendSequence s = beginSequence(1, requests[0]);
+      SendSequence s = beginSequence(1, requests.get(0));
 
-      for (int i = 1; i < requests.length; i++) {
-        s.thenSend(requests[i]);
+      for (int i = 1; i < requests.size(); i++) {
+        s.thenSend(requests.get(i));
       }
 
       return s;
     }
+  }
+
+  private Collection<SmtpRequest> rpctCommands(Collection<String> recipients) {
+    return recipients.stream().map(SmtpRequests::rcpt).collect(Collectors.toList());
   }
 
   private SendSequence beginSequence(int expectedResponses, Object... objects) {
