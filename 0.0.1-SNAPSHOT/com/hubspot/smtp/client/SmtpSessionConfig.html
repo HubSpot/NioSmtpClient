@@ -235,12 +235,12 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getSSLEngineSupplier--">getSSLEngineSupplier</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getSslEngineSupplier--">getSslEngineSupplier</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i14" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#hashCode--">hashCode</a></span>()</code>
-<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>executor</code>, <code>readTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>, <code>allocator</code>, <code>sSLEngineSupplier</code>.</div>
+<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>executor</code>, <code>readTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>, <code>allocator</code>, <code>sslEngineSupplier</code>.</div>
 </td>
 </tr>
 <tr id="i15" class="rowColor">
@@ -317,8 +317,8 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 </tr>
 <tr id="i27" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withSSLEngineSupplier-java.util.function.Supplier-">withSSLEngineSupplier</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;&nbsp;sSLEngineSupplier)</code>
-<div class="block">Copy the current immutable object by setting a value for the <code>sSLEngineSupplier</code> attribute.</div>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withSslEngineSupplier-java.util.function.Supplier-">withSslEngineSupplier</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;&nbsp;sslEngineSupplier)</code>
+<div class="block">Copy the current immutable object by setting a value for the <code>sslEngineSupplier</code> attribute.</div>
 </td>
 </tr>
 </table>
@@ -464,16 +464,16 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 </dl>
 </li>
 </ul>
-<a name="getSSLEngineSupplier--">
+<a name="getSslEngineSupplier--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getSSLEngineSupplier</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;&nbsp;getSSLEngineSupplier()</pre>
+<h4>getSslEngineSupplier</h4>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;&nbsp;getSslEngineSupplier()</pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>The value of the <code>sSLEngineSupplier</code> attribute</dd>
+<dd>The value of the <code>sslEngineSupplier</code> attribute</dd>
 </dl>
 </li>
 </ul>
@@ -661,18 +661,18 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 </dl>
 </li>
 </ul>
-<a name="withSSLEngineSupplier-java.util.function.Supplier-">
+<a name="withSslEngineSupplier-java.util.function.Supplier-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>withSSLEngineSupplier</h4>
-<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;withSSLEngineSupplier(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;&nbsp;sSLEngineSupplier)</pre>
-<div class="block">Copy the current immutable object by setting a value for the <code>sSLEngineSupplier</code> attribute.
+<h4>withSslEngineSupplier</h4>
+<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;withSslEngineSupplier(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLEngine.html?is-external=true" title="class or interface in javax.net.ssl">SSLEngine</a>&gt;&nbsp;sslEngineSupplier)</pre>
+<div class="block">Copy the current immutable object by setting a value for the <code>sslEngineSupplier</code> attribute.
  A shallow reference equality check is used to prevent copying of the same value by returning <code>this</code>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>sSLEngineSupplier</code> - A new value for sSLEngineSupplier</dd>
+<dd><code>sslEngineSupplier</code> - A new value for sslEngineSupplier</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A modified copy of the <code>this</code> object</dd>
 </dl>
@@ -702,7 +702,7 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <li class="blockList">
 <h4>hashCode</h4>
 <pre>public&nbsp;int&nbsp;hashCode()</pre>
-<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>executor</code>, <code>readTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>, <code>allocator</code>, <code>sSLEngineSupplier</code>.</div>
+<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>executor</code>, <code>readTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>, <code>allocator</code>, <code>sslEngineSupplier</code>.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a></code>&nbsp;in class&nbsp;<code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></dd>

@@ -244,7 +244,7 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpClientResponse.html#getSession--">getSession()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#getSSLEngineSupplier--">getSSLEngineSupplier()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#getSslEngineSupplier--">getSslEngineSupplier()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/EhloResponse.html#getSupportedExtensions--">getSupportedExtensions()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/EhloResponse.html" title="class in com.hubspot.smtp.client">EhloResponse</a></dt>
 <dd>&nbsp;</dd>
@@ -256,7 +256,7 @@
 <dl>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#hashCode--">hashCode()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
-<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>executor</code>, <code>readTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>, <code>allocator</code>, <code>sSLEngineSupplier</code>.</div>
+<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>executor</code>, <code>readTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>, <code>allocator</code>, <code>sslEngineSupplier</code>.</div>
 </dd>
 </dl>
 <a name="I:I">
@@ -418,9 +418,9 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionFactory.html#SmtpSessionFactory-io.netty.channel.nio.NioEventLoopGroup-java.util.concurrent.ExecutorService-">SmtpSessionFactory(NioEventLoopGroup, ExecutorService)</a></span> - Constructor for class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionFactory.html" title="class in com.hubspot.smtp.client">SmtpSessionFactory</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#sSLEngineSupplier-java.util.function.Supplier-">sSLEngineSupplier(Supplier&lt;SSLEngine&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></dt>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#sslEngineSupplier-java.util.function.Supplier-">sslEngineSupplier(Supplier&lt;SSLEngine&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></dt>
 <dd>
-<div class="block">Initializes the value for the <code>sSLEngineSupplier</code> attribute.</div>
+<div class="block">Initializes the value for the <code>sslEngineSupplier</code> attribute.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSession.html#startTls--">startTls()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a></dt>
 <dd>&nbsp;</dd>
@@ -521,9 +521,9 @@ the order they are declared.</div>
 <dd>
 <div class="block">Copy the current immutable object by setting a value for the <code>remoteAddress</code> attribute.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withSSLEngineSupplier-java.util.function.Supplier-">withSSLEngineSupplier(Supplier&lt;SSLEngine&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withSslEngineSupplier-java.util.function.Supplier-">withSslEngineSupplier(Supplier&lt;SSLEngine&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
-<div class="block">Copy the current immutable object by setting a value for the <code>sSLEngineSupplier</code> attribute.</div>
+<div class="block">Copy the current immutable object by setting a value for the <code>sslEngineSupplier</code> attribute.</div>
 </dd>
 </dl>
 <a href="#I:A">A</a>&nbsp;<a href="#I:B">B</a>&nbsp;<a href="#I:C">C</a>&nbsp;<a href="#I:D">D</a>&nbsp;<a href="#I:E">E</a>&nbsp;<a href="#I:F">F</a>&nbsp;<a href="#I:G">G</a>&nbsp;<a href="#I:H">H</a>&nbsp;<a href="#I:I">I</a>&nbsp;<a href="#I:K">K</a>&nbsp;<a href="#I:L">L</a>&nbsp;<a href="#I:M">M</a>&nbsp;<a href="#I:O">O</a>&nbsp;<a href="#I:P">P</a>&nbsp;<a href="#I:R">R</a>&nbsp;<a href="#I:S">S</a>&nbsp;<a href="#I:T">T</a>&nbsp;<a href="#I:V">V</a>&nbsp;<a href="#I:W">W</a>&nbsp;</div>
