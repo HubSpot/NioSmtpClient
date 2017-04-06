@@ -24,15 +24,22 @@ class CrlfTerminatingChunkedStream extends ChunkedStream {
   public ByteBuf readChunk(ByteBufAllocator allocator) throws Exception {
     ByteBuf chunk = super.readChunk(allocator);
 
-    int length = chunk.readableBytes();
     if (!isEndOfInput()) {
       return chunk;
     }
 
-    if (length >= 2 && chunk.getByte(length - 2) == CR && chunk.getByte(length - 1) == LF) {
+    if (isTerminatedWithCrLf(chunk)) {
       return chunk;
     }
 
     return allocator.compositeBuffer(2).addComponents(true, chunk, allocator.buffer(2).writeBytes(TRAILING_BYTES));
+  }
+
+  private boolean isTerminatedWithCrLf(ByteBuf chunk) {
+    int length = chunk.readableBytes();
+
+    return length >= 2 &&
+        chunk.getByte(length - 2) == CR &&
+        chunk.getByte(length - 1) == LF;
   }
 }

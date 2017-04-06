@@ -1,13 +1,18 @@
 package com.hubspot.smtp.messages;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.OptionalInt;
+
+import com.google.common.collect.Iterators;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 public class ByteBufMessageContent extends MessageContent {
   private static final long LONG_WITH_HIGH_BITS_SET = 0x8080808080808080L;
-  private static final int UNCOUNTED = -1;
+  private static final float UNCOUNTED = -1F;
   private static final byte CR = '\r';
   private static final byte LF = '\n';
   private static final byte[] CR_LF = {CR, LF};
@@ -17,7 +22,7 @@ public class ByteBufMessageContent extends MessageContent {
   private final int size;
   private final MessageContentEncoding encoding;
 
-  private int eightBitCharCount = UNCOUNTED;
+  private float eightBitCharProportion = UNCOUNTED;
 
   public ByteBufMessageContent(ByteBuf buffer, MessageContentEncoding encoding) {
     this.buffer = buffer;
@@ -31,6 +36,11 @@ public class ByteBufMessageContent extends MessageContent {
   }
 
   @Override
+  public Iterator<ByteBuf> getContentChunkIterator(ByteBufAllocator allocator) {
+    return Iterators.singletonIterator((ByteBuf) getContent());
+  }
+
+  @Override
   public Object getDotStuffedContent() {
     return dotStuff(buffer);
   }
@@ -41,17 +51,17 @@ public class ByteBufMessageContent extends MessageContent {
   }
 
   @Override
-  public int size() {
-    return size;
+  public OptionalInt size() {
+    return OptionalInt.of(size);
   }
 
   @Override
-  public int count8bitCharacters() {
-    if (eightBitCharCount != UNCOUNTED) {
-      return eightBitCharCount;
+  public float get8bitCharacterProportion() {
+    if (eightBitCharProportion != UNCOUNTED) {
+      return eightBitCharProportion;
     }
 
-    eightBitCharCount = 0;
+    int eightBitCharCount = 0;
     buffer.markReaderIndex();
 
     // read content as longs for performance
@@ -76,7 +86,8 @@ public class ByteBufMessageContent extends MessageContent {
 
     buffer.resetReaderIndex();
 
-    return eightBitCharCount;
+    eightBitCharProportion = 1.0F * eightBitCharCount / size;
+    return eightBitCharProportion;
   }
 
   @Override
