@@ -320,7 +320,7 @@ public class SmtpSession {
     checkMessageSize(content == null ? 0 : content.size());
 
     int expectedResponses = requests.length + (content == null ? 0 : 1);
-    CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(expectedResponses, () -> createDebugString(requests));
+    CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(expectedResponses, () -> createDebugString((Object[]) requests));
 
     if (content != null) {
       writeContent(content);

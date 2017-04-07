@@ -34,6 +34,11 @@ abstract class AbstractSmtpSessionConfig {
   public abstract Optional<Executor> getExecutor();
 
   @Default
+  public Duration getConnectionTimeout() {
+    return Duration.ofMinutes(2);
+  }
+
+  @Default
   public Duration getReadTimeout() {
     return Duration.ofMinutes(2);
   }

@@ -127,6 +127,7 @@ public class ChunkingExtension implements EhloExtension, CommandHandler<SMTPSess
       super.messageReceived(ctx, e);
     }
 
+    @SuppressWarnings("unchecked")
     private void startCapturingData(int bytesToCapture, boolean last) {
       currentChunkSize = bytesToCapture;
       isLastChunk = last;
