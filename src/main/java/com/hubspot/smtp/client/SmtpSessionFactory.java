@@ -2,8 +2,10 @@ package com.hubspot.smtp.client;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
@@ -43,6 +45,7 @@ public class SmtpSessionFactory implements Closeable  {
         .group(eventLoopGroup)
         .channel(NioSocketChannel.class)
         .option(ChannelOption.ALLOCATOR, config.getAllocator())
+        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) getMillis(config.getConnectionTimeout()))
         .remoteAddress(config.getRemoteAddress())
         .localAddress(config.getLocalAddress().orElse(null))
         .handler(new Initializer(responseHandler, config));
@@ -63,6 +66,10 @@ public class SmtpSessionFactory implements Closeable  {
     });
 
     return connectFuture;
+  }
+
+  private long getMillis(Duration duration) {
+    return TimeUnit.NANOSECONDS.convert(duration.getNano(), TimeUnit.MILLISECONDS);
   }
 
   private <R, T> CompletableFuture<R> applyOnExecutor(CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
