@@ -19,7 +19,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.net.ssl.SSLEngine;
@@ -77,7 +76,6 @@ public class IntegrationTest {
       "Hello!\r\n";
 
   private static final NioEventLoopGroup EVENT_LOOP_GROUP = new NioEventLoopGroup();
-  private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 
   private InetSocketAddress serverAddress;
   private NettyServer smtpServer;
@@ -93,7 +91,7 @@ public class IntegrationTest {
     serverAddress = new InetSocketAddress(getFreePort());
     serverLog = mock(Logger.class);
     smtpServer = createAndStartSmtpServer(serverLog, serverAddress);
-    sessionFactory = new SmtpSessionFactory(EVENT_LOOP_GROUP, EXECUTOR_SERVICE);
+    sessionFactory = new SmtpSessionFactory(EVENT_LOOP_GROUP);
 
     when(serverLog.isDebugEnabled()).thenReturn(true);
   }

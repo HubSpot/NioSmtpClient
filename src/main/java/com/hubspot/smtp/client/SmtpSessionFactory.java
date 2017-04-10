@@ -4,7 +4,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -27,12 +26,10 @@ public class SmtpSessionFactory implements Closeable  {
   private static final Logger LOG = LoggerFactory.getLogger(SmtpSessionFactory.class);
 
   private final NioEventLoopGroup eventLoopGroup;
-  private final ExecutorService executorService;
   private final ChannelGroup allChannels;
 
-  public SmtpSessionFactory(NioEventLoopGroup eventLoopGroup, ExecutorService executorService) {
+  public SmtpSessionFactory(NioEventLoopGroup eventLoopGroup) {
     this.eventLoopGroup = eventLoopGroup;
-    this.executorService = executorService;
 
     allChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   }
@@ -58,10 +55,10 @@ public class SmtpSessionFactory implements Closeable  {
         allChannels.add(channel);
 
         SmtpSession session = new SmtpSession(channel, responseHandler, config);
-        applyOnExecutor(initialResponseFuture, r -> connectFuture.complete(new SmtpClientResponse(r[0], session)));
+        applyOnExecutor(config, initialResponseFuture, r -> connectFuture.complete(new SmtpClientResponse(r[0], session)));
       } else {
         LOG.error("Could not connect to {}", config.getRemoteAddress(), f.cause());
-        executorService.execute(() -> connectFuture.completeExceptionally(f.cause()));
+        config.getEffectiveExecutor().execute(() -> connectFuture.completeExceptionally(f.cause()));
       }
     });
 
@@ -72,7 +69,7 @@ public class SmtpSessionFactory implements Closeable  {
     return TimeUnit.NANOSECONDS.convert(duration.getNano(), TimeUnit.MILLISECONDS);
   }
 
-  private <R, T> CompletableFuture<R> applyOnExecutor(CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
+  private <R, T> CompletableFuture<R> applyOnExecutor(SmtpSessionConfig config, CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
     // use handleAsync to ensure exceptions and other callbacks are completed on the ExecutorService thread
     return eventLoopFuture.handleAsync((rs, e) -> {
       if (e != null) {
@@ -80,7 +77,7 @@ public class SmtpSessionFactory implements Closeable  {
       }
 
       return mapper.apply(rs);
-    }, executorService);
+    }, config.getEffectiveExecutor());
   }
 
   @Override
@@ -106,5 +103,4 @@ public class SmtpSessionFactory implements Closeable  {
 
     return returnedFuture;
   }
-
 }
