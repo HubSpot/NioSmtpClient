@@ -48,22 +48,6 @@ public class DotStuffingTest {
     assertThat(dotStuffUsingByteBuf("x", true, false)).isEqualTo("x");
   }
 
-  @Test
-  public void itRetainsSourceByteBufs() {
-    String testString = "abc\r\n.def\r\n.ghi\r\n.";
-
-    ByteBuf sourceBuffer = ALLOCATOR.buffer();
-    sourceBuffer.writeBytes(testString.getBytes(StandardCharsets.UTF_8));
-    assertThat(sourceBuffer.refCnt()).isEqualTo(1);
-
-    ByteBuf destBuffer = DotStuffing.createDotStuffedBuffer(ALLOCATOR, sourceBuffer, null, MessageTermination.ADD_CRLF);
-    assertThat(destBuffer.refCnt()).isEqualTo(1);
-
-    // should be able to release both of these successfully
-    sourceBuffer.release();
-    destBuffer.release();
-  }
-
   private String dotStuffUsingByteBuf(String testString) {
     return dotStuffUsingByteBuf(testString, true, true);
   }

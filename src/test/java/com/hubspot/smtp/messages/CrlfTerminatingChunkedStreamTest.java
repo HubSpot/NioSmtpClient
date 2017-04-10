@@ -44,11 +44,12 @@ public class CrlfTerminatingChunkedStreamTest {
 
     CompositeByteBuf destBuffer = ALLOCATOR.compositeBuffer();
     while (!chunkedStream.isEndOfInput()) {
-      destBuffer.addComponent(true, chunkedStream.readChunk(ALLOCATOR).retain());
+      destBuffer.addComponent(true, chunkedStream.readChunk(ALLOCATOR));
     }
 
     byte[] bytes = new byte[destBuffer.readableBytes()];
     destBuffer.getBytes(0, bytes);
+    destBuffer.release();
     return new String(bytes, CharsetUtil.UTF_8);
   }
 }
