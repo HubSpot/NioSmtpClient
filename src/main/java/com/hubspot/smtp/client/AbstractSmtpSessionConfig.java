@@ -6,6 +6,9 @@ import java.time.Duration;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 
 import javax.net.ssl.SSLEngine;
@@ -18,6 +21,8 @@ import org.immutables.value.Value.Style;
 import org.immutables.value.Value.Style.ImplementationVisibility;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Suppliers;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -28,10 +33,21 @@ import io.netty.handler.ssl.SslContextBuilder;
 abstract class AbstractSmtpSessionConfig {
   public static final Executor DIRECT_EXECUTOR = Runnable::run;
 
+  private static final com.google.common.base.Supplier<Executor> SHARED_DEFAULT_EXECUTOR = Suppliers.memoize(AbstractSmtpSessionConfig::getSharedExecutor);
+
+  private static ExecutorService getSharedExecutor() {
+    ThreadFactory threadFactory = new ThreadFactoryBuilder().setDaemon(true).setNameFormat("niosmtpclient-%d").build();
+    return Executors.newCachedThreadPool(threadFactory);
+  }
+
   public abstract InetSocketAddress getRemoteAddress();
   public abstract Optional<InetSocketAddress> getLocalAddress();
   public abstract Optional<Duration> getKeepAliveTimeout();
   public abstract Optional<Executor> getExecutor();
+
+  Executor getEffectiveExecutor() {
+    return getExecutor().orElse(SHARED_DEFAULT_EXECUTOR.get());
+  }
 
   @Default
   public Duration getConnectionTimeout() {

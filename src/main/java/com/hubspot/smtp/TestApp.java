@@ -12,8 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -35,7 +33,6 @@ import io.netty.handler.codec.smtp.SmtpRequest;
 class TestApp {
   private static final String TEST_EMAIL = "Subject: test mail\r\n\r\nHi there!\r\n\r\n- Michael\r\n";
   private static final NioEventLoopGroup EVENT_LOOP_GROUP = new NioEventLoopGroup();
-  private static final ExecutorService EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 
   public static void main(String[] args) throws InterruptedException, IOException, ExecutionException {
     Stopwatch stopwatch = Stopwatch.createStarted();
@@ -52,7 +49,7 @@ class TestApp {
     SmtpSessionConfig config = SmtpSessionConfig.forRemoteAddress("localhost", 9925)
         .withReadTimeout(Duration.ofSeconds(10)).withKeepAliveTimeout(Duration.ofSeconds(3));
 
-    SmtpSessionFactory sessionFactory = new SmtpSessionFactory(EVENT_LOOP_GROUP, EXECUTOR_SERVICE);
+    SmtpSessionFactory sessionFactory = new SmtpSessionFactory(EVENT_LOOP_GROUP);
     sessionFactory.connect(config).thenCompose(r -> r.getSession().send(req(EHLO, "hubspot.com")));
 
     while (true) {
@@ -66,7 +63,7 @@ class TestApp {
 
     SmtpSessionConfig config = SmtpSessionConfig.forRemoteAddress("localhost", 9925);
 
-    CompletableFuture<SmtpClientResponse[]> future = new SmtpSessionFactory(EVENT_LOOP_GROUP, EXECUTOR_SERVICE).connect(config)
+    CompletableFuture<SmtpClientResponse[]> future = new SmtpSessionFactory(EVENT_LOOP_GROUP).connect(config)
         .thenCompose(r -> r.getSession().send(req(EHLO, "hubspot.com")))
         .thenCompose(r -> r.getSession().sendPipelined(req(MAIL, "FROM:test@example.com"), req(RCPT, "TO:person1@example.com"), req(DATA)));
 
@@ -85,7 +82,7 @@ class TestApp {
   }
 
   private static void sendEmail(NioEventLoopGroup eventLoopGroup) throws InterruptedException, ExecutionException {
-    SmtpClient client = new SmtpClient(eventLoopGroup, new SmtpSessionFactory(EVENT_LOOP_GROUP, EXECUTOR_SERVICE));
+    SmtpClient client = new SmtpClient(eventLoopGroup, new SmtpSessionFactory(EVENT_LOOP_GROUP));
 
     client.connect(SmtpSessionConfig.forRemoteAddress("localhost", 9925))
         .thenCompose(r -> client.ehlo(r.getSession(), "hubspot.com"))
