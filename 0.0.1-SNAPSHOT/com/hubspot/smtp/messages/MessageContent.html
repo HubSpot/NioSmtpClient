@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":6};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":6};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -134,8 +134,8 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>abstract int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#count8bitCharacters--">count8bitCharacters</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>abstract float</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#get8bitCharacterProportion--">get8bitCharacterProportion</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>abstract <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></td>
@@ -146,46 +146,52 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getContentAsString--">getContentAsString</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code>abstract <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;io.netty.buffer.ByteBuf&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getContentChunkIterator-io.netty.buffer.ByteBufAllocator-">getContentChunkIterator</a></span>(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code>&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>abstract <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getDotStuffedContent--">getDotStuffedContent</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>abstract <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getEncoding--">getEncoding</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#of-io.netty.buffer.ByteBuf-">of</a></span>(io.netty.buffer.ByteBuf&nbsp;messageBuffer)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#of-io.netty.buffer.ByteBuf-com.hubspot.smtp.messages.MessageContentEncoding-">of</a></span>(io.netty.buffer.ByteBuf&nbsp;messageBuffer,
   <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
-<td class="colFirst"><code>static <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#of-com.google.common.io.ByteSource-int-">of</a></span>(com.google.common.io.ByteSource&nbsp;byteSource,
-  int&nbsp;size)</code>&nbsp;</td>
-</tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#of-com.google.common.io.ByteSource-int-com.hubspot.smtp.messages.MessageContentEncoding-">of</a></span>(com.google.common.io.ByteSource&nbsp;byteSource,
-  int&nbsp;size,
-  <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#of-com.google.common.io.ByteSource-">of</a></span>(com.google.common.io.ByteSource&nbsp;byteSource)</code>&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#of-java.util.function.Supplier-int-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream,
-  int&nbsp;size)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#of-com.google.common.io.ByteSource-com.hubspot.smtp.messages.MessageContentEncoding-">of</a></span>(com.google.common.io.ByteSource&nbsp;byteSource,
+  <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>&nbsp;</td>
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#of-java.util.function.Supplier-int-com.hubspot.smtp.messages.MessageContentEncoding-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream,
-  int&nbsp;size,
-  <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#of-java.util.function.Supplier-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream)</code>&nbsp;</td>
 </tr>
 <tr id="i11" class="rowColor">
-<td class="colFirst"><code>abstract int</code></td>
+<td class="colFirst"><code>static <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#of-java.util.function.Supplier-com.hubspot.smtp.messages.MessageContentEncoding-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream,
+  <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>&nbsp;</td>
+</tr>
+<tr id="i12" class="altColor">
+<td class="colFirst"><code>static <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#of-java.util.function.Supplier-com.hubspot.smtp.messages.MessageContentEncoding-int-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream,
+  <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding,
+  int&nbsp;size)</code>&nbsp;</td>
+</tr>
+<tr id="i13" class="rowColor">
+<td class="colFirst"><code>abstract <a href="http://docs.oracle.com/javase/8/docs/api/java/util/OptionalInt.html?is-external=true" title="class or interface in java.util">OptionalInt</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#size--">size</a></span>()</code>&nbsp;</td>
 </tr>
 </table>
@@ -229,45 +235,52 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
                                 <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</pre>
 </li>
 </ul>
-<a name="of-java.util.function.Supplier-int-">
+<a name="of-java.util.function.Supplier-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>of</h4>
-<pre>public static&nbsp;<a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;of(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream,
-                                int&nbsp;size)</pre>
+<pre>public static&nbsp;<a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;of(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream)</pre>
 </li>
 </ul>
-<a name="of-java.util.function.Supplier-int-com.hubspot.smtp.messages.MessageContentEncoding-">
+<a name="of-java.util.function.Supplier-com.hubspot.smtp.messages.MessageContentEncoding-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>of</h4>
 <pre>public static&nbsp;<a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;of(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream,
-                                int&nbsp;size,
                                 <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</pre>
 </li>
 </ul>
-<a name="of-com.google.common.io.ByteSource-int-">
+<a name="of-java.util.function.Supplier-com.hubspot.smtp.messages.MessageContentEncoding-int-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>of</h4>
-<pre>public static&nbsp;<a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;of(com.google.common.io.ByteSource&nbsp;byteSource,
+<pre>public static&nbsp;<a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;of(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream,
+                                <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding,
                                 int&nbsp;size)</pre>
 </li>
 </ul>
-<a name="of-com.google.common.io.ByteSource-int-com.hubspot.smtp.messages.MessageContentEncoding-">
+<a name="of-com.google.common.io.ByteSource-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>of</h4>
+<pre>public static&nbsp;<a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;of(com.google.common.io.ByteSource&nbsp;byteSource)</pre>
+</li>
+</ul>
+<a name="of-com.google.common.io.ByteSource-com.hubspot.smtp.messages.MessageContentEncoding-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>of</h4>
 <pre>public static&nbsp;<a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;of(com.google.common.io.ByteSource&nbsp;byteSource,
-                                int&nbsp;size,
                                 <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</pre>
 </li>
 </ul>
@@ -277,7 +290,7 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <ul class="blockList">
 <li class="blockList">
 <h4>size</h4>
-<pre>public abstract&nbsp;int&nbsp;size()</pre>
+<pre>public abstract&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/OptionalInt.html?is-external=true" title="class or interface in java.util">OptionalInt</a>&nbsp;size()</pre>
 </li>
 </ul>
 <a name="getContent--">
@@ -287,6 +300,15 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <li class="blockList">
 <h4>getContent</h4>
 <pre>public abstract&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;getContent()</pre>
+</li>
+</ul>
+<a name="getContentChunkIterator-io.netty.buffer.ByteBufAllocator-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getContentChunkIterator</h4>
+<pre>public abstract&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;io.netty.buffer.ByteBuf&gt;&nbsp;getContentChunkIterator(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</pre>
 </li>
 </ul>
 <a name="getDotStuffedContent--">
@@ -307,13 +329,13 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <pre>public abstract&nbsp;<a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;getEncoding()</pre>
 </li>
 </ul>
-<a name="count8bitCharacters--">
+<a name="get8bitCharacterProportion--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>count8bitCharacters</h4>
-<pre>public abstract&nbsp;int&nbsp;count8bitCharacters()</pre>
+<h4>get8bitCharacterProportion</h4>
+<pre>public abstract&nbsp;float&nbsp;get8bitCharacterProportion()</pre>
 </li>
 </ul>
 <a name="getContentAsString--">
