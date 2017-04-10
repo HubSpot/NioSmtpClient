@@ -12,21 +12,21 @@ public abstract class MessageContentTest {
         0x00, 0x00
     };
 
-    assertThat(createContent(allZeros).count8bitCharacters()).isEqualTo(0);
+    assertThat(createContent(allZeros).get8bitCharacterProportion()).isEqualTo(0.0F);
 
     byte[] allHighBit = new byte[] {
         (byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0x80, (byte) 0x80,
         (byte) 0x80, (byte) 0x80
     };
 
-    assertThat(createContent(allHighBit).count8bitCharacters()).isEqualTo(allHighBit.length);
+    assertThat(createContent(allHighBit).get8bitCharacterProportion()).isEqualTo(1.0F);
 
     byte[] mixed = new byte[] {
         (byte) 0x80, (byte) 0x00, (byte) 0x80, (byte) 0x00, (byte) 0x80, (byte) 0x00, (byte) 0x80, (byte) 0x00,
         (byte) 0x80, (byte) 0x00
     };
 
-    assertThat(createContent(mixed).count8bitCharacters()).isEqualTo(mixed.length / 2);
+    assertThat(createContent(mixed).get8bitCharacterProportion()).isEqualTo(0.5F);
   }
 
   protected abstract MessageContent createContent(byte[] bytes);

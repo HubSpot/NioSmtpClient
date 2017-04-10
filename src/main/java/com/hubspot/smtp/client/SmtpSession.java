@@ -7,7 +7,9 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -35,6 +37,7 @@ import com.hubspot.smtp.utils.SmtpResponses;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
@@ -175,7 +178,7 @@ public class SmtpSession {
       return sendAs8BitMime(from, recipients, content);
     }
 
-    if (content.count8bitCharacters() == 0) {
+    if (content.get8bitCharacterProportion() == 0) {
       return sendAs7Bit(from, recipients, content);
     }
 
@@ -188,10 +191,15 @@ public class SmtpSession {
       List<Object> objects = Lists.newArrayListWithExpectedSize(3 + recipients.size());
       objects.add(SmtpRequests.mail(from));
       objects.addAll(rpctCommands(recipients));
-      objects.add(new DefaultSmtpRequest(BDAT_COMMAND, Integer.toString(content.size()), "LAST"));
-      objects.add(content.getContent());
 
-      return beginSequence(objects.size() - 1, objects.toArray()).toResponses();
+      Iterator<ByteBuf> chunkIterator = content.getContentChunkIterator(channel.alloc());
+
+      ByteBuf firstChunk = chunkIterator.next();
+      objects.add(getBdatRequestWithData(firstChunk, !chunkIterator.hasNext()));
+
+      return beginSequence(objects.size(), objects.toArray())
+          .thenSendInTurn(getBdatIterator(chunkIterator))
+          .toResponses();
 
     } else {
       SendSequence sequence = beginSequence(1, SmtpRequests.mail(from));
@@ -201,9 +209,33 @@ public class SmtpSession {
       }
 
       return sequence
-          .thenSend(new DefaultSmtpRequest(BDAT_COMMAND, Integer.toString(content.size()), "LAST"), content.getContent())
+          .thenSendInTurn(getBdatIterator(content.getContentChunkIterator(channel.alloc())))
           .toResponses();
     }
+  }
+
+  @SuppressFBWarnings("VA_FORMAT_STRING_USES_NEWLINE") // we shouldn't use platform-specific newlines for SMTP
+  private ByteBuf getBdatRequestWithData(ByteBuf data, boolean isLast) {
+    String request = String.format("BDAT %d%s\r\n", data.readableBytes(), isLast ? " LAST" : "");
+    ByteBuf requestBuf = channel.alloc().buffer(request.length());
+    ByteBufUtil.writeAscii(requestBuf, request);
+
+    return channel.alloc().compositeBuffer().addComponents(true, requestBuf, data);
+  }
+
+  private Iterator<Object> getBdatIterator(Iterator<ByteBuf> chunkIterator) {
+    return new Iterator<Object>() {
+      @Override
+      public boolean hasNext() {
+        return chunkIterator.hasNext();
+      }
+
+      @Override
+      public Object next() {
+        ByteBuf buf = chunkIterator.next();
+        return getBdatRequestWithData(buf, !chunkIterator.hasNext());
+      }
+    };
   }
 
   private CompletableFuture<SmtpClientResponse[]> sendAs7Bit(String from, Collection<String> recipients, MessageContent content) {
@@ -287,7 +319,7 @@ public class SmtpSession {
   public CompletableFuture<SmtpClientResponse> sendChunk(ByteBuf data, boolean isLast) {
     Preconditions.checkState(ehloResponse.isSupported(Extension.CHUNKING), "Chunking is not supported on this server");
     Preconditions.checkNotNull(data);
-    checkMessageSize(chunkedBytesSent.addAndGet(data.readableBytes()));
+    checkMessageSize(OptionalInt.of(chunkedBytesSent.addAndGet(data.readableBytes())));
 
     if (isLast) {
       // reset the counter so we can send another mail over this connection
@@ -317,7 +349,7 @@ public class SmtpSession {
     Preconditions.checkState(ehloResponse.isSupported(Extension.PIPELINING), "Pipelining is not supported on this server");
     Preconditions.checkNotNull(requests);
     checkValidPipelinedRequest(requests);
-    checkMessageSize(content == null ? 0 : content.size());
+    checkMessageSize(content == null ? OptionalInt.empty() : content.size());
 
     int expectedResponses = requests.length + (content == null ? 0 : 1);
     CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(expectedResponses, () -> createDebugString((Object[]) requests));
@@ -377,12 +409,12 @@ public class SmtpSession {
     return applyOnExecutor(responseFuture, loginResponse -> new SmtpClientResponse(loginResponse[0], this));
   }
 
-  private void checkMessageSize(int size) {
-    if (!ehloResponse.getMaxMessageSize().isPresent()) {
+  private void checkMessageSize(OptionalInt size) {
+    if (!ehloResponse.getMaxMessageSize().isPresent() || !size.isPresent()) {
       return;
     }
 
-    if (ehloResponse.getMaxMessageSize().get() < size) {
+    if (ehloResponse.getMaxMessageSize().get() < size.getAsInt()) {
       throw new MessageTooLargeException(config.getConnectionId(), ehloResponse.getMaxMessageSize().get());
     }
   }
@@ -476,8 +508,7 @@ public class SmtpSession {
     CompletableFuture<SmtpResponse[]> responseFuture;
 
     SendSequence(int expectedResponses, Object... objects) {
-      responseFuture = createFuture(expectedResponses, objects);
-      writeObjects(objects);
+      responseFuture = writeObjectsAndCollectResponses(expectedResponses, objects);
     }
 
     SendSequence thenSend(Object... objects) {
@@ -486,12 +517,47 @@ public class SmtpSession {
           return CompletableFuture.completedFuture(responses);
         }
 
-        CompletableFuture<SmtpResponse[]> nextFuture = createFuture(1, objects);
-        writeObjects(objects);
-        return nextFuture.thenApply(newResponses -> ObjectArrays.concat(responses, newResponses, SmtpResponse.class));
+        return writeObjectsAndCollectResponses(1, objects)
+            .thenApply(mergeResponses(responses));
       });
 
       return this;
+    }
+
+    // sends the next item from the iterator only when the response for the previous one
+    // has arrived, continuing until the iterator is empty or the response is an error
+    SendSequence thenSendInTurn(Iterator<Object> iterator) {
+      responseFuture = sendNext(responseFuture, iterator);
+      return this;
+    }
+
+    private CompletableFuture<SmtpResponse[]> sendNext(CompletableFuture<SmtpResponse[]> prevFuture, Iterator<Object> iterator) {
+      if (!iterator.hasNext()) {
+        return prevFuture;
+      }
+
+      return prevFuture.thenCompose(responses -> {
+        if (SmtpResponses.isError(responses[responses.length - 1])) {
+          return CompletableFuture.completedFuture(responses);
+        }
+
+        Object nextObject = iterator.next();
+
+        CompletableFuture<SmtpResponse[]> f = writeObjectsAndCollectResponses(1, nextObject)
+            .thenApply(mergeResponses(responses));
+
+        return sendNext(f, iterator);
+      });
+    }
+
+    private Function<SmtpResponse[], SmtpResponse[]> mergeResponses(SmtpResponse[] existingResponses) {
+      return newResponses -> ObjectArrays.concat(existingResponses, newResponses, SmtpResponse.class);
+    }
+
+    private CompletableFuture<SmtpResponse[]> writeObjectsAndCollectResponses(int expectedResponses, Object... objects) {
+      CompletableFuture<SmtpResponse[]> nextFuture = createFuture(expectedResponses, objects);
+      writeObjects(objects);
+      return nextFuture;
     }
 
     CompletableFuture<SmtpClientResponse[]> toResponses() {

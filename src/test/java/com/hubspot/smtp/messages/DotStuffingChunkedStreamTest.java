@@ -48,7 +48,7 @@ public class DotStuffingChunkedStreamTest {
 
   private String dotStuff(String testString, int chunkSize) throws Exception {
     ByteArrayInputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
-    DotStuffingChunkedStream chunkedStream = new DotStuffingChunkedStream(stream, testString.length(), chunkSize);
+    DotStuffingChunkedStream chunkedStream = new DotStuffingChunkedStream(stream, chunkSize);
 
     CompositeByteBuf destBuffer = ALLOCATOR.compositeBuffer();
     while (!chunkedStream.isEndOfInput()) {

@@ -4,34 +4,39 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.OptionalInt;
 import java.util.function.Supplier;
 
 import com.google.common.io.ByteSource;
 import com.google.common.io.CharStreams;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+
 public class InputStreamMessageContent extends MessageContent {
-  private static final int UNCOUNTED = -1;
+  private static final float UNCOUNTED = -1F;
   private static final int READ_LIMIT = 8192;
 
   private final Supplier<InputStream> streamSupplier;
-  private final int size;
+  private final OptionalInt size;
   private final MessageContentEncoding encoding;
 
-  private int eightBitCharCount = UNCOUNTED;
+  private float eightBitCharProportion = UNCOUNTED;
   private InputStream stream;
 
-  public InputStreamMessageContent(Supplier<InputStream> streamSupplier, int size, MessageContentEncoding encoding) {
+  public InputStreamMessageContent(Supplier<InputStream> streamSupplier, OptionalInt size, MessageContentEncoding encoding) {
     this.streamSupplier = streamSupplier;
     this.size = size;
     this.encoding = encoding;
   }
 
-  public InputStreamMessageContent(ByteSource byteSource, int size, MessageContentEncoding encoding) {
+  public InputStreamMessageContent(ByteSource byteSource, OptionalInt size, MessageContentEncoding encoding) {
     this(getStream(byteSource), size, encoding);
   }
 
   @Override
-  public int size() {
+  public OptionalInt size() {
     return size;
   }
 
@@ -41,10 +46,36 @@ public class InputStreamMessageContent extends MessageContent {
   }
 
   @Override
+  public Iterator<ByteBuf> getContentChunkIterator(ByteBufAllocator allocator) {
+    CrlfTerminatingChunkedStream chunkedStream = new CrlfTerminatingChunkedStream(getStream());
+
+    return new Iterator<ByteBuf>() {
+      @Override
+      public boolean hasNext() {
+        try {
+          return !chunkedStream.isEndOfInput();
+        } catch (Exception e) {
+          // isEndOfInput can throw IOException though it declares Exception
+          throw new RuntimeException(e);
+        }
+      }
+
+      @Override
+      public ByteBuf next() {
+        try {
+          return chunkedStream.readChunk(allocator);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+    };
+  }
+
+  @Override
   public Object getDotStuffedContent() {
     // note: size is hard to predict for dot-stuffed content as
     // the transformation might add a few extra bytes
-    return new DotStuffingChunkedStream(getStream(), size);
+    return new DotStuffingChunkedStream(getStream());
   }
 
   @Override
@@ -53,12 +84,12 @@ public class InputStreamMessageContent extends MessageContent {
   }
 
   @Override
-  public int count8bitCharacters() {
-    if (eightBitCharCount != UNCOUNTED) {
-      return eightBitCharCount;
+  public float get8bitCharacterProportion() {
+    if (eightBitCharProportion != UNCOUNTED) {
+      return eightBitCharProportion;
     }
 
-    eightBitCharCount = 0;
+    int eightBitCharCount = 0;
 
     InputStream inputStream = getStream();
     inputStream.mark(READ_LIMIT);
@@ -74,18 +105,14 @@ public class InputStreamMessageContent extends MessageContent {
         bytesRead++;
       }
 
-      // if we've already read READ_LIMIT, estimate the remaining stream
-      if (bytesRead == READ_LIMIT) {
-        eightBitCharCount *= size / READ_LIMIT;
-      }
-
       inputStream.reset();
+      eightBitCharProportion = 1.0F * eightBitCharCount / bytesRead;
 
     } catch (IOException e) {
       e.printStackTrace();
     }
 
-    return eightBitCharCount;
+    return eightBitCharProportion;
   }
 
   @Override

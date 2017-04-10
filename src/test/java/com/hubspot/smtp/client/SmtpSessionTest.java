@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -21,6 +22,7 @@ import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteSource;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -51,11 +53,13 @@ public class SmtpSessionTest {
   private static final String ALICE = "alice@example.com";
   private static final String BOB = "bob@example.com";
   private static final String CAROL = "carol@example.com";
+  private static final String MESSAGE_CONTENTS = "Subject: test\r\nhi\r\n";
+  private static final byte[] MESSAGE_BYTES = MESSAGE_CONTENTS.getBytes(StandardCharsets.UTF_8);
 
   private static final SmtpRequest SMTP_REQUEST = new DefaultSmtpRequest(SmtpCommand.NOOP);
-  private static final MessageContent SMTP_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]));
-  private static final MessageContent SEVEN_BIT_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]), MessageContentEncoding.SEVEN_BIT);
-  private static final MessageContent UNKNOWN_CONTENT = MessageContent.of(Unpooled.copiedBuffer(new byte[1]), MessageContentEncoding.UNKNOWN);
+  private static final MessageContent SMTP_CONTENT = MessageContent.of(Unpooled.copiedBuffer(MESSAGE_BYTES));
+  private static final MessageContent SEVEN_BIT_CONTENT = MessageContent.of(Unpooled.copiedBuffer(MESSAGE_BYTES), MessageContentEncoding.SEVEN_BIT);
+  private static final MessageContent UNKNOWN_CONTENT = MessageContent.of(Unpooled.copiedBuffer(MESSAGE_BYTES), MessageContentEncoding.UNKNOWN);
   private static final SmtpResponse OK_RESPONSE = new DefaultSmtpResponse(250, "OK");
   private static final SmtpResponse FAIL_RESPONSE = new DefaultSmtpResponse(400, "nope");
   private static final SmtpResponse INTERMEDIATE_RESPONSE = new DefaultSmtpResponse(300, "... go on");
@@ -78,6 +82,7 @@ public class SmtpSessionTest {
   private ChannelPipeline pipeline;
   private SmtpSession session;
   private ChannelFuture writeFuture;
+  private ArgumentCaptor<ByteBuf> byteBufCaptor;
 
   @Before
   public void setup() {
@@ -85,6 +90,7 @@ public class SmtpSessionTest {
     pipeline = mock(ChannelPipeline.class);
     responseHandler = mock(ResponseHandler.class);
 
+    byteBufCaptor = ArgumentCaptor.forClass(ByteBuf.class);
     responseFuture = new CompletableFuture<>();
     secondResponseFuture = new CompletableFuture<>();
     writeFuture = mock(ChannelFuture.class);
@@ -119,7 +125,7 @@ public class SmtpSessionTest {
   public void itThrowsIllegalArgumentIfTheSubmittedMessageSizeIsLargerThanTheMaximum() {
     session.parseEhloResponse(Lists.newArrayList("SIZE 1024"));
 
-    MessageContent largeMessage = MessageContent.of(ByteSource.wrap(new byte[0]), 1025);
+    MessageContent largeMessage = MessageContent.of(ByteSource.wrap(new byte[1025]));
 
     assertThatThrownBy(() -> session.send(largeMessage))
       .isInstanceOf(MessageTooLargeException.class)
@@ -399,11 +405,23 @@ public class SmtpSessionTest {
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + CAROL + ">"));
-    order.verify(channel).write(req(BDAT, Integer.toString(SMTP_CONTENT.size()), "LAST"));
-    order.verify(channel).write(SMTP_CONTENT.getContent());
+    order.verify(channel).write(byteBufCaptor.capture());
     order.verify(channel).flush();
 
+    assertThat(getString(byteBufCaptor.getValue()))
+        .isEqualTo("BDAT " + MESSAGE_CONTENTS.length() + " LAST\r\n" + MESSAGE_CONTENTS);
+
     assertResponsesMapped(4, future);
+  }
+
+  private String getString(ByteBuf byteBuf) {
+    return new String(getBytes(byteBuf));
+  }
+
+  private byte[] getBytes(ByteBuf byteBuf) {
+    byte[] bytes = new byte[byteBuf.readableBytes()];
+    byteBuf.getBytes(0, bytes);
+    return bytes;
   }
 
   @Test
@@ -414,15 +432,13 @@ public class SmtpSessionTest {
     InOrder order = inOrder(channel);
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
-    order.verify(channel).write(req(BDAT, Integer.toString(SMTP_CONTENT.size()), "LAST"));
-    order.verify(channel).write(SMTP_CONTENT.getContent());
+    order.verify(channel).write(byteBufCaptor.capture());
     order.verify(channel).flush();
 
     order.verify(channel).write(req(SmtpCommand.RSET));
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
-    order.verify(channel).write(req(BDAT, Integer.toString(SMTP_CONTENT.size()), "LAST"));
-    order.verify(channel).write(SMTP_CONTENT.getContent());
+    order.verify(channel).write(byteBufCaptor.capture());
     order.verify(channel).flush();
   }
 
@@ -437,9 +453,11 @@ public class SmtpSessionTest {
     InOrder order = inOrder(channel);
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
-    order.verify(channel).write(req(BDAT, Integer.toString(SMTP_CONTENT.size()), "LAST"));
-    order.verify(channel).write(SMTP_CONTENT.getContent());
+    order.verify(channel).write(byteBufCaptor.capture());
     order.verify(channel).flush();
+
+    assertThat(getString(byteBufCaptor.getValue()))
+        .isEqualTo("BDAT " + MESSAGE_CONTENTS.length() + " LAST\r\n" + MESSAGE_CONTENTS);
 
     assertThat(future.isDone());
     assertThat(future.get().length).isEqualTo(3);
@@ -457,12 +475,55 @@ public class SmtpSessionTest {
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + CAROL + ">"));
-    order.verify(channel).write(req(BDAT, Integer.toString(SMTP_CONTENT.size()), "LAST"));
-    order.verify(channel).write(SMTP_CONTENT.getContent());
+    order.verify(channel).write(byteBufCaptor.capture());
     order.verify(channel).flush();
 
+    assertThat(getString(byteBufCaptor.getValue()))
+        .isEqualTo("BDAT " + MESSAGE_CONTENTS.length() + " LAST\r\n" + MESSAGE_CONTENTS);
+    
     assertThat(future.isDone());
     assertThat(future.get().length).isEqualTo(4);
+  }
+
+  @Test
+  public void itSendsChunksOneAtATime() throws Exception {
+    List<String> chunks = Lists.newArrayList("first chunk", "number two", "last one");
+    MessageContent content = mock(MessageContent.class);
+    when(content.getContentChunkIterator(any()))
+        .thenReturn(Iterators.transform(chunks.iterator(), c -> Unpooled.copiedBuffer(c.getBytes(StandardCharsets.UTF_8))));
+
+    CompletableFuture<SmtpResponse[]> future1 = new CompletableFuture<>();
+    CompletableFuture<SmtpResponse[]> future2 = new CompletableFuture<>();
+    CompletableFuture<SmtpResponse[]> future3 = new CompletableFuture<>();
+
+    when(responseHandler.createResponseFuture(anyInt(), any())).thenReturn(future1, future2, future3);
+
+    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, Collections.singleton(BOB), content);
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).write(byteBufCaptor.capture());
+    order.verify(channel).flush();
+
+    // respond to the initial pipelined requests
+    future1.complete(new SmtpResponse[] { OK_RESPONSE });
+
+    order.verify(channel).write(byteBufCaptor.capture());
+    order.verify(channel).flush();
+
+    // respond to the second chunk
+    future2.complete(new SmtpResponse[] { OK_RESPONSE });
+
+    order.verify(channel).write(byteBufCaptor.capture());
+    order.verify(channel).flush();
+
+    assertThat(getString(byteBufCaptor.getAllValues().get(0)))
+        .isEqualTo("BDAT " + chunks.get(0).length() + "\r\n" + chunks.get(0));
+    assertThat(getString(byteBufCaptor.getAllValues().get(1)))
+        .isEqualTo("BDAT " + chunks.get(1).length() + "\r\n" + chunks.get(1));
+    assertThat(getString(byteBufCaptor.getAllValues().get(2)))
+        .isEqualTo("BDAT " + chunks.get(2).length() + " LAST\r\n" + chunks.get(2));
   }
 
   @Test
