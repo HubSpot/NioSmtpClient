@@ -71,8 +71,6 @@ public class SmtpSessionTest {
   private static final SmtpRequest HELO_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELO);
   private static final SmtpRequest HELP_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELP);
 
-  private static final SmtpCommand BDAT = SmtpCommand.valueOf("BDAT");
-
   private static final SmtpSessionConfig CONFIG = SmtpSessionConfig.forRemoteAddress("127.0.0.1", 25).withExecutor(SmtpSessionConfig.DIRECT_EXECUTOR);
 
   private ResponseHandler responseHandler;
@@ -85,6 +83,7 @@ public class SmtpSessionTest {
   private ArgumentCaptor<ByteBuf> byteBufCaptor;
 
   @Before
+  @SuppressWarnings("unchecked")
   public void setup() {
     channel = mock(Channel.class);
     pipeline = mock(ChannelPipeline.class);
@@ -486,6 +485,7 @@ public class SmtpSessionTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   public void itSendsChunksOneAtATime() throws Exception {
     List<String> chunks = Lists.newArrayList("first chunk", "number two", "last one");
     MessageContent content = mock(MessageContent.class);
@@ -498,7 +498,7 @@ public class SmtpSessionTest {
 
     when(responseHandler.createResponseFuture(anyInt(), any())).thenReturn(future1, future2, future3);
 
-    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, Collections.singleton(BOB), content);
+    session.send(ALICE, Collections.singleton(BOB), content);
 
     InOrder order = inOrder(channel);
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
