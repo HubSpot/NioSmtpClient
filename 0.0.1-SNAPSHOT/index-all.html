@@ -106,6 +106,10 @@
 </a>
 <h2 class="title">C</h2>
 <dl>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#channelClass-java.lang.Class-">channelClass(Class&lt;? extends Channel&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></dt>
+<dd>
+<div class="block">Initializes the value for the <code>channelClass</code> attribute.</div>
+</dd>
 <dt><a href="com/hubspot/smtp/client/ChannelClosedException.html" title="class in com.hubspot.smtp.client"><span class="typeNameLink">ChannelClosedException</span></a> - Exception in <a href="com/hubspot/smtp/client/package-summary.html">com.hubspot.smtp.client</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/ChannelClosedException.html#ChannelClosedException-java.lang.String-java.lang.String-">ChannelClosedException(String, String)</a></span> - Constructor for exception com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/ChannelClosedException.html" title="class in com.hubspot.smtp.client">ChannelClosedException</a></dt>
@@ -200,6 +204,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#getAllocator--">getAllocator()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#getChannelClass--">getChannelClass()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSession.html#getCloseFuture--">getCloseFuture()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#getConnectionId--">getConnectionId()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
@@ -268,7 +274,7 @@
 <dl>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#hashCode--">hashCode()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
-<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>executor</code>, <code>connectionTimeout</code>, <code>readTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>, <code>allocator</code>, <code>sslEngineSupplier</code>.</div>
+<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>executor</code>, <code>connectionTimeout</code>, <code>readTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>, <code>allocator</code>, <code>sslEngineSupplier</code>, <code>channelClass</code>.</div>
 </dd>
 </dl>
 <a name="I:I">
@@ -432,7 +438,7 @@
 </dd>
 <dt><a href="com/hubspot/smtp/client/SmtpSessionFactory.html" title="class in com.hubspot.smtp.client"><span class="typeNameLink">SmtpSessionFactory</span></a> - Class in <a href="com/hubspot/smtp/client/package-summary.html">com.hubspot.smtp.client</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionFactory.html#SmtpSessionFactory-io.netty.channel.nio.NioEventLoopGroup-">SmtpSessionFactory(NioEventLoopGroup)</a></span> - Constructor for class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionFactory.html" title="class in com.hubspot.smtp.client">SmtpSessionFactory</a></dt>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionFactory.html#SmtpSessionFactory-io.netty.channel.EventLoopGroup-">SmtpSessionFactory(EventLoopGroup)</a></span> - Constructor for class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionFactory.html" title="class in com.hubspot.smtp.client">SmtpSessionFactory</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#sslEngineSupplier-java.util.function.Supplier-">sslEngineSupplier(Supplier&lt;SSLEngine&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></dt>
 <dd>
@@ -496,6 +502,10 @@ the order they are declared.</div>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withAllocator-io.netty.buffer.ByteBufAllocator-">withAllocator(ByteBufAllocator)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
 <div class="block">Copy the current immutable object by setting a value for the <code>allocator</code> attribute.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withChannelClass-java.lang.Class-">withChannelClass(Class&lt;? extends Channel&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
+<dd>
+<div class="block">Copy the current immutable object by setting a value for the <code>channelClass</code> attribute.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withConnectionId-java.lang.String-">withConnectionId(String)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
