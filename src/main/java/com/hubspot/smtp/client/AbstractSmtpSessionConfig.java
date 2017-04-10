@@ -26,6 +26,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslContextBuilder;
 
 @Immutable
@@ -77,6 +79,11 @@ abstract class AbstractSmtpSessionConfig {
   @Default
   public Supplier<SSLEngine> getSslEngineSupplier() {
     return this::createSSLEngine;
+  }
+
+  @Default
+  public Class<? extends Channel> getChannelClass() {
+    return NioSocketChannel.class;
   }
 
   @Check

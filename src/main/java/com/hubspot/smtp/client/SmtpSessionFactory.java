@@ -15,20 +15,19 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
 public class SmtpSessionFactory implements Closeable  {
   private static final Logger LOG = LoggerFactory.getLogger(SmtpSessionFactory.class);
 
-  private final NioEventLoopGroup eventLoopGroup;
+  private final EventLoopGroup eventLoopGroup;
   private final ChannelGroup allChannels;
 
-  public SmtpSessionFactory(NioEventLoopGroup eventLoopGroup) {
+  public SmtpSessionFactory(EventLoopGroup eventLoopGroup) {
     this.eventLoopGroup = eventLoopGroup;
 
     allChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
@@ -40,7 +39,7 @@ public class SmtpSessionFactory implements Closeable  {
 
     Bootstrap bootstrap = new Bootstrap()
         .group(eventLoopGroup)
-        .channel(NioSocketChannel.class)
+        .channel(config.getChannelClass())
         .option(ChannelOption.ALLOCATOR, config.getAllocator())
         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) getMillis(config.getConnectionTimeout()))
         .remoteAddress(config.getRemoteAddress())
