@@ -41,31 +41,35 @@ final class DotStuffing {
   public static ByteBuf createDotStuffedBuffer(ByteBufAllocator allocator, ByteBuf sourceBuffer, byte[] previousBytes, MessageTermination termination) {
     int dotIndex = findDotAtBeginningOfLine(sourceBuffer, 0, normalisePreviousBytes(previousBytes));
 
-    if (dotIndex == -1) {
-      if (termination == MessageTermination.ADD_CRLF) {
-        return allocator.compositeBuffer(2).addComponents(true, sourceBuffer.retainedSlice(), CR_LF_BUFFER.slice());
-      } else {
-        return sourceBuffer;
+    try {
+      if (dotIndex == -1) {
+        if (termination == MessageTermination.ADD_CRLF) {
+          return allocator.compositeBuffer(2).addComponents(true, sourceBuffer.retainedSlice(), CR_LF_BUFFER.slice());
+        } else {
+          return sourceBuffer.retainedSlice();
+        }
       }
+
+      // Build a CompositeByteBuf to avoid copying
+      CompositeByteBuf compositeByteBuf = allocator.compositeBuffer();
+      compositeByteBuf.addComponents(true, sourceBuffer.retainedSlice(0, dotIndex), DOT_DOT_BUFFER.slice());
+
+      int nextDotIndex;
+      while ((nextDotIndex = findDotAtBeginningOfLine(sourceBuffer, dotIndex + 1, NOT_CR_LF)) != -1) {
+        compositeByteBuf.addComponents(true, sourceBuffer.retainedSlice(dotIndex + 1, nextDotIndex - dotIndex - 1), DOT_DOT_BUFFER.slice());
+        dotIndex = nextDotIndex;
+      }
+
+      compositeByteBuf.addComponent(true, sourceBuffer.retainedSlice(dotIndex + 1, sourceBuffer.readableBytes() - dotIndex - 1));
+
+      if (termination == MessageTermination.ADD_CRLF) {
+        compositeByteBuf.addComponent(true, CR_LF_BUFFER.slice());
+      }
+
+      return compositeByteBuf;
+    } finally {
+      sourceBuffer.release();
     }
-
-    // Build a CompositeByteBuf to avoid copying
-    CompositeByteBuf compositeByteBuf = allocator.compositeBuffer();
-    compositeByteBuf.addComponents(true, sourceBuffer.retainedSlice(0, dotIndex), DOT_DOT_BUFFER.slice());
-
-    int nextDotIndex;
-    while ((nextDotIndex = findDotAtBeginningOfLine(sourceBuffer, dotIndex + 1, NOT_CR_LF)) != -1) {
-      compositeByteBuf.addComponents(true, sourceBuffer.retainedSlice(dotIndex + 1, nextDotIndex - dotIndex - 1), DOT_DOT_BUFFER.slice());
-      dotIndex = nextDotIndex;
-    }
-
-    compositeByteBuf.addComponent(true, sourceBuffer.retainedSlice(dotIndex + 1, sourceBuffer.readableBytes() - dotIndex - 1));
-
-    if (termination == MessageTermination.ADD_CRLF) {
-      compositeByteBuf.addComponent(true, CR_LF_BUFFER.slice());
-    }
-
-    return compositeByteBuf;
   }
 
   private static byte[] normalisePreviousBytes(byte[] previousBytes) {

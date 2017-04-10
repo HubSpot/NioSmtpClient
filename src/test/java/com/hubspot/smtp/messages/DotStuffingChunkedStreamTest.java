@@ -10,6 +10,7 @@ import org.junit.Test;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCountUtil;
 
 public class DotStuffingChunkedStreamTest {
   private static final String CRLF = "\r\n";
@@ -51,12 +52,15 @@ public class DotStuffingChunkedStreamTest {
     DotStuffingChunkedStream chunkedStream = new DotStuffingChunkedStream(stream, chunkSize);
 
     CompositeByteBuf destBuffer = ALLOCATOR.compositeBuffer();
+
     while (!chunkedStream.isEndOfInput()) {
-      destBuffer.addComponent(true, chunkedStream.readChunk(ALLOCATOR).retain());
+      destBuffer.addComponent(true, chunkedStream.readChunk(ALLOCATOR));
     }
 
     byte[] bytes = new byte[destBuffer.readableBytes()];
     destBuffer.getBytes(0, bytes);
+
+    ReferenceCountUtil.release(destBuffer);
     return new String(bytes, CharsetUtil.UTF_8);
   }
 }
