@@ -68,9 +68,9 @@ public class SmtpSessionFactory implements Closeable  {
     return TimeUnit.NANOSECONDS.convert(duration.getNano(), TimeUnit.MILLISECONDS);
   }
 
-  private <R, T> CompletableFuture<R> applyOnExecutor(SmtpSessionConfig config, CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
+  private <R, T> void applyOnExecutor(SmtpSessionConfig config, CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
     // use handleAsync to ensure exceptions and other callbacks are completed on the ExecutorService thread
-    return eventLoopFuture.handleAsync((rs, e) -> {
+    eventLoopFuture.handleAsync((rs, e) -> {
       if (e != null) {
         throw new RuntimeException(e);
       }
