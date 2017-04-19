@@ -107,15 +107,10 @@ var activeTableTab = "activeTableTab";
 <div class="description">
 <ul class="blockList">
 <li class="blockList">
-<dl>
-<dt>All Implemented Interfaces:</dt>
-<dd>io.netty.handler.codec.smtp.SmtpResponse</dd>
-</dl>
 <hr>
 <br>
 <pre>public class <span class="typeNameLabel">SmtpClientResponse</span>
-extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
-implements io.netty.handler.codec.smtp.SmtpResponse</pre>
+extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></pre>
 </li>
 </ul>
 </div>
@@ -134,8 +129,16 @@ implements io.netty.handler.codec.smtp.SmtpResponse</pre>
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#SmtpClientResponse-io.netty.handler.codec.smtp.SmtpResponse-com.hubspot.smtp.client.SmtpSession-">SmtpClientResponse</a></span>(io.netty.handler.codec.smtp.SmtpResponse&nbsp;response,
-                  <a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a>&nbsp;session)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#SmtpClientResponse-com.hubspot.smtp.client.SmtpSession-java.lang.Iterable-">SmtpClientResponse</a></span>(<a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a>&nbsp;session,
+                  <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&nbsp;responses)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#SmtpClientResponse-com.hubspot.smtp.client.SmtpSession-io.netty.handler.codec.smtp.SmtpResponse-">SmtpClientResponse</a></span>(<a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a>&nbsp;session,
+                  io.netty.handler.codec.smtp.SmtpResponse&nbsp;response)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#SmtpClientResponse-com.hubspot.smtp.client.SmtpSession-io.netty.handler.codec.smtp.SmtpResponse:A-">SmtpClientResponse</a></span>(<a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a>&nbsp;session,
+                  io.netty.handler.codec.smtp.SmtpResponse[]&nbsp;responses)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -153,12 +156,12 @@ implements io.netty.handler.codec.smtp.SmtpResponse</pre>
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#code--">code</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#containsError--">containsError</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
-<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/CharSequence.html?is-external=true" title="class or interface in java.lang">CharSequence</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#details--">details</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#getResponses--">getResponses</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a></code></td>
@@ -190,14 +193,34 @@ implements io.netty.handler.codec.smtp.SmtpResponse</pre>
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="SmtpClientResponse-io.netty.handler.codec.smtp.SmtpResponse-com.hubspot.smtp.client.SmtpSession-">
+<a name="SmtpClientResponse-com.hubspot.smtp.client.SmtpSession-io.netty.handler.codec.smtp.SmtpResponse-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>SmtpClientResponse</h4>
+<pre>public&nbsp;SmtpClientResponse(<a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a>&nbsp;session,
+                          io.netty.handler.codec.smtp.SmtpResponse&nbsp;response)</pre>
+</li>
+</ul>
+<a name="SmtpClientResponse-com.hubspot.smtp.client.SmtpSession-java.lang.Iterable-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>SmtpClientResponse</h4>
+<pre>public&nbsp;SmtpClientResponse(<a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a>&nbsp;session,
+                          <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&nbsp;responses)</pre>
+</li>
+</ul>
+<a name="SmtpClientResponse-com.hubspot.smtp.client.SmtpSession-io.netty.handler.codec.smtp.SmtpResponse:A-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>SmtpClientResponse</h4>
-<pre>public&nbsp;SmtpClientResponse(io.netty.handler.codec.smtp.SmtpResponse&nbsp;response,
-                          <a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a>&nbsp;session)</pre>
+<pre>public&nbsp;SmtpClientResponse(<a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a>&nbsp;session,
+                          io.netty.handler.codec.smtp.SmtpResponse[]&nbsp;responses)</pre>
 </li>
 </ul>
 </li>
@@ -208,32 +231,6 @@ implements io.netty.handler.codec.smtp.SmtpResponse</pre>
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="code--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>code</h4>
-<pre>public&nbsp;int&nbsp;code()</pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>code</code>&nbsp;in interface&nbsp;<code>io.netty.handler.codec.smtp.SmtpResponse</code></dd>
-</dl>
-</li>
-</ul>
-<a name="details--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>details</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/CharSequence.html?is-external=true" title="class or interface in java.lang">CharSequence</a>&gt;&nbsp;details()</pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>details</code>&nbsp;in interface&nbsp;<code>io.netty.handler.codec.smtp.SmtpResponse</code></dd>
-</dl>
-</li>
-</ul>
 <a name="getSession--">
 <!--   -->
 </a>
@@ -241,6 +238,24 @@ implements io.netty.handler.codec.smtp.SmtpResponse</pre>
 <li class="blockList">
 <h4>getSession</h4>
 <pre>public&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a>&nbsp;getSession()</pre>
+</li>
+</ul>
+<a name="containsError--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>containsError</h4>
+<pre>public&nbsp;boolean&nbsp;containsError()</pre>
+</li>
+</ul>
+<a name="getResponses--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getResponses</h4>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&nbsp;getResponses()</pre>
 </li>
 </ul>
 <a name="toString--">

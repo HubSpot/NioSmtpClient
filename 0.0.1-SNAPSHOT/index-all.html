@@ -120,8 +120,6 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionFactory.html#closeAsync--">closeAsync()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionFactory.html" title="class in com.hubspot.smtp.client">SmtpSessionFactory</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpClientResponse.html#code--">code()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="com/hubspot/smtp/package-summary.html">com.hubspot.smtp</a> - package com.hubspot.smtp</dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/hubspot/smtp/client/package-summary.html">com.hubspot.smtp.client</a> - package com.hubspot.smtp.client</dt>
@@ -140,14 +138,14 @@
 <dd>
 <div class="block">Initializes the value for the <code>connectionTimeout</code> attribute.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpClientResponse.html#containsError--">containsError()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a></dt>
+<dd>&nbsp;</dd>
 </dl>
 <a name="I:D">
 <!--   -->
 </a>
 <h2 class="title">D</h2>
 <dl>
-<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpClientResponse.html#details--">details()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#disabledExtensions-java.util.EnumSet-">disabledExtensions(EnumSet&lt;Extension&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></dt>
 <dd>
 <div class="block">Initializes the value for the <code>disabledExtensions</code> attribute.</div>
@@ -259,6 +257,8 @@
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#getReadTimeout--">getReadTimeout()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#getRemoteAddress--">getRemoteAddress()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpClientResponse.html#getResponses--">getResponses()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpClientResponse.html#getSession--">getSession()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a></dt>
 <dd>&nbsp;</dd>
@@ -418,7 +418,11 @@
 <dd>&nbsp;</dd>
 <dt><a href="com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client"><span class="typeNameLink">SmtpClientResponse</span></a> - Class in <a href="com/hubspot/smtp/client/package-summary.html">com.hubspot.smtp.client</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpClientResponse.html#SmtpClientResponse-io.netty.handler.codec.smtp.SmtpResponse-com.hubspot.smtp.client.SmtpSession-">SmtpClientResponse(SmtpResponse, SmtpSession)</a></span> - Constructor for class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a></dt>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpClientResponse.html#SmtpClientResponse-com.hubspot.smtp.client.SmtpSession-io.netty.handler.codec.smtp.SmtpResponse-">SmtpClientResponse(SmtpSession, SmtpResponse)</a></span> - Constructor for class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpClientResponse.html#SmtpClientResponse-com.hubspot.smtp.client.SmtpSession-java.lang.Iterable-">SmtpClientResponse(SmtpSession, Iterable&lt;SmtpResponse&gt;)</a></span> - Constructor for class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpClientResponse.html#SmtpClientResponse-com.hubspot.smtp.client.SmtpSession-io.netty.handler.codec.smtp.SmtpResponse:A-">SmtpClientResponse(SmtpSession, SmtpResponse[])</a></span> - Constructor for class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="com/hubspot/smtp/client/SmtpException.html" title="class in com.hubspot.smtp.client"><span class="typeNameLink">SmtpException</span></a> - Exception in <a href="com/hubspot/smtp/client/package-summary.html">com.hubspot.smtp.client</a></dt>
 <dd>&nbsp;</dd>
