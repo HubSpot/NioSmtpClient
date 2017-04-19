@@ -345,19 +345,19 @@ public class IntegrationTest {
   @Test
   public void itCanSendWithPipelining() throws Exception {
     // connect and send the initial message metadata
-    CompletableFuture<SmtpClientResponse[]> future = connect()
+    CompletableFuture<SmtpClientResponse> future = connect()
         .thenCompose(r -> assertSuccess(r).send(req(EHLO, "example.com")))
         .thenCompose(r -> assertSuccess(r).sendPipelined(req(MAIL, "FROM:<return-path@example.com>"), req(RCPT, "TO:<person1@example.com>"), req(DATA)));
 
     // send the data for the current message and the metadata for the next one, nine times
     for (int i = 1; i < 10; i++) {
       String recipient = "TO:<person" + i + "@example.com>";
-      future = future.thenCompose(r -> assertSuccess(r[0]).sendPipelined(createMessageContent(), req(RSET), req(MAIL, "FROM:<return-path@example.com>"), req(RCPT, recipient), req(DATA)));
+      future = future.thenCompose(r -> assertSuccess(r).sendPipelined(createMessageContent(), req(RSET), req(MAIL, "FROM:<return-path@example.com>"), req(RCPT, recipient), req(DATA)));
     }
 
     // finally send the data for the tenth message and quit
-    future.thenCompose(r -> assertSuccess(r[0]).sendPipelined(createMessageContent(), req(QUIT)))
-        .thenCompose(r -> assertSuccess(r[0]).close())
+    future.thenCompose(r -> assertSuccess(r).sendPipelined(createMessageContent(), req(QUIT)))
+        .thenCompose(r -> assertSuccess(r).close())
         .join();
 
     assertThat(receivedMails.size()).isEqualTo(10);
@@ -402,15 +402,8 @@ public class IntegrationTest {
   }
 
   private SmtpSession assertSuccess(SmtpClientResponse r) {
-    assertThat(r.code() < 400).withFailMessage("Received error: " + r).isTrue();
+    assertThat(r.containsError()).withFailMessage("Received error: " + r).isFalse();
     return r.getSession();
-  }
-
-  private SmtpSession assertSuccess(SmtpClientResponse[] rs) {
-    for (SmtpClientResponse r : rs) {
-      assertThat(r.code() < 400).withFailMessage("Received error: " + r).isTrue();
-    }
-    return rs[0].getSession();
   }
 
   private CompletableFuture<SmtpClientResponse> connect() {
