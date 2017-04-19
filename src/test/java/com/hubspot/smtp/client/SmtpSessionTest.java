@@ -171,8 +171,8 @@ public class SmtpSessionTest {
 
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().getSession()).isEqualTo(session);
-    assertThat(future.get().code()).isEqualTo(OK_RESPONSE.code());
-    assertThat(future.get().details()).isEqualTo(OK_RESPONSE.details());
+    assertThat(future.get().getResponses().get(0).code()).isEqualTo(OK_RESPONSE.code());
+    assertThat(future.get().getResponses().get(0).details()).isEqualTo(OK_RESPONSE.details());
   }
 
   @Test
@@ -289,7 +289,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itWrapsTheResponsesWhenPipelining() throws ExecutionException, InterruptedException {
-    CompletableFuture<SmtpClientResponse[]> future = session.sendPipelined(smtpContent, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
+    CompletableFuture<SmtpClientResponse> future = session.sendPipelined(smtpContent, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
 
     SmtpResponse[] responses = {OK_RESPONSE, OK_RESPONSE, OK_RESPONSE, OK_RESPONSE};
     responseFuture.complete(responses);
@@ -298,9 +298,9 @@ public class SmtpSessionTest {
     verify(responseHandler).createResponseFuture(eq(4), any());
 
     assertThat(future.isDone()).isTrue();
-    assertThat(future.get().length).isEqualTo(responses.length);
-    assertThat(future.get()[0].getSession()).isEqualTo(session);
-    assertThat(future.get()[0].code()).isEqualTo(OK_RESPONSE.code());
+    assertThat(future.get().getResponses().size()).isEqualTo(responses.length);
+    assertThat(future.get().getSession()).isEqualTo(session);
+    assertThat(future.get().getResponses().get(0).code()).isEqualTo(OK_RESPONSE.code());
   }
 
   @Test
@@ -419,7 +419,7 @@ public class SmtpSessionTest {
 
     responseFuture.complete(new SmtpResponse[] {FAIL_RESPONSE});
 
-    assertThat(f.get().code()).isEqualTo(FAIL_RESPONSE.code());
+    assertThat(f.get().getResponses().get(0).code()).isEqualTo(FAIL_RESPONSE.code());
   }
 
   @Test
@@ -430,7 +430,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itSendsEmailsUsingChunkingIfItIsSupported() throws Exception {
-    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), smtpContent);
+    CompletableFuture<SmtpClientResponse> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), smtpContent);
 
     InOrder order = inOrder(channel);
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
@@ -479,7 +479,7 @@ public class SmtpSessionTest {
 
     when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(new SmtpResponse[]{OK_RESPONSE}));
 
-    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, BOB, smtpContent);
+    CompletableFuture<SmtpClientResponse> future = session.send(ALICE, BOB, smtpContent);
 
     InOrder order = inOrder(channel);
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
@@ -491,7 +491,7 @@ public class SmtpSessionTest {
         .isEqualTo("BDAT " + MESSAGE_CONTENTS.length() + " LAST\r\n" + MESSAGE_CONTENTS);
 
     assertThat(future.isDone());
-    assertThat(future.get().length).isEqualTo(3);
+    assertThat(future.get().getResponses().size()).isEqualTo(3);
   }
 
   @Test
@@ -500,7 +500,7 @@ public class SmtpSessionTest {
 
     when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(new SmtpResponse[]{OK_RESPONSE}));
 
-    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), smtpContent);
+    CompletableFuture<SmtpClientResponse> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), smtpContent);
 
     InOrder order = inOrder(channel);
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
@@ -513,7 +513,7 @@ public class SmtpSessionTest {
         .isEqualTo("BDAT " + MESSAGE_CONTENTS.length() + " LAST\r\n" + MESSAGE_CONTENTS);
     
     assertThat(future.isDone());
-    assertThat(future.get().length).isEqualTo(4);
+    assertThat(future.get().getResponses().size()).isEqualTo(4);
   }
 
   @Test
@@ -570,7 +570,7 @@ public class SmtpSessionTest {
 
     when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(new SmtpResponse[]{OK_RESPONSE}));
 
-    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), sevenBitContent);
+    CompletableFuture<SmtpClientResponse> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), sevenBitContent);
 
     InOrder order = inOrder(channel);
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
@@ -585,14 +585,14 @@ public class SmtpSessionTest {
     secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
 
     assertThat(future.isDone()).isTrue();
-    assertThat(future.get().length).isEqualTo(5);
+    assertThat(future.get().getResponses().size()).isEqualTo(5);
   }
 
   @Test
   public void itSendsEmailsUsingDataIfTheContentIs7BitAndThereAreMultipleRecipients() throws Exception {
     setExtensions(Extension.PIPELINING);
 
-    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), sevenBitContent);
+    CompletableFuture<SmtpClientResponse> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), sevenBitContent);
 
     InOrder order = inOrder(channel);
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
@@ -609,14 +609,14 @@ public class SmtpSessionTest {
     secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
 
     assertThat(future.isDone()).isTrue();
-    assertThat(future.get().length).isEqualTo(5);
+    assertThat(future.get().getResponses().size()).isEqualTo(5);
   }
 
   @Test
   public void itSendsEmailsUsing8BitMimeIfItIsSupported() throws Exception {
     setExtensions(Extension.EIGHT_BIT_MIME, Extension.PIPELINING);
 
-    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, BOB, unknownContent);
+    CompletableFuture<SmtpClientResponse> future = session.send(ALICE, BOB, unknownContent);
 
     InOrder order = inOrder(channel);
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
@@ -632,7 +632,7 @@ public class SmtpSessionTest {
     secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
 
     assertThat(future.isDone()).isTrue();
-    assertThat(future.get().length).isEqualTo(4);
+    assertThat(future.get().getResponses().size()).isEqualTo(4);
   }
 
   @Test
@@ -642,7 +642,7 @@ public class SmtpSessionTest {
   }
 
   private void assertSentAs7Bit(MessageContent content) throws InterruptedException, ExecutionException {
-    CompletableFuture<SmtpClientResponse[]> future = session.send(ALICE, BOB, content);
+    CompletableFuture<SmtpClientResponse> future = session.send(ALICE, BOB, content);
 
     InOrder order = inOrder(channel);
     order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
@@ -658,14 +658,14 @@ public class SmtpSessionTest {
     secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
 
     assertThat(future.isDone()).isTrue();
-    assertThat(future.get().length).isEqualTo(4);
+    assertThat(future.get().getResponses().size()).isEqualTo(4);
   }
 
   private void setExtensions(Extension... extensions) {
     session.parseEhloResponse(Arrays.stream(extensions).map(Extension::getLowerCaseName).collect(Collectors.toList()));
   }
 
-  private void assertResponsesMapped(int responsesExpected, CompletableFuture<SmtpClientResponse[]> future) throws Exception {
+  private void assertResponsesMapped(int responsesExpected, CompletableFuture<SmtpClientResponse> future) throws Exception {
     SmtpResponse[] responses = new SmtpResponse[responsesExpected];
     for (int i = 0; i < responsesExpected; i++) {
       responses[i] = new DefaultSmtpResponse(250 + i, "OK " + i);
@@ -676,12 +676,12 @@ public class SmtpSessionTest {
     verify(responseHandler).createResponseFuture(eq(responsesExpected), any());
 
     assertThat(future.isDone()).isTrue();
-    assertThat(future.get().length).isEqualTo(responses.length);
+    assertThat(future.get().getResponses().size()).isEqualTo(responses.length);
 
     for (int i = 0; i < responsesExpected; i++) {
-      assertThat(future.get()[i].getSession()).isEqualTo(session);
-      assertThat(future.get()[i].code()).isEqualTo(responses[i].code());
-      assertThat(future.get()[i].details()).isEqualTo(responses[i].details());
+      assertThat(future.get().getSession()).isEqualTo(session);
+      assertThat(future.get().getResponses().get(i).code()).isEqualTo(responses[i].code());
+      assertThat(future.get().getResponses().get(i).details()).isEqualTo(responses[i].details());
     }
   }
 
@@ -784,7 +784,7 @@ public class SmtpSessionTest {
     responseFuture.complete(new SmtpResponse[] {FAIL_RESPONSE});
 
     assertThat(f.isDone());
-    assertThat(f.get().code()).isEqualTo(FAIL_RESPONSE.code());
+    assertThat(f.get().getResponses().get(0).code()).isEqualTo(FAIL_RESPONSE.code());
   }
 
   @Test
@@ -822,7 +822,7 @@ public class SmtpSessionTest {
     ((DefaultPromise<Channel>) sslHandler.handshakeFuture()).setSuccess(channel);
 
     assertThat(f.isDone()).isTrue();
-    assertThat(f.get().code()).isEqualTo(OK_RESPONSE.code());
+    assertThat(f.get().getResponses().get(0).code()).isEqualTo(OK_RESPONSE.code());
   }
 
   private SslHandler getSslHandler() throws Exception {

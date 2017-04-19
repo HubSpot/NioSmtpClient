@@ -112,7 +112,7 @@ public class SmtpSession {
     Preconditions.checkState(!isEncrypted(), "This connection is already using TLS");
 
     return send(new DefaultSmtpRequest(STARTTLS_COMMAND)).thenCompose(r -> {
-      if (SmtpResponses.isError(r)) {
+      if (r.containsError()) {
         return CompletableFuture.completedFuture(r);
       } else {
         return performTlsHandshake(r);
@@ -142,11 +142,11 @@ public class SmtpSession {
     return channel.pipeline().get(SslHandler.class) != null;
   }
 
-  public CompletableFuture<SmtpClientResponse[]> send(String from, String to, MessageContent content) {
+  public CompletableFuture<SmtpClientResponse> send(String from, String to, MessageContent content) {
     return send(from, Collections.singleton(to), content);
   }
 
-  public CompletableFuture<SmtpClientResponse[]> send(String from, Collection<String> recipients, MessageContent content) {
+  public CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content) {
     Preconditions.checkNotNull(from);
     Preconditions.checkNotNull(recipients);
     Preconditions.checkArgument(!recipients.isEmpty(), "recipients must be > 0");
@@ -173,7 +173,7 @@ public class SmtpSession {
     return sendAs7Bit(from, recipients, encodeContentAs7Bit(content));
   }
 
-  private CompletableFuture<SmtpClientResponse[]> sendAsChunked(String from, Collection<String> recipients, MessageContent content) {
+  private CompletableFuture<SmtpClientResponse> sendAsChunked(String from, Collection<String> recipients, MessageContent content) {
     if (ehloResponse.isSupported(Extension.PIPELINING)) {
       List<Object> objects = Lists.newArrayListWithExpectedSize(3 + recipients.size());
       objects.add(SmtpRequests.mail(from));
@@ -225,13 +225,13 @@ public class SmtpSession {
     };
   }
 
-  private CompletableFuture<SmtpClientResponse[]> sendAs7Bit(String from, Collection<String> recipients, MessageContent content) {
+  private CompletableFuture<SmtpClientResponse> sendAs7Bit(String from, Collection<String> recipients, MessageContent content) {
     return sendPipelinedIfPossible(SmtpRequests.mail(from), recipients, SmtpRequests.data())
         .thenSend(content.getDotStuffedContent(), EMPTY_LAST_CONTENT)
         .toResponses();
   }
 
-  private CompletableFuture<SmtpClientResponse[]> sendAs8BitMime(String from, Collection<String> recipients, MessageContent content) {
+  private CompletableFuture<SmtpClientResponse> sendAs8BitMime(String from, Collection<String> recipients, MessageContent content) {
     return sendPipelinedIfPossible(SmtpRequests.mail(from), recipients, new DefaultSmtpRequest(SmtpCommand.DATA, "BODY=8BITMIME"))
         .thenSend(content.getDotStuffedContent(), EMPTY_LAST_CONTENT)
         .toResponses();
@@ -328,11 +328,11 @@ public class SmtpSession {
     return applyOnExecutor(responseFuture, this::wrapFirstResponse);
   }
 
-  public CompletableFuture<SmtpClientResponse[]> sendPipelined(SmtpRequest... requests) {
+  public CompletableFuture<SmtpClientResponse> sendPipelined(SmtpRequest... requests) {
     return sendPipelined(null, requests);
   }
 
-  public CompletableFuture<SmtpClientResponse[]> sendPipelined(MessageContent content, SmtpRequest... requests) {
+  public CompletableFuture<SmtpClientResponse> sendPipelined(MessageContent content, SmtpRequest... requests) {
     Preconditions.checkState(ehloResponse.isSupported(Extension.PIPELINING), "Pipelining is not supported on this server");
     Preconditions.checkNotNull(requests);
     checkValidPipelinedRequest(requests);
@@ -353,18 +353,12 @@ public class SmtpSession {
     return applyOnExecutor(responseFuture, this::wrapResponses);
   }
 
-  private SmtpClientResponse[] wrapResponses(SmtpResponse[] responses) {
-    SmtpClientResponse[] smtpClientResponses = new SmtpClientResponse[responses.length];
-
-    for (int i = 0; i < responses.length; i++) {
-      smtpClientResponses[i] = new SmtpClientResponse(responses[i], this);
-    }
-
-    return smtpClientResponses;
+  private SmtpClientResponse wrapResponses(SmtpResponse[] responses) {
+    return new SmtpClientResponse(this, responses);
   }
 
   private SmtpClientResponse wrapFirstResponse(SmtpResponse[] responses) {
-    return new SmtpClientResponse(responses[0], this);
+    return new SmtpClientResponse(this, responses[0]);
   }
 
   public CompletableFuture<SmtpClientResponse> authPlain(String username, String password) {
@@ -378,7 +372,7 @@ public class SmtpSession {
     Preconditions.checkState(ehloResponse.isAuthLoginSupported(), "Auth login is not supported on this server");
 
     return send(new DefaultSmtpRequest(AUTH_COMMAND, AUTH_LOGIN_MECHANISM, encodeBase64(username))).thenCompose(r -> {
-      if (SmtpResponses.isError(r)) {
+      if (r.containsError()) {
         return CompletableFuture.completedFuture(r);
       } else {
         return sendAuthLoginPassword(password);
@@ -393,7 +387,7 @@ public class SmtpSession {
     ByteBuf passwordBuffer = channel.alloc().buffer().writeBytes(passwordResponse.getBytes(StandardCharsets.UTF_8));
     writeAndFlush(passwordBuffer);
 
-    return applyOnExecutor(responseFuture, loginResponse -> new SmtpClientResponse(loginResponse[0], this));
+    return applyOnExecutor(responseFuture, this::wrapFirstResponse);
   }
 
   private void checkMessageSize(OptionalInt size) {
@@ -547,7 +541,7 @@ public class SmtpSession {
       return nextFuture;
     }
 
-    CompletableFuture<SmtpClientResponse[]> toResponses() {
+    CompletableFuture<SmtpClientResponse> toResponses() {
       return applyOnExecutor(responseFuture, SmtpSession.this::wrapResponses);
     }
 

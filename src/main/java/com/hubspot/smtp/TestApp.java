@@ -63,17 +63,17 @@ class TestApp {
 
     SmtpSessionConfig config = SmtpSessionConfig.forRemoteAddress("localhost", 9925);
 
-    CompletableFuture<SmtpClientResponse[]> future = new SmtpSessionFactory(EVENT_LOOP_GROUP).connect(config)
+    CompletableFuture<SmtpClientResponse> future = new SmtpSessionFactory(EVENT_LOOP_GROUP).connect(config)
         .thenCompose(r -> r.getSession().send(req(EHLO, "hubspot.com")))
         .thenCompose(r -> r.getSession().sendPipelined(req(MAIL, "FROM:test@example.com"), req(RCPT, "TO:person1@example.com"), req(DATA)));
 
     for (int i = 1; i < messageCount; i++) {
       String recipient = "TO:person" + i + "@example.com";
-      future = future.thenCompose(r -> r[0].getSession().sendPipelined(contentProvider.get(), req(RSET), req(MAIL, "FROM:test@example.com"), req(RCPT, recipient), req(DATA)));
+      future = future.thenCompose(r -> r.getSession().sendPipelined(contentProvider.get(), req(RSET), req(MAIL, "FROM:test@example.com"), req(RCPT, recipient), req(DATA)));
     }
 
-    future.thenCompose(r -> r[0].getSession().sendPipelined(contentProvider.get(), req(QUIT)))
-        .thenCompose(r -> r[0].getSession().close())
+    future.thenCompose(r -> r.getSession().sendPipelined(contentProvider.get(), req(QUIT)))
+        .thenCompose(r -> r.getSession().close())
         .join();
   }
 
