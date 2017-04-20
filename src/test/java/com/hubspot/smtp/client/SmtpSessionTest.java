@@ -690,6 +690,17 @@ public class SmtpSessionTest {
     assertThat(future.get().getResponses().size()).isEqualTo(4);
   }
 
+  @Test
+  public void itSupportsOverridingHooksForASingleSend() throws Exception {
+    LoggingHook localLog = new LoggingHook();
+    CompletableFuture<SmtpClientResponse> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), smtpContent, localLog);
+
+    assertResponsesMapped(4, future);
+
+    assertThat(log.getLog()).isEqualTo(""); // shared hooks are not called
+    assertThat(localLog.getLog()).isEqualTo("<pipeline>, 250 OK 0, 251 OK 1, 252 OK 2, 253 OK 3");
+  }
+
   private void setExtensions(Extension... extensions) {
     session.parseEhloResponse(Arrays.stream(extensions).map(Extension::getLowerCaseName).collect(Collectors.toList()));
   }
