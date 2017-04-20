@@ -278,34 +278,34 @@ public class SmtpSession {
   public CompletableFuture<SmtpClientResponse> send(SmtpRequest request) {
     Preconditions.checkNotNull(request);
 
-    return executeCommandHook(request.command(), () -> {
-      CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> createDebugString(request));
+    return applyOnExecutor(executeCommandHook(request.command(), () -> {
+      CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> createDebugString(request));
       writeAndFlush(request);
 
       if (request.command().equals(SmtpCommand.EHLO)) {
-        responseFuture = responseFuture.whenComplete((response, ignored) -> {
-          if (response != null) {
-            parseEhloResponse(response[0].details());
+        responseFuture = responseFuture.whenComplete((responses, ignored) -> {
+          if (responses != null) {
+            parseEhloResponse(responses.get(0).details());
           }
         });
       }
 
-      return applyOnExecutor(responseFuture, this::wrapFirstResponse);
-    });
+      return responseFuture;
+    }), this::wrapFirstResponse);
   }
 
   public CompletableFuture<SmtpClientResponse> send(MessageContent content) {
     Preconditions.checkNotNull(content);
     checkMessageSize(content.size());
 
-    return executeDataHook(() -> {
-      CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> "message contents");
+    return applyOnExecutor(executeDataHook(() -> {
+      CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> "message contents");
 
       writeContent(content);
       channel.flush();
 
-      return applyOnExecutor(responseFuture, this::wrapFirstResponse);
-    });
+      return responseFuture;
+    }), this::wrapFirstResponse);
   }
 
   public CompletableFuture<SmtpClientResponse> sendChunk(ByteBuf data, boolean isLast) {
@@ -318,8 +318,8 @@ public class SmtpSession {
       chunkedBytesSent.set(0);
     }
 
-    return executeDataHook(() -> {
-      CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> "BDAT message chunk");
+    return applyOnExecutor(executeDataHook(() -> {
+      CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> "BDAT message chunk");
 
       String size = Integer.toString(data.readableBytes());
       if (isLast) {
@@ -331,8 +331,8 @@ public class SmtpSession {
       write(data);
       channel.flush();
 
-      return applyOnExecutor(responseFuture, this::wrapFirstResponse);
-    });
+      return responseFuture;
+    }), this::wrapFirstResponse);
   }
 
   public CompletableFuture<SmtpClientResponse> sendPipelined(SmtpRequest... requests) {
@@ -345,9 +345,9 @@ public class SmtpSession {
     checkValidPipelinedRequest(requests);
     checkMessageSize(content == null ? OptionalInt.empty() : content.size());
 
-    return executePipelineHook(() -> {
+    return applyOnExecutor(executePipelineHook(() -> {
       int expectedResponses = requests.length + (content == null ? 0 : 1);
-      CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(expectedResponses, () -> createDebugString((Object[]) requests));
+      CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(expectedResponses, () -> createDebugString((Object[]) requests));
 
       if (content != null) {
         writeContent(content);
@@ -358,16 +358,16 @@ public class SmtpSession {
 
       channel.flush();
 
-      return applyOnExecutor(responseFuture, this::wrapResponses);
-    });
+      return responseFuture;
+    }), this::wrapResponses);
   }
 
-  private SmtpClientResponse wrapResponses(SmtpResponse[] responses) {
+  private SmtpClientResponse wrapResponses(List<SmtpResponse> responses) {
     return new SmtpClientResponse(this, responses);
   }
 
-  private SmtpClientResponse wrapFirstResponse(SmtpResponse[] responses) {
-    return new SmtpClientResponse(this, responses[0]);
+  private SmtpClientResponse wrapFirstResponse(List<SmtpResponse> responses) {
+    return new SmtpClientResponse(this, responses.get(0));
   }
 
   public CompletableFuture<SmtpClientResponse> authPlain(String username, String password) {
@@ -390,15 +390,15 @@ public class SmtpSession {
   }
 
   private CompletionStage<SmtpClientResponse> sendAuthLoginPassword(String password) {
-    return executeCommandHook(AUTH_COMMAND, () -> {
-      CompletableFuture<SmtpResponse[]> responseFuture = responseHandler.createResponseFuture(1, () -> "auth login password");
+    return applyOnExecutor(executeCommandHook(AUTH_COMMAND, () -> {
+      CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> "auth login password");
 
       String passwordResponse = encodeBase64(password) + CRLF;
       ByteBuf passwordBuffer = channel.alloc().buffer().writeBytes(passwordResponse.getBytes(StandardCharsets.UTF_8));
       writeAndFlush(passwordBuffer);
 
-      return applyOnExecutor(responseFuture, this::wrapFirstResponse);
-    });
+      return responseFuture;
+    }), this::wrapFirstResponse);
   }
 
   private void checkMessageSize(OptionalInt size) {
@@ -496,20 +496,20 @@ public class SmtpSession {
     }, executor);
   }
 
-  CompletableFuture<SmtpClientResponse> executeCommandHook(SmtpCommand command, Supplier<CompletableFuture<SmtpClientResponse>> supplier) {
+  CompletableFuture<List<SmtpResponse>> executeCommandHook(SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
     return config.getHook().map(h -> h.aroundCommand(command, supplier)).orElseGet(supplier);
   }
 
-  CompletableFuture<SmtpClientResponse> executeDataHook(Supplier<CompletableFuture<SmtpClientResponse>> supplier) {
+  CompletableFuture<List<SmtpResponse>> executeDataHook(Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
     return config.getHook().map(h -> h.aroundData(supplier)).orElseGet(supplier);
   }
 
-  CompletableFuture<SmtpClientResponse> executePipelineHook(Supplier<CompletableFuture<SmtpClientResponse>> supplier) {
+  CompletableFuture<List<SmtpResponse>> executePipelineHook(Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
     return config.getHook().map(h -> h.aroundPipelinedSequence(supplier)).orElseGet(supplier);
   }
 
   private class SendSequence {
-    CompletableFuture<SmtpResponse[]> responseFuture;
+    CompletableFuture<List<SmtpResponse>> responseFuture;
 
     SendSequence(int expectedResponses, Object... objects) {
       responseFuture = writeObjectsAndCollectResponses(expectedResponses, objects);
@@ -517,7 +517,7 @@ public class SmtpSession {
 
     SendSequence thenSend(Object... objects) {
       responseFuture = responseFuture.thenCompose(responses -> {
-        if (SmtpResponses.isError(responses[responses.length - 1])) {
+        if (SmtpResponses.isError(responses.get(responses.size() - 1))) {
           return CompletableFuture.completedFuture(responses);
         }
 
@@ -535,48 +535,49 @@ public class SmtpSession {
       return this;
     }
 
-    private CompletableFuture<SmtpResponse[]> sendNext(CompletableFuture<SmtpResponse[]> prevFuture, Iterator<Object> iterator) {
+    private CompletableFuture<List<SmtpResponse>> sendNext(CompletableFuture<List<SmtpResponse>> prevFuture, Iterator<Object> iterator) {
       if (!iterator.hasNext()) {
         return prevFuture;
       }
 
       return prevFuture.thenCompose(responses -> {
-        if (SmtpResponses.isError(responses[responses.length - 1])) {
+        if (SmtpResponses.isError(responses.get(responses.size() - 1))) {
           return CompletableFuture.completedFuture(responses);
         }
 
         Object nextObject = iterator.next();
 
-        CompletableFuture<SmtpResponse[]> f = writeObjectsAndCollectResponses(1, nextObject)
+        CompletableFuture<List<SmtpResponse>> f = writeObjectsAndCollectResponses(1, nextObject)
             .thenApply(mergeResponses(responses));
 
         return sendNext(f, iterator);
       });
     }
 
-    private Function<SmtpResponse[], SmtpResponse[]> mergeResponses(SmtpResponse[] existingResponses) {
-      return newResponses -> ObjectArrays.concat(existingResponses, newResponses, SmtpResponse.class);
+    private Function<List<SmtpResponse>, List<SmtpResponse>> mergeResponses(List<SmtpResponse> existingResponses) {
+      return newResponses -> {
+        List<SmtpResponse> newList = Lists.newArrayList(existingResponses);
+        newList.addAll(newResponses);
+        return newList;
+      };
     }
 
-    private CompletableFuture<SmtpResponse[]> writeObjectsAndCollectResponses(int expectedResponses, Object... objects) {
+    private CompletableFuture<List<SmtpResponse>> writeObjectsAndCollectResponses(int expectedResponses, Object... objects) {
       return executeHook(expectedResponses, objects, () -> {
-        CompletableFuture<SmtpResponse[]> nextFuture = createFuture(expectedResponses, objects);
+        CompletableFuture<List<SmtpResponse>> nextFuture = createFuture(expectedResponses, objects);
         writeObjects(objects);
         return nextFuture;
       });
     }
 
-    private CompletableFuture<SmtpResponse[]> executeHook(int expectedResponses, Object[] objects, Supplier<CompletableFuture<SmtpResponse[]>> supplier) {
-      // todo: use lists of responses internally so we don't need to translate from/to arrays
-      Supplier<CompletableFuture<SmtpClientResponse>> clientResponseSupplier = () -> supplier.get().thenApply(a -> new SmtpClientResponse(SmtpSession.this, Lists.newArrayList(a)));
-
+    private CompletableFuture<List<SmtpResponse>> executeHook(int expectedResponses, Object[] objects, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
       if (expectedResponses > 1) {
-        return executePipelineHook(clientResponseSupplier).thenApply(rs -> rs.getResponses().toArray(new SmtpResponse[0]));
+        return executePipelineHook(supplier);
       } else if (objects[0] instanceof SmtpRequest) {
         SmtpCommand cmd = ((SmtpRequest) objects[0]).command();
-        return executeCommandHook(cmd, clientResponseSupplier).thenApply(rs -> rs.getResponses().toArray(new SmtpResponse[0]));
+        return executeCommandHook(cmd, supplier);
       } else {
-        return executeDataHook(clientResponseSupplier).thenApply(rs -> rs.getResponses().toArray(new SmtpResponse[0]));
+        return executeDataHook(supplier);
       }
     }
 
@@ -591,7 +592,7 @@ public class SmtpSession {
       channel.flush();
     }
 
-    private CompletableFuture<SmtpResponse[]> createFuture(int expectedResponses, Object[] objects) {
+    private CompletableFuture<List<SmtpResponse>> createFuture(int expectedResponses, Object[] objects) {
       return responseHandler.createResponseFuture(expectedResponses, () -> createDebugString(objects));
     }
   }

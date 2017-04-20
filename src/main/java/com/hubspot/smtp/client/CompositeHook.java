@@ -8,6 +8,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
 import io.netty.handler.codec.smtp.SmtpCommand;
+import io.netty.handler.codec.smtp.SmtpResponse;
 
 public class CompositeHook implements Hook {
   private final Hook rootHook;
@@ -34,13 +35,18 @@ public class CompositeHook implements Hook {
   }
 
   @Override
-  public CompletableFuture<SmtpClientResponse> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<SmtpClientResponse>> next) {
+  public CompletableFuture<List<SmtpResponse>> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
     return rootHook.aroundCommand(command, next);
   }
 
   @Override
-  public CompletableFuture<SmtpClientResponse> aroundData(Supplier<CompletableFuture<SmtpClientResponse>> next) {
+  public CompletableFuture<List<SmtpResponse>> aroundData(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
     return rootHook.aroundData(next);
+  }
+
+  @Override
+  public CompletableFuture<List<SmtpResponse>> aroundPipelinedSequence(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
+    return rootHook.aroundPipelinedSequence(next);
   }
 
   private static class HookWrapper implements Hook {
@@ -53,13 +59,18 @@ public class CompositeHook implements Hook {
     }
 
     @Override
-    public CompletableFuture<SmtpClientResponse> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<SmtpClientResponse>> next) {
+    public CompletableFuture<List<SmtpResponse>> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
       return thisHook.aroundCommand(command, () -> nextHook.aroundCommand(command, next));
     }
 
     @Override
-    public CompletableFuture<SmtpClientResponse> aroundData(Supplier<CompletableFuture<SmtpClientResponse>> next) {
+    public CompletableFuture<List<SmtpResponse>> aroundData(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
       return thisHook.aroundData(() -> nextHook.aroundData(next));
+    }
+
+    @Override
+    public CompletableFuture<List<SmtpResponse>> aroundPipelinedSequence(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
+      return thisHook.aroundData(() -> nextHook.aroundPipelinedSequence(next));
     }
   }
 }

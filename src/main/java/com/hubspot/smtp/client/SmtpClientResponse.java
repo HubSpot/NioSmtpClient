@@ -22,7 +22,7 @@ public class SmtpClientResponse  {
     this.session = session;
   }
 
-  public SmtpClientResponse(SmtpSession session, SmtpResponse[] responses) {
+  public SmtpClientResponse(SmtpSession session, List<SmtpResponse> responses) {
     this.responses = ImmutableList.copyOf(responses);
     this.session = session;
   }
