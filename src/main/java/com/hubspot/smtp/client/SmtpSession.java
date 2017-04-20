@@ -148,47 +148,47 @@ public class SmtpSession {
     return send(from, Collections.singleton(to), content, Optional.empty());
   }
 
-  public CompletableFuture<SmtpClientResponse> send(String from, String to, MessageContent content, Hook hook) {
-    return send(from, Collections.singleton(to), content, Optional.of(hook));
+  public CompletableFuture<SmtpClientResponse> send(String from, String to, MessageContent content, SendInterceptor sendInterceptor) {
+    return send(from, Collections.singleton(to), content, Optional.of(sendInterceptor));
   }
 
   public CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content) {
     return send(from, recipients, content, Optional.empty());
   }
 
-  public CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content, Hook hook) {
-    return send(from, recipients, content, Optional.of(hook));
+  public CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content, SendInterceptor sendInterceptor) {
+    return send(from, recipients, content, Optional.of(sendInterceptor));
   }
 
-  private CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content, Optional<Hook> sequenceHook) {
+  private CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
     Preconditions.checkNotNull(from);
     Preconditions.checkNotNull(recipients);
     Preconditions.checkArgument(!recipients.isEmpty(), "recipients must be > 0");
     Preconditions.checkNotNull(content);
     checkMessageSize(content.size());
-    Preconditions.checkNotNull(sequenceHook);
+    Preconditions.checkNotNull(sequenceInterceptor);
 
     if (ehloResponse.isSupported(Extension.CHUNKING)) {
-      return sendAsChunked(from, recipients, content, sequenceHook);
+      return sendAsChunked(from, recipients, content, sequenceInterceptor);
     }
 
     if (content.getEncoding() == MessageContentEncoding.SEVEN_BIT) {
-      return sendAs7Bit(from, recipients, content, sequenceHook);
+      return sendAs7Bit(from, recipients, content, sequenceInterceptor);
     }
 
     if (ehloResponse.isSupported(Extension.EIGHT_BIT_MIME)) {
-      return sendAs8BitMime(from, recipients, content, sequenceHook);
+      return sendAs8BitMime(from, recipients, content, sequenceInterceptor);
     }
 
     if (content.get8bitCharacterProportion() == 0) {
-      return sendAs7Bit(from, recipients, content, sequenceHook);
+      return sendAs7Bit(from, recipients, content, sequenceInterceptor);
     }
 
     // this message is not 7 bit, but the server only supports 7 bit :(
-    return sendAs7Bit(from, recipients, encodeContentAs7Bit(content), sequenceHook);
+    return sendAs7Bit(from, recipients, encodeContentAs7Bit(content), sequenceInterceptor);
   }
 
-  private CompletableFuture<SmtpClientResponse> sendAsChunked(String from, Collection<String> recipients, MessageContent content, Optional<Hook> sequenceHook) {
+  private CompletableFuture<SmtpClientResponse> sendAsChunked(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
     if (ehloResponse.isSupported(Extension.PIPELINING)) {
       List<Object> objects = Lists.newArrayListWithExpectedSize(3 + recipients.size());
       objects.add(SmtpRequests.mail(from));
@@ -199,12 +199,12 @@ public class SmtpSession {
       ByteBuf firstChunk = chunkIterator.next();
       objects.add(getBdatRequestWithData(firstChunk, !chunkIterator.hasNext()));
 
-      return beginSequence(sequenceHook, objects.size(), objects.toArray())
+      return beginSequence(sequenceInterceptor, objects.size(), objects.toArray())
           .thenSendInTurn(getBdatIterator(chunkIterator))
           .toResponses();
 
     } else {
-      SendSequence sequence = beginSequence(sequenceHook, 1, SmtpRequests.mail(from));
+      SendSequence sequence = beginSequence(sequenceInterceptor, 1, SmtpRequests.mail(from));
 
       for (String recipient : recipients) {
         sequence.thenSend(SmtpRequests.rcpt(recipient));
@@ -240,28 +240,28 @@ public class SmtpSession {
     };
   }
 
-  private CompletableFuture<SmtpClientResponse> sendAs7Bit(String from, Collection<String> recipients, MessageContent content, Optional<Hook> sequenceHook) {
-    return sendPipelinedIfPossible(SmtpRequests.mail(from), recipients, SmtpRequests.data(), sequenceHook)
+  private CompletableFuture<SmtpClientResponse> sendAs7Bit(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
+    return sendPipelinedIfPossible(SmtpRequests.mail(from), recipients, SmtpRequests.data(), sequenceInterceptor)
         .thenSend(content.getDotStuffedContent(), EMPTY_LAST_CONTENT)
         .toResponses();
   }
 
-  private CompletableFuture<SmtpClientResponse> sendAs8BitMime(String from, Collection<String> recipients, MessageContent content, Optional<Hook> sequenceHook) {
-    return sendPipelinedIfPossible(SmtpRequests.mail(from), recipients, new DefaultSmtpRequest(SmtpCommand.DATA, "BODY=8BITMIME"), sequenceHook)
+  private CompletableFuture<SmtpClientResponse> sendAs8BitMime(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
+    return sendPipelinedIfPossible(SmtpRequests.mail(from), recipients, new DefaultSmtpRequest(SmtpCommand.DATA, "BODY=8BITMIME"), sequenceInterceptor)
         .thenSend(content.getDotStuffedContent(), EMPTY_LAST_CONTENT)
         .toResponses();
   }
 
-  private SendSequence sendPipelinedIfPossible(SmtpRequest mailRequest, Collection<String> recipients, SmtpRequest dataRequest, Optional<Hook> sequenceHook) {
+  private SendSequence sendPipelinedIfPossible(SmtpRequest mailRequest, Collection<String> recipients, SmtpRequest dataRequest, Optional<SendInterceptor> sequenceInterceptor) {
     List<SmtpRequest> requests = Lists.newArrayListWithExpectedSize(2 + recipients.size());
     requests.add(mailRequest);
     requests.addAll(rpctCommands(recipients));
     requests.add(dataRequest);
 
     if (ehloResponse.isSupported(Extension.PIPELINING)) {
-      return beginSequence(sequenceHook, requests.size(), requests.toArray());
+      return beginSequence(sequenceInterceptor, requests.size(), requests.toArray());
     } else {
-      SendSequence s = beginSequence(sequenceHook, 1, requests.get(0));
+      SendSequence s = beginSequence(sequenceInterceptor, 1, requests.get(0));
 
       for (int i = 1; i < requests.size(); i++) {
         s.thenSend(requests.get(i));
@@ -275,12 +275,12 @@ public class SmtpSession {
     return recipients.stream().map(SmtpRequests::rcpt).collect(Collectors.toList());
   }
 
-  private SendSequence beginSequence(Optional<Hook> sequenceHook, int expectedResponses, Object... objects) {
+  private SendSequence beginSequence(Optional<SendInterceptor> sequenceInterceptor, int expectedResponses, Object... objects) {
     if (requiresRset) {
-      return new SendSequence(sequenceHook, expectedResponses + 1, ObjectArrays.concat(SmtpRequests.rset(), objects));
+      return new SendSequence(sequenceInterceptor, expectedResponses + 1, ObjectArrays.concat(SmtpRequests.rset(), objects));
     } else {
       requiresRset = true;
-      return new SendSequence(sequenceHook, expectedResponses, objects);
+      return new SendSequence(sequenceInterceptor, expectedResponses, objects);
     }
   }
 
@@ -292,7 +292,7 @@ public class SmtpSession {
   public CompletableFuture<SmtpClientResponse> send(SmtpRequest request) {
     Preconditions.checkNotNull(request);
 
-    return applyOnExecutor(executeCommandHook(config.getHook(), request.command(), () -> {
+    return applyOnExecutor(executeCommandInterceptor(config.getSendInterceptor(), request.command(), () -> {
       CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> createDebugString(request));
       writeAndFlush(request);
 
@@ -312,7 +312,7 @@ public class SmtpSession {
     Preconditions.checkNotNull(content);
     checkMessageSize(content.size());
 
-    return applyOnExecutor(executeDataHook(config.getHook(), () -> {
+    return applyOnExecutor(executeDataInterceptor(config.getSendInterceptor(), () -> {
       CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> "message contents");
 
       writeContent(content);
@@ -332,7 +332,7 @@ public class SmtpSession {
       chunkedBytesSent.set(0);
     }
 
-    return applyOnExecutor(executeDataHook(config.getHook(), () -> {
+    return applyOnExecutor(executeDataInterceptor(config.getSendInterceptor(), () -> {
       CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> "BDAT message chunk");
 
       String size = Integer.toString(data.readableBytes());
@@ -359,7 +359,7 @@ public class SmtpSession {
     checkValidPipelinedRequest(requests);
     checkMessageSize(content == null ? OptionalInt.empty() : content.size());
 
-    return applyOnExecutor(executePipelineHook(config.getHook(), () -> {
+    return applyOnExecutor(executePipelineInterceptor(config.getSendInterceptor(), () -> {
       int expectedResponses = requests.length + (content == null ? 0 : 1);
       CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(expectedResponses, () -> createDebugString((Object[]) requests));
 
@@ -404,7 +404,7 @@ public class SmtpSession {
   }
 
   private CompletionStage<SmtpClientResponse> sendAuthLoginPassword(String password) {
-    return applyOnExecutor(executeCommandHook(config.getHook(), AUTH_COMMAND, () -> {
+    return applyOnExecutor(executeCommandInterceptor(config.getSendInterceptor(), AUTH_COMMAND, () -> {
       CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> "auth login password");
 
       String passwordResponse = encodeBase64(password) + CRLF;
@@ -510,24 +510,24 @@ public class SmtpSession {
     }, executor);
   }
 
-  CompletableFuture<List<SmtpResponse>> executeCommandHook(Optional<Hook> hook, SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
-    return hook.map(h -> h.aroundCommand(command, supplier)).orElseGet(supplier);
+  CompletableFuture<List<SmtpResponse>> executeCommandInterceptor(Optional<SendInterceptor> interceptor, SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
+    return interceptor.map(h -> h.aroundCommand(command, supplier)).orElseGet(supplier);
   }
 
-  CompletableFuture<List<SmtpResponse>> executeDataHook(Optional<Hook> hook, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
-    return hook.map(h -> h.aroundData(supplier)).orElseGet(supplier);
+  CompletableFuture<List<SmtpResponse>> executeDataInterceptor(Optional<SendInterceptor> interceptor, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
+    return interceptor.map(h -> h.aroundData(supplier)).orElseGet(supplier);
   }
 
-  CompletableFuture<List<SmtpResponse>> executePipelineHook(Optional<Hook> hook, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
-    return hook.map(h -> h.aroundPipelinedSequence(supplier)).orElseGet(supplier);
+  CompletableFuture<List<SmtpResponse>> executePipelineInterceptor(Optional<SendInterceptor> interceptor, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
+    return interceptor.map(h -> h.aroundPipelinedSequence(supplier)).orElseGet(supplier);
   }
 
   private class SendSequence {
-    final Optional<Hook> sequenceHook;
+    final Optional<SendInterceptor> sequenceInterceptor;
     CompletableFuture<List<SmtpResponse>> responseFuture;
 
-    SendSequence(Optional<Hook> sequenceHook, int expectedResponses, Object... objects) {
-      this.sequenceHook = sequenceHook;
+    SendSequence(Optional<SendInterceptor> sequenceInterceptor, int expectedResponses, Object... objects) {
+      this.sequenceInterceptor = sequenceInterceptor;
       responseFuture = writeObjectsAndCollectResponses(expectedResponses, objects);
     }
 
@@ -579,26 +579,26 @@ public class SmtpSession {
     }
 
     private CompletableFuture<List<SmtpResponse>> writeObjectsAndCollectResponses(int expectedResponses, Object... objects) {
-      return executeHook(expectedResponses, objects, () -> {
+      return executeInterceptor(expectedResponses, objects, () -> {
         CompletableFuture<List<SmtpResponse>> nextFuture = createFuture(expectedResponses, objects);
         writeObjects(objects);
         return nextFuture;
       });
     }
 
-    private CompletableFuture<List<SmtpResponse>> executeHook(int expectedResponses, Object[] objects, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
-      Optional<Hook> hook = Optional.ofNullable(sequenceHook.orElse(config.getHook().orElse(null)));
-      if (!hook.isPresent()) {
+    private CompletableFuture<List<SmtpResponse>> executeInterceptor(int expectedResponses, Object[] objects, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
+      Optional<SendInterceptor> interceptor = Optional.ofNullable(sequenceInterceptor.orElse(config.getSendInterceptor().orElse(null)));
+      if (!interceptor.isPresent()) {
         return supplier.get();
       }
 
       if (expectedResponses > 1) {
-        return executePipelineHook(hook, supplier);
+        return executePipelineInterceptor(interceptor, supplier);
       } else if (objects[0] instanceof SmtpRequest) {
         SmtpCommand cmd = ((SmtpRequest) objects[0]).command();
-        return executeCommandHook(hook, cmd, supplier);
+        return executeCommandInterceptor(interceptor, cmd, supplier);
       } else {
-        return executeDataHook(hook, supplier);
+        return executeDataInterceptor(interceptor, supplier);
       }
     }
 

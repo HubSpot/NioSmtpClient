@@ -15,10 +15,10 @@ import io.netty.handler.codec.smtp.DefaultSmtpResponse;
 import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpResponse;
 
-public class CompositeHookTest {
+public class CompositeSendInterceptorTest {
   private static final List<SmtpResponse> DEFAULT_RESPONSE = Lists.newArrayList(new DefaultSmtpResponse(250, "OK"));
 
-  private static final Hook RESPONSE_HOOK = new Hook() {
+  private static final SendInterceptor RESPONSE_SEND_INTERCEPTOR = new SendInterceptor() {
     @Override
     public CompletableFuture<List<SmtpResponse>> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
       return CompletableFuture.completedFuture(DEFAULT_RESPONSE);
@@ -35,7 +35,7 @@ public class CompositeHookTest {
     }
   };
 
-  private static final Hook ALWAYS_FAILS_HOOK = new Hook() {
+  private static final SendInterceptor ALWAYS_FAILS_SEND_INTERCEPTOR = new SendInterceptor() {
     @Override
     public CompletableFuture<List<SmtpResponse>> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
       return getFailedFuture();
@@ -58,7 +58,7 @@ public class CompositeHookTest {
     }
   };
 
-  private static final Hook PASS_THROUGH_HOOK = new Hook() {
+  private static final SendInterceptor PASS_THROUGH_SEND_INTERCEPTOR = new SendInterceptor() {
     @Override
     public CompletableFuture<List<SmtpResponse>> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
       return next.get();
@@ -76,25 +76,25 @@ public class CompositeHookTest {
   };
 
   @Test
-  public void itWrapsHooks() throws Exception {
-    List<SmtpResponse> responses = CompositeHook.of(RESPONSE_HOOK).aroundCommand(SmtpCommand.MAIL, null).get();
+  public void itWrapsInterceptors() throws Exception {
+    List<SmtpResponse> responses = CompositeSendInterceptor.of(RESPONSE_SEND_INTERCEPTOR).aroundCommand(SmtpCommand.MAIL, null).get();
 
     assertThat(responses).isEqualTo(DEFAULT_RESPONSE);
   }
 
   @Test
-  public void itOrdersHooks() throws Exception {
-    List<SmtpResponse> responses = CompositeHook.of(PASS_THROUGH_HOOK, RESPONSE_HOOK).aroundCommand(SmtpCommand.MAIL, null).get();
+  public void itOrdersInterceptors() throws Exception {
+    List<SmtpResponse> responses = CompositeSendInterceptor.of(PASS_THROUGH_SEND_INTERCEPTOR, RESPONSE_SEND_INTERCEPTOR).aroundCommand(SmtpCommand.MAIL, null).get();
 
     assertThat(responses).isEqualTo(DEFAULT_RESPONSE);
   }
 
   @Test
-  public void itExecutesHooksLazily() throws Exception {
-    Hook mockHook = mock(Hook.class);
-    CompletableFuture<List<SmtpResponse>> future = CompositeHook.of(ALWAYS_FAILS_HOOK, mockHook).aroundCommand(SmtpCommand.MAIL, null);
+  public void itExecutesInterceptorsLazily() throws Exception {
+    SendInterceptor mockSendInterceptor = mock(SendInterceptor.class);
+    CompletableFuture<List<SmtpResponse>> future = CompositeSendInterceptor.of(ALWAYS_FAILS_SEND_INTERCEPTOR, mockSendInterceptor).aroundCommand(SmtpCommand.MAIL, null);
 
     assertThat(future.isCompletedExceptionally()).isTrue();
-    verify(mockHook, never()).aroundCommand(any(), any());
+    verify(mockSendInterceptor, never()).aroundCommand(any(), any());
   }
 }

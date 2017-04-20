@@ -88,7 +88,7 @@ public class SmtpSessionTest {
   private ChannelFuture writeFuture;
   private ArgumentCaptor<ByteBuf> byteBufCaptor;
   private List<Object> objectsToRelease = Lists.newArrayList();
-  private LoggingHook log;
+  private LoggingInterceptor log;
 
   @Before
   @SuppressWarnings("unchecked")
@@ -119,8 +119,8 @@ public class SmtpSessionTest {
       return writeFuture;
     });
 
-    log = new LoggingHook();
-    session = new SmtpSession(channel, responseHandler, CONFIG.withHook(log));
+    log = new LoggingInterceptor();
+    session = new SmtpSession(channel, responseHandler, CONFIG.withSendInterceptor(log));
     session.parseEhloResponse(Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN", "CHUNKING"));
   }
 
@@ -691,13 +691,13 @@ public class SmtpSessionTest {
   }
 
   @Test
-  public void itSupportsOverridingHooksForASingleSend() throws Exception {
-    LoggingHook localLog = new LoggingHook();
+  public void itSupportsOverridingInterceptorsForASingleSend() throws Exception {
+    LoggingInterceptor localLog = new LoggingInterceptor();
     CompletableFuture<SmtpClientResponse> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), smtpContent, localLog);
 
     assertResponsesMapped(4, future);
 
-    assertThat(log.getLog()).isEqualTo(""); // shared hooks are not called
+    assertThat(log.getLog()).isEqualTo(""); // shared interceptors are not called
     assertThat(localLog.getLog()).isEqualTo("<pipeline>, 250 OK 0, 251 OK 1, 252 OK 2, 253 OK 3");
   }
 
@@ -895,7 +895,7 @@ public class SmtpSessionTest {
     return new DefaultSmtpRequest(command, parameters);
   }
 
-  private class LoggingHook implements Hook {
+  private class LoggingInterceptor implements SendInterceptor {
     private List<String> entries = Lists.newArrayList();
 
     @Override
