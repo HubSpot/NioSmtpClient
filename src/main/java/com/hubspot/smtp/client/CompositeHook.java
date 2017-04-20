@@ -8,7 +8,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
 import io.netty.handler.codec.smtp.SmtpCommand;
-import io.netty.handler.codec.smtp.SmtpResponse;
 
 public class CompositeHook implements Hook {
   private final Hook rootHook;
@@ -35,12 +34,12 @@ public class CompositeHook implements Hook {
   }
 
   @Override
-  public CompletableFuture<List<SmtpResponse>> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
+  public CompletableFuture<SmtpClientResponse> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<SmtpClientResponse>> next) {
     return rootHook.aroundCommand(command, next);
   }
 
   @Override
-  public CompletableFuture<List<SmtpResponse>> aroundData(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
+  public CompletableFuture<SmtpClientResponse> aroundData(Supplier<CompletableFuture<SmtpClientResponse>> next) {
     return rootHook.aroundData(next);
   }
 
@@ -54,12 +53,12 @@ public class CompositeHook implements Hook {
     }
 
     @Override
-    public CompletableFuture<List<SmtpResponse>> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
+    public CompletableFuture<SmtpClientResponse> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<SmtpClientResponse>> next) {
       return thisHook.aroundCommand(command, () -> nextHook.aroundCommand(command, next));
     }
 
     @Override
-    public CompletableFuture<List<SmtpResponse>> aroundData(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
+    public CompletableFuture<SmtpClientResponse> aroundData(Supplier<CompletableFuture<SmtpClientResponse>> next) {
       return thisHook.aroundData(() -> nextHook.aroundData(next));
     }
   }

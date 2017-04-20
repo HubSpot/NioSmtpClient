@@ -484,6 +484,18 @@ public class SmtpSession {
       return mapper.apply(rs);
     }, executor);
   }
+//
+//  private CompletableFuture<SmtpResponse[]> executeCommandHook(SmtpCommand command, Supplier<CompletableFuture<SmtpResponse[]>> supplier) {
+//    return config.getHook()
+//        .map(h -> h.aroundCommand(command, () -> supplier.get().thenApply(array -> Lists.newArrayList(array))))
+//        .orElse(supplier.get());
+////    return config.getHook().map(h -> h.aroundCommand(command, () -> Lists.newArrayList(supplier.get())).orElse(supplier.get());
+////    if (config.getHook().isPresent()) {
+////      config.getHook().get()
+////    } else {
+////      return supplier.get();
+////    }
+//  }
 
   private class SendSequence {
     CompletableFuture<SmtpResponse[]> responseFuture;
