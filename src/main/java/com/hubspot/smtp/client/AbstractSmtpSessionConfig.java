@@ -46,6 +46,7 @@ abstract class AbstractSmtpSessionConfig {
   public abstract Optional<InetSocketAddress> getLocalAddress();
   public abstract Optional<Duration> getKeepAliveTimeout();
   public abstract Optional<Executor> getExecutor();
+  public abstract Optional<Hook> getHook();
 
   Executor getEffectiveExecutor() {
     return getExecutor().orElse(SHARED_DEFAULT_EXECUTOR.get());
