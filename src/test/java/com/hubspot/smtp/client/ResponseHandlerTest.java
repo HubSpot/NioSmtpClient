@@ -4,12 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.collect.Lists;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.smtp.DefaultSmtpResponse;
@@ -32,7 +35,7 @@ public class ResponseHandlerTest {
 
   @Test
   public void itCompletesExceptionallyIfAnExceptionIsCaught() throws Exception {
-    CompletableFuture<SmtpResponse[]> f = responseHandler.createResponseFuture(1, DEBUG_STRING);
+    CompletableFuture<List<SmtpResponse>> f = responseHandler.createResponseFuture(1, DEBUG_STRING);
     Exception testException = new Exception("test");
 
     responseHandler.exceptionCaught(context, testException);
@@ -45,17 +48,17 @@ public class ResponseHandlerTest {
 
   @Test
   public void itCompletesWithAResponseWhenHandled() throws Exception {
-    CompletableFuture<SmtpResponse[]> f = responseHandler.createResponseFuture(1, DEBUG_STRING);
+    CompletableFuture<List<SmtpResponse>> f = responseHandler.createResponseFuture(1, DEBUG_STRING);
 
     responseHandler.channelRead(context, SMTP_RESPONSE);
 
     assertThat(f.isCompletedExceptionally()).isFalse();
-    assertThat(f.get()).isEqualTo(new SmtpResponse[] { SMTP_RESPONSE });
+    assertThat(f.get()).isEqualTo(Lists.newArrayList(SMTP_RESPONSE));
   }
 
   @Test
   public void itDoesNotCompleteWhenSomeOtherObjectIsRead() throws Exception {
-    CompletableFuture<SmtpResponse[]> f = responseHandler.createResponseFuture(1, DEBUG_STRING);
+    CompletableFuture<List<SmtpResponse>> f = responseHandler.createResponseFuture(1, DEBUG_STRING);
 
     responseHandler.channelRead(context, "unexpected");
 
@@ -82,7 +85,7 @@ public class ResponseHandlerTest {
 
   @Test
   public void itCanCreateAFutureThatWaitsForMultipleReponses() throws Exception {
-    CompletableFuture<SmtpResponse[]> f = responseHandler.createResponseFuture(3, DEBUG_STRING);
+    CompletableFuture<List<SmtpResponse>> f = responseHandler.createResponseFuture(3, DEBUG_STRING);
     SmtpResponse response1 = new DefaultSmtpResponse(250, "1");
     SmtpResponse response2 = new DefaultSmtpResponse(250, "2");
     SmtpResponse response3 = new DefaultSmtpResponse(250, "3");
@@ -97,14 +100,14 @@ public class ResponseHandlerTest {
     assertThat(f.isDone()).isTrue();
 
     assertThat(f.isCompletedExceptionally()).isFalse();
-    assertThat(f.get()[0]).isEqualTo(response1);
-    assertThat(f.get()[1]).isEqualTo(response2);
-    assertThat(f.get()[2]).isEqualTo(response3);
+    assertThat(f.get().get(0)).isEqualTo(response1);
+    assertThat(f.get().get(1)).isEqualTo(response2);
+    assertThat(f.get().get(2)).isEqualTo(response3);
   }
 
   @Test
   public void itCanCreateAFutureInTheCallbackForAPreviousFuture() throws Exception {
-    CompletableFuture<SmtpResponse[]> future = responseHandler.createResponseFuture(1, DEBUG_STRING);
+    CompletableFuture<List<SmtpResponse>> future = responseHandler.createResponseFuture(1, DEBUG_STRING);
 
     CompletableFuture<Void> assertion = future.thenRun(() -> assertThat(responseHandler.createResponseFuture(1, DEBUG_STRING)).isNotNull());
 
@@ -115,7 +118,7 @@ public class ResponseHandlerTest {
 
   @Test
   public void itCanFailMultipleResponseFuturesAtAnyTime() throws Exception {
-    CompletableFuture<SmtpResponse[]> f = responseHandler.createResponseFuture(3, DEBUG_STRING);
+    CompletableFuture<List<SmtpResponse>> f = responseHandler.createResponseFuture(3, DEBUG_STRING);
     Exception testException = new Exception("test");
 
     responseHandler.exceptionCaught(context, testException);
@@ -160,7 +163,7 @@ public class ResponseHandlerTest {
 
   @Test
   public void itCompletesExceptionallyIfTheChannelIsClosed() throws Exception {
-    CompletableFuture<SmtpResponse[]> f = responseHandler.createResponseFuture(1, DEBUG_STRING);
+    CompletableFuture<List<SmtpResponse>> f = responseHandler.createResponseFuture(1, DEBUG_STRING);
 
     responseHandler.channelInactive(context);
 

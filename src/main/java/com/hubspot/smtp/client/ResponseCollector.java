@@ -1,15 +1,17 @@
 package com.hubspot.smtp.client;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 import io.netty.handler.codec.smtp.SmtpResponse;
 
 class ResponseCollector {
-  private final CompletableFuture<SmtpResponse[]> future;
-  private final SmtpResponse[] responses;
+  private final CompletableFuture<List<SmtpResponse>> future;
+  private final List<SmtpResponse> responses;
   private final Supplier<String> debugString;
   private int remainingResponses;
 
@@ -17,11 +19,11 @@ class ResponseCollector {
     this.remainingResponses = expectedResponses;
     this.debugString = debugString;
 
-    responses = new SmtpResponse[expectedResponses];
+    responses = Lists.newArrayListWithExpectedSize(expectedResponses);
     future = new CompletableFuture<>();
   }
 
-  CompletableFuture<SmtpResponse[]> getFuture() {
+  CompletableFuture<List<SmtpResponse>> getFuture() {
     return future;
   }
 
@@ -33,7 +35,7 @@ class ResponseCollector {
     Preconditions.checkState(remainingResponses > 0, "All the responses have already been collected");
     remainingResponses--;
 
-    responses[responses.length - remainingResponses - 1] = response;
+    responses.add(response);
 
     return remainingResponses == 0;
   }

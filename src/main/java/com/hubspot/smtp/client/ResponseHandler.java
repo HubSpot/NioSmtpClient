@@ -1,5 +1,6 @@
 package com.hubspot.smtp.client;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -22,7 +23,7 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
     this.connectionId = connectionId;
   }
 
-  CompletableFuture<SmtpResponse[]> createResponseFuture(int expectedResponses, Supplier<String> debugStringSupplier) {
+  CompletableFuture<List<SmtpResponse>> createResponseFuture(int expectedResponses, Supplier<String> debugStringSupplier) {
     ResponseCollector collector = new ResponseCollector(expectedResponses, debugStringSupplier);
 
     boolean success = responseCollector.compareAndSet(null, collector);

@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.After;
@@ -23,12 +24,14 @@ import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteSource;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.hubspot.smtp.messages.MessageContent;
 import com.hubspot.smtp.messages.MessageContentEncoding;
+import com.hubspot.smtp.utils.SmtpResponses;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -77,14 +80,15 @@ public class SmtpSessionTest {
   private MessageContent unknownContent;
   private MessageContent unknown7BitContent;
   private ResponseHandler responseHandler;
-  private CompletableFuture<SmtpResponse[]> responseFuture;
-  private CompletableFuture<SmtpResponse[]> secondResponseFuture;
+  private CompletableFuture<List<SmtpResponse>> responseFuture;
+  private CompletableFuture<List<SmtpResponse>> secondResponseFuture;
   private Channel channel;
   private ChannelPipeline pipeline;
   private SmtpSession session;
   private ChannelFuture writeFuture;
   private ArgumentCaptor<ByteBuf> byteBufCaptor;
   private List<Object> objectsToRelease = Lists.newArrayList();
+  private LoggingInterceptor log;
 
   @Before
   @SuppressWarnings("unchecked")
@@ -115,7 +119,8 @@ public class SmtpSessionTest {
       return writeFuture;
     });
 
-    session = new SmtpSession(channel, responseHandler, CONFIG);
+    log = new LoggingInterceptor();
+    session = new SmtpSession(channel, responseHandler, CONFIG.withSendInterceptor(log));
     session.parseEhloResponse(Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN", "CHUNKING"));
   }
 
@@ -141,6 +146,8 @@ public class SmtpSessionTest {
     session.send(SMTP_REQUEST);
 
     verify(channel).writeAndFlush(SMTP_REQUEST);
+
+    assertThat(log.getLog()).isEqualTo("NOOP");
   }
 
   @Test
@@ -150,6 +157,8 @@ public class SmtpSessionTest {
     verify(channel).write(smtpContent.getDotStuffedContent());
     verify(channel).write(EMPTY_LAST_CONTENT);
     verify(channel).flush();
+
+    assertThat(log.getLog()).isEqualTo("<contents>");
   }
 
   @Test
@@ -167,7 +176,7 @@ public class SmtpSessionTest {
   public void itWrapsTheResponse() throws ExecutionException, InterruptedException {
     CompletableFuture<SmtpClientResponse> future = session.send(SMTP_REQUEST);
 
-    responseFuture.complete(new SmtpResponse[] {OK_RESPONSE});
+    responseFuture.complete(Lists.newArrayList(OK_RESPONSE));
 
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().getSession()).isEqualTo(session);
@@ -179,12 +188,12 @@ public class SmtpSessionTest {
   public void itParsesTheEhloResponse() {
     session.send(EHLO_REQUEST);
 
-    responseFuture.complete(new SmtpResponse[] { new DefaultSmtpResponse(250,
+    responseFuture.complete(Lists.newArrayList(new DefaultSmtpResponse(250,
         "smtp.example.com Hello client.example.com",
         "AUTH PLAIN LOGIN",
         "8BITMIME",
         "STARTTLS",
-        "SIZE") });
+        "SIZE")));
 
     assertThat(session.getEhloResponse().isSupported(Extension.EIGHT_BIT_MIME)).isTrue();
     assertThat(session.getEhloResponse().isSupported(Extension.STARTTLS)).isTrue();
@@ -200,8 +209,8 @@ public class SmtpSessionTest {
   public void itParsesAnEmptyEhloResponse() {
     session.send(EHLO_REQUEST);
 
-    responseFuture.complete(new SmtpResponse[] { new DefaultSmtpResponse(250,
-        "smtp.example.com Hello client.example.com") });
+    responseFuture.complete(Lists.newArrayList(new DefaultSmtpResponse(250,
+        "smtp.example.com Hello client.example.com")));
 
     assertThat(session.getEhloResponse().isSupported(Extension.EIGHT_BIT_MIME)).isFalse();
     assertThat(session.getEhloResponse().isSupported(Extension.STARTTLS)).isFalse();
@@ -220,7 +229,7 @@ public class SmtpSessionTest {
     CompletableFuture<SmtpClientResponse> future = session.send(SMTP_REQUEST);
     CompletableFuture<Void> assertionFuture = future.thenRun(() -> assertThat(Thread.currentThread().getName()).contains("SmtpSessionTestExecutor"));
 
-    responseFuture.complete(new SmtpResponse[] {OK_RESPONSE});
+    responseFuture.complete(Lists.newArrayList(OK_RESPONSE));
     assertionFuture.join();
   }
 
@@ -259,6 +268,8 @@ public class SmtpSessionTest {
     order.verify(channel).write(RCPT_REQUEST);
     order.verify(channel).write(DATA_REQUEST);
     order.verify(channel).flush();
+
+    assertThat(log.getLog()).isEqualTo("<pipeline>");
   }
 
   @Test
@@ -292,7 +303,7 @@ public class SmtpSessionTest {
     CompletableFuture<SmtpClientResponse> future = session.sendPipelined(smtpContent, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST);
 
     SmtpResponse[] responses = {OK_RESPONSE, OK_RESPONSE, OK_RESPONSE, OK_RESPONSE};
-    responseFuture.complete(responses);
+    responseFuture.complete(Lists.newArrayList(responses));
 
     // 4 responses expected: one for the content, 3 for the requests
     verify(responseHandler).createResponseFuture(eq(4), any());
@@ -301,6 +312,8 @@ public class SmtpSessionTest {
     assertThat(future.get().getResponses().size()).isEqualTo(responses.length);
     assertThat(future.get().getSession()).isEqualTo(session);
     assertThat(future.get().getResponses().get(0).code()).isEqualTo(OK_RESPONSE.code());
+
+    assertThat(log.getLog()).isEqualTo("<pipeline>, 250 OK, 250 OK, 250 OK, 250 OK");
   }
 
   @Test
@@ -349,6 +362,8 @@ public class SmtpSessionTest {
     verify(channel).write(new DefaultSmtpRequest(SmtpCommand.valueOf("BDAT"), Integer.toString(buffer.readableBytes())));
     verify(channel).write(buffer);
     verify(channel).flush();
+
+    assertThat(log.getLog()).isEqualTo("<contents>");
   }
 
   @Test
@@ -380,6 +395,8 @@ public class SmtpSessionTest {
     session.authPlain(username, password);
 
     verify(channel).writeAndFlush(new DefaultSmtpRequest("AUTH", "PLAIN", encoded));
+
+    assertThat(log.getLog()).isEqualTo("AUTH");
   }
 
   @Test
@@ -402,7 +419,7 @@ public class SmtpSessionTest {
     verify(channel).writeAndFlush(new DefaultSmtpRequest("AUTH", "LOGIN", encodeBase64(username)));
 
     // now the second request, which sends the password
-    responseFuture.complete(new SmtpResponse[] {INTERMEDIATE_RESPONSE});
+    responseFuture.complete(Lists.newArrayList(INTERMEDIATE_RESPONSE));
 
     // this is sent to the second invocation of writeAndFlush
     ArgumentCaptor<Object> bufCaptor = ArgumentCaptor.forClass(Object.class);
@@ -417,7 +434,7 @@ public class SmtpSessionTest {
   public void itReturnsTheResponseIfAuthLoginFailsAtTheFirstRequest() throws Exception {
     CompletableFuture<SmtpClientResponse> f = session.authLogin("user", "password");
 
-    responseFuture.complete(new SmtpResponse[] {FAIL_RESPONSE});
+    responseFuture.complete(Lists.newArrayList(FAIL_RESPONSE));
 
     assertThat(f.get().getResponses().get(0).code()).isEqualTo(FAIL_RESPONSE.code());
   }
@@ -443,6 +460,8 @@ public class SmtpSessionTest {
         .isEqualTo("BDAT " + MESSAGE_CONTENTS.length() + " LAST\r\n" + MESSAGE_CONTENTS);
 
     assertResponsesMapped(4, future);
+
+    assertThat(log.getLog()).isEqualTo("<pipeline>, 250 OK 0, 251 OK 1, 252 OK 2, 253 OK 3");
   }
 
   private String getString(ByteBuf byteBuf) {
@@ -471,13 +490,15 @@ public class SmtpSessionTest {
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
     order.verify(channel).write(byteBufCaptor.capture());
     order.verify(channel).flush();
+
+    assertThat(log.getLog()).isEqualTo("<pipeline>, <pipeline>");
   }
 
   @Test
   public void itSendsEmailsUsingChunkingIfItIsSupportedWithoutPipelining() throws Exception {
     setExtensions(Extension.CHUNKING);
 
-    when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(new SmtpResponse[]{OK_RESPONSE}));
+    when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(Lists.newArrayList(OK_RESPONSE)));
 
     CompletableFuture<SmtpClientResponse> future = session.send(ALICE, BOB, smtpContent);
 
@@ -492,13 +513,15 @@ public class SmtpSessionTest {
 
     assertThat(future.isDone());
     assertThat(future.get().getResponses().size()).isEqualTo(3);
+
+    assertThat(log.getLog()).isEqualTo("MAIL, 250 OK, RCPT, 250 OK, <contents>, 250 OK");
   }
 
   @Test
   public void itSendsEmailsUsingChunkingIfItIsSupportedWithoutPipeliningAndMultipleRecipients() throws Exception {
     setExtensions(Extension.CHUNKING);
 
-    when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(new SmtpResponse[]{OK_RESPONSE}));
+    when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(Lists.newArrayList(OK_RESPONSE)));
 
     CompletableFuture<SmtpClientResponse> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), smtpContent);
 
@@ -514,6 +537,8 @@ public class SmtpSessionTest {
     
     assertThat(future.isDone());
     assertThat(future.get().getResponses().size()).isEqualTo(4);
+
+    assertThat(log.getLog()).isEqualTo("MAIL, 250 OK, RCPT, 250 OK, RCPT, 250 OK, <contents>, 250 OK");
   }
 
   @Test
@@ -524,9 +549,9 @@ public class SmtpSessionTest {
     when(content.getContentChunkIterator(any()))
         .thenReturn(Iterators.transform(chunks.iterator(), c -> Unpooled.copiedBuffer(c.getBytes(StandardCharsets.UTF_8))));
 
-    CompletableFuture<SmtpResponse[]> future1 = new CompletableFuture<>();
-    CompletableFuture<SmtpResponse[]> future2 = new CompletableFuture<>();
-    CompletableFuture<SmtpResponse[]> future3 = new CompletableFuture<>();
+    CompletableFuture<List<SmtpResponse>> future1 = new CompletableFuture<>();
+    CompletableFuture<List<SmtpResponse>> future2 = new CompletableFuture<>();
+    CompletableFuture<List<SmtpResponse>> future3 = new CompletableFuture<>();
 
     when(responseHandler.createResponseFuture(anyInt(), any())).thenReturn(future1, future2, future3);
 
@@ -539,13 +564,13 @@ public class SmtpSessionTest {
     order.verify(channel).flush();
 
     // respond to the initial pipelined requests
-    future1.complete(new SmtpResponse[] { OK_RESPONSE });
+    future1.complete(Lists.newArrayList(OK_RESPONSE));
 
     order.verify(channel).write(byteBufCaptor.capture());
     order.verify(channel).flush();
 
     // respond to the second chunk
-    future2.complete(new SmtpResponse[] { OK_RESPONSE });
+    future2.complete(Lists.newArrayList(OK_RESPONSE));
 
     order.verify(channel).write(byteBufCaptor.capture());
     order.verify(channel).flush();
@@ -556,6 +581,8 @@ public class SmtpSessionTest {
         .isEqualTo("BDAT " + chunks.get(1).length() + "\r\n" + chunks.get(1));
     assertThat(getString(byteBufCaptor.getAllValues().get(2)))
         .isEqualTo("BDAT " + chunks.get(2).length() + " LAST\r\n" + chunks.get(2));
+
+    assertThat(log.getLog()).isEqualTo("<pipeline>, 250 OK, <contents>, 250 OK, <contents>");
   }
 
   @Test
@@ -568,7 +595,7 @@ public class SmtpSessionTest {
   public void itSendsEmailsUsingDataIfTheContentIs7BitWithoutPipeliningAndMultipleRecipients() throws Exception {
     session.parseEhloResponse(Collections.emptyList());
 
-    when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(new SmtpResponse[]{OK_RESPONSE}));
+    when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(Lists.newArrayList(OK_RESPONSE)));
 
     CompletableFuture<SmtpClientResponse> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), sevenBitContent);
 
@@ -582,10 +609,12 @@ public class SmtpSessionTest {
     order.verify(channel).write(EMPTY_LAST_CONTENT);
     order.verify(channel).flush();
 
-    secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
+    secondResponseFuture.complete(Lists.newArrayList(OK_RESPONSE));
 
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().getResponses().size()).isEqualTo(5);
+
+    assertThat(log.getLog()).isEqualTo("MAIL, 250 OK, RCPT, 250 OK, RCPT, 250 OK, DATA, 250 OK, <contents>, 250 OK");
   }
 
   @Test
@@ -600,13 +629,13 @@ public class SmtpSessionTest {
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + CAROL + ">"));
     order.verify(channel).write(req(SmtpCommand.DATA));
 
-    responseFuture.complete(new SmtpResponse[] { OK_RESPONSE, OK_RESPONSE, OK_RESPONSE, OK_RESPONSE });
+    responseFuture.complete(Lists.newArrayList(OK_RESPONSE, OK_RESPONSE, OK_RESPONSE, OK_RESPONSE));
 
     order.verify(channel).write(sevenBitContent.getDotStuffedContent());
     order.verify(channel).write(EMPTY_LAST_CONTENT);
     order.verify(channel).flush();
 
-    secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
+    secondResponseFuture.complete(Lists.newArrayList(OK_RESPONSE));
 
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().getResponses().size()).isEqualTo(5);
@@ -623,13 +652,13 @@ public class SmtpSessionTest {
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
     order.verify(channel).write(req(SmtpCommand.DATA, "BODY=8BITMIME"));
 
-    responseFuture.complete(new SmtpResponse[] { OK_RESPONSE, OK_RESPONSE, OK_RESPONSE });
+    responseFuture.complete(Lists.newArrayList(OK_RESPONSE, OK_RESPONSE, OK_RESPONSE));
 
     order.verify(channel).write(smtpContent.getDotStuffedContent());
     order.verify(channel).write(EMPTY_LAST_CONTENT);
     order.verify(channel).flush();
 
-    secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
+    secondResponseFuture.complete(Lists.newArrayList(OK_RESPONSE));
 
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().getResponses().size()).isEqualTo(4);
@@ -649,16 +678,27 @@ public class SmtpSessionTest {
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
     order.verify(channel).write(req(SmtpCommand.DATA));
 
-    responseFuture.complete(new SmtpResponse[] { OK_RESPONSE, OK_RESPONSE, OK_RESPONSE });
+    responseFuture.complete(Lists.newArrayList(OK_RESPONSE, OK_RESPONSE, OK_RESPONSE));
 
     order.verify(channel).write(content.getDotStuffedContent());
     order.verify(channel).write(EMPTY_LAST_CONTENT);
     order.verify(channel).flush();
 
-    secondResponseFuture.complete(new SmtpResponse[] { OK_RESPONSE });
+    secondResponseFuture.complete(Lists.newArrayList(OK_RESPONSE));
 
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().getResponses().size()).isEqualTo(4);
+  }
+
+  @Test
+  public void itSupportsOverridingInterceptorsForASingleSend() throws Exception {
+    LoggingInterceptor localLog = new LoggingInterceptor();
+    CompletableFuture<SmtpClientResponse> future = session.send(ALICE, Lists.newArrayList(BOB, CAROL), smtpContent, localLog);
+
+    assertResponsesMapped(4, future);
+
+    assertThat(log.getLog()).isEqualTo(""); // shared interceptors are not called
+    assertThat(localLog.getLog()).isEqualTo("<pipeline>, 250 OK 0, 251 OK 1, 252 OK 2, 253 OK 3");
   }
 
   private void setExtensions(Extension... extensions) {
@@ -666,9 +706,9 @@ public class SmtpSessionTest {
   }
 
   private void assertResponsesMapped(int responsesExpected, CompletableFuture<SmtpClientResponse> future) throws Exception {
-    SmtpResponse[] responses = new SmtpResponse[responsesExpected];
+    List<SmtpResponse> responses = Lists.newArrayList();
     for (int i = 0; i < responsesExpected; i++) {
-      responses[i] = new DefaultSmtpResponse(250 + i, "OK " + i);
+      responses.add(new DefaultSmtpResponse(250 + i, "OK " + i));
     }
 
     responseFuture.complete(responses);
@@ -676,12 +716,12 @@ public class SmtpSessionTest {
     verify(responseHandler).createResponseFuture(eq(responsesExpected), any());
 
     assertThat(future.isDone()).isTrue();
-    assertThat(future.get().getResponses().size()).isEqualTo(responses.length);
+    assertThat(future.get().getResponses().size()).isEqualTo(responses.size());
 
     for (int i = 0; i < responsesExpected; i++) {
       assertThat(future.get().getSession()).isEqualTo(session);
-      assertThat(future.get().getResponses().get(i).code()).isEqualTo(responses[i].code());
-      assertThat(future.get().getResponses().get(i).details()).isEqualTo(responses[i].details());
+      assertThat(future.get().getResponses().get(i).code()).isEqualTo(responses.get(i).code());
+      assertThat(future.get().getResponses().get(i).details()).isEqualTo(responses.get(i).details());
     }
   }
 
@@ -781,7 +821,7 @@ public class SmtpSessionTest {
   public void itReturnsTheFailureResponseWhenStartTlsIsCalledIfTheServerReturnsAnError() throws Exception {
     CompletableFuture<SmtpClientResponse> f = session.startTls();
 
-    responseFuture.complete(new SmtpResponse[] {FAIL_RESPONSE});
+    responseFuture.complete(Lists.newArrayList(FAIL_RESPONSE));
 
     assertThat(f.isDone());
     assertThat(f.get().getResponses().get(0).code()).isEqualTo(FAIL_RESPONSE.code());
@@ -791,15 +831,17 @@ public class SmtpSessionTest {
   public void itAddsAnSslHandlerToThePipelineIfTheStartTlsCommandSucceeds() throws Exception {
     session.startTls();
 
-    responseFuture.complete(new SmtpResponse[] {OK_RESPONSE});
+    responseFuture.complete(Lists.newArrayList(OK_RESPONSE));
 
     verify(pipeline).addFirst(any(SslHandler.class));
+
+    assertThat(log.getLog()).isEqualTo("STARTTLS, 250 OK");
   }
 
   @Test
   public void itFailsTheFutureIfTheTlsHandshakeFails() throws Exception {
     CompletableFuture<SmtpClientResponse> f = session.startTls();
-    responseFuture.complete(new SmtpResponse[] {OK_RESPONSE});
+    responseFuture.complete(Lists.newArrayList(OK_RESPONSE));
     SslHandler sslHandler = getSslHandler();
 
     // fail the handshake
@@ -815,7 +857,7 @@ public class SmtpSessionTest {
   @Test
   public void itReturnsTheStartTlsResponseIfTheTlsHandshakeSucceeds() throws Exception {
     CompletableFuture<SmtpClientResponse> f = session.startTls();
-    responseFuture.complete(new SmtpResponse[] {OK_RESPONSE});
+    responseFuture.complete(Lists.newArrayList(OK_RESPONSE));
     SslHandler sslHandler = getSslHandler();
 
     // the handshake succeeds
@@ -851,5 +893,40 @@ public class SmtpSessionTest {
 
   private SmtpRequest req(SmtpCommand command, CharSequence... parameters) {
     return new DefaultSmtpRequest(command, parameters);
+  }
+
+  private class LoggingInterceptor implements SendInterceptor {
+    private List<String> entries = Lists.newArrayList();
+
+    @Override
+    public CompletableFuture<List<SmtpResponse>> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
+      entries.add(command.name().toString());
+      return logResponses(next);
+    }
+
+    @Override
+    public CompletableFuture<List<SmtpResponse>> aroundData(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
+      entries.add("<contents>");
+      return logResponses(next);
+    }
+
+    @Override
+    public CompletableFuture<List<SmtpResponse>> aroundPipelinedSequence(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
+      entries.add("<pipeline>");
+      return logResponses(next);
+    }
+
+    private CompletableFuture<List<SmtpResponse>> logResponses(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
+      return next.get().thenApply(rs -> {
+        for (SmtpResponse r : rs) {
+          entries.add(SmtpResponses.toString(r));
+        }
+        return rs;
+      });
+    }
+
+    String getLog() {
+      return Joiner.on(", ").join(entries);
+    }
   }
 }

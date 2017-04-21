@@ -3,6 +3,7 @@ package com.hubspot.smtp.client;
 import java.io.Closeable;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -35,7 +36,7 @@ public class SmtpSessionFactory implements Closeable  {
 
   public CompletableFuture<SmtpClientResponse> connect(SmtpSessionConfig config) {
     ResponseHandler responseHandler = new ResponseHandler(config.getConnectionId());
-    CompletableFuture<SmtpResponse[]> initialResponseFuture = responseHandler.createResponseFuture(1, () -> "initial response");
+    CompletableFuture<List<SmtpResponse>> initialResponseFuture = responseHandler.createResponseFuture(1, () -> "initial response");
 
     Bootstrap bootstrap = new Bootstrap()
         .group(eventLoopGroup)
@@ -54,7 +55,7 @@ public class SmtpSessionFactory implements Closeable  {
         allChannels.add(channel);
 
         SmtpSession session = new SmtpSession(channel, responseHandler, config);
-        applyOnExecutor(config, initialResponseFuture, r -> connectFuture.complete(new SmtpClientResponse(session, r[0])));
+        applyOnExecutor(config, initialResponseFuture, r -> connectFuture.complete(new SmtpClientResponse(session, r.get(0))));
       } else {
         LOG.error("Could not connect to {}", config.getRemoteAddress(), f.cause());
         config.getEffectiveExecutor().execute(() -> connectFuture.completeExceptionally(f.cause()));
