@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
@@ -12,6 +13,7 @@ import io.netty.handler.codec.smtp.SmtpResponse;
 
 public class CompositeSendInterceptor implements SendInterceptor {
   private final SendInterceptor rootInterceptor;
+  private final List<SendInterceptor> sendInterceptors;
 
   public static CompositeSendInterceptor of(SendInterceptor... sendInterceptors) {
     return new CompositeSendInterceptor(Lists.newArrayList(sendInterceptors));
@@ -32,6 +34,12 @@ public class CompositeSendInterceptor implements SendInterceptor {
     }
 
     this.rootInterceptor = rootInterceptor;
+    this.sendInterceptors = sendInterceptors;
+  }
+
+  @VisibleForTesting
+  public List<SendInterceptor> getSendInterceptors() {
+    return sendInterceptors;
   }
 
   @Override
