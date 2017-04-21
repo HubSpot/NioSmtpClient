@@ -3,6 +3,7 @@ package com.hubspot.smtp.client;
 import static io.netty.handler.codec.smtp.LastSmtpContent.EMPTY_LAST_CONTENT;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
@@ -292,7 +293,7 @@ public class SmtpSession {
   public CompletableFuture<SmtpClientResponse> send(SmtpRequest request) {
     Preconditions.checkNotNull(request);
 
-    return applyOnExecutor(executeCommandInterceptor(config.getSendInterceptor(), request.command(), () -> {
+    return applyOnExecutor(executeRequestInterceptor(config.getSendInterceptor(), request, () -> {
       CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> createDebugString(request));
       writeAndFlush(request);
 
@@ -359,7 +360,7 @@ public class SmtpSession {
     checkValidPipelinedRequest(requests);
     checkMessageSize(content == null ? OptionalInt.empty() : content.size());
 
-    return applyOnExecutor(executePipelineInterceptor(config.getSendInterceptor(), () -> {
+    return applyOnExecutor(executePipelineInterceptor(config.getSendInterceptor(), Lists.newArrayList(requests), () -> {
       int expectedResponses = requests.length + (content == null ? 0 : 1);
       CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(expectedResponses, () -> createDebugString((Object[]) requests));
 
@@ -404,7 +405,7 @@ public class SmtpSession {
   }
 
   private CompletionStage<SmtpClientResponse> sendAuthLoginPassword(String password) {
-    return applyOnExecutor(executeCommandInterceptor(config.getSendInterceptor(), AUTH_COMMAND, () -> {
+    return applyOnExecutor(executeRequestInterceptor(config.getSendInterceptor(), new DefaultSmtpRequest(AUTH_COMMAND), () -> {
       CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> "auth login password");
 
       String passwordResponse = encodeBase64(password) + CRLF;
@@ -510,16 +511,16 @@ public class SmtpSession {
     }, executor);
   }
 
-  CompletableFuture<List<SmtpResponse>> executeCommandInterceptor(Optional<SendInterceptor> interceptor, SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
-    return interceptor.map(h -> h.aroundCommand(command, supplier)).orElseGet(supplier);
+  CompletableFuture<List<SmtpResponse>> executeRequestInterceptor(Optional<SendInterceptor> interceptor, SmtpRequest request, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
+    return interceptor.map(h -> h.aroundRequest(request, supplier)).orElseGet(supplier);
   }
 
   CompletableFuture<List<SmtpResponse>> executeDataInterceptor(Optional<SendInterceptor> interceptor, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
     return interceptor.map(h -> h.aroundData(supplier)).orElseGet(supplier);
   }
 
-  CompletableFuture<List<SmtpResponse>> executePipelineInterceptor(Optional<SendInterceptor> interceptor, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
-    return interceptor.map(h -> h.aroundPipelinedSequence(supplier)).orElseGet(supplier);
+  CompletableFuture<List<SmtpResponse>> executePipelineInterceptor(Optional<SendInterceptor> interceptor, List<SmtpRequest> requests, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
+    return interceptor.map(h -> h.aroundPipelinedSequence(requests, supplier)).orElseGet(supplier);
   }
 
   private class SendSequence {
@@ -593,10 +594,16 @@ public class SmtpSession {
       }
 
       if (expectedResponses > 1) {
-        return executePipelineInterceptor(interceptor, supplier);
+        ArrayList<SmtpRequest> requests = Lists.newArrayList();
+        for (Object obj : objects) {
+          if (obj instanceof SmtpRequest) {
+            requests.add((SmtpRequest) obj);
+          }
+        }
+
+        return executePipelineInterceptor(interceptor, requests, supplier);
       } else if (objects[0] instanceof SmtpRequest) {
-        SmtpCommand cmd = ((SmtpRequest) objects[0]).command();
-        return executeCommandInterceptor(interceptor, cmd, supplier);
+        return executeRequestInterceptor(interceptor, ((SmtpRequest) objects[0]), supplier);
       } else {
         return executeDataInterceptor(interceptor, supplier);
       }

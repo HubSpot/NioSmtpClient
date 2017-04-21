@@ -269,7 +269,7 @@ public class SmtpSessionTest {
     order.verify(channel).write(DATA_REQUEST);
     order.verify(channel).flush();
 
-    assertThat(log.getLog()).isEqualTo("<pipeline>");
+    assertThat(log.getLog()).isEqualTo("<pipeline MAIL, RCPT, DATA>");
   }
 
   @Test
@@ -313,7 +313,7 @@ public class SmtpSessionTest {
     assertThat(future.get().getSession()).isEqualTo(session);
     assertThat(future.get().getResponses().get(0).code()).isEqualTo(OK_RESPONSE.code());
 
-    assertThat(log.getLog()).isEqualTo("<pipeline>, 250 OK, 250 OK, 250 OK, 250 OK");
+    assertThat(log.getLog()).isEqualTo("<pipeline MAIL, RCPT, DATA>, 250 OK, 250 OK, 250 OK, 250 OK");
   }
 
   @Test
@@ -461,7 +461,7 @@ public class SmtpSessionTest {
 
     assertResponsesMapped(4, future);
 
-    assertThat(log.getLog()).isEqualTo("<pipeline>, 250 OK 0, 251 OK 1, 252 OK 2, 253 OK 3");
+    assertThat(log.getLog()).isEqualTo("<pipeline MAIL, RCPT, RCPT>, 250 OK 0, 251 OK 1, 252 OK 2, 253 OK 3");
   }
 
   private String getString(ByteBuf byteBuf) {
@@ -491,7 +491,7 @@ public class SmtpSessionTest {
     order.verify(channel).write(byteBufCaptor.capture());
     order.verify(channel).flush();
 
-    assertThat(log.getLog()).isEqualTo("<pipeline>, <pipeline>");
+    assertThat(log.getLog()).isEqualTo("<pipeline MAIL, RCPT>, <pipeline RSET, MAIL, RCPT>");
   }
 
   @Test
@@ -582,7 +582,7 @@ public class SmtpSessionTest {
     assertThat(getString(byteBufCaptor.getAllValues().get(2)))
         .isEqualTo("BDAT " + chunks.get(2).length() + " LAST\r\n" + chunks.get(2));
 
-    assertThat(log.getLog()).isEqualTo("<pipeline>, 250 OK, <contents>, 250 OK, <contents>");
+    assertThat(log.getLog()).isEqualTo("<pipeline MAIL, RCPT>, 250 OK, <contents>, 250 OK, <contents>");
   }
 
   @Test
@@ -698,7 +698,7 @@ public class SmtpSessionTest {
     assertResponsesMapped(4, future);
 
     assertThat(log.getLog()).isEqualTo(""); // shared interceptors are not called
-    assertThat(localLog.getLog()).isEqualTo("<pipeline>, 250 OK 0, 251 OK 1, 252 OK 2, 253 OK 3");
+    assertThat(localLog.getLog()).isEqualTo("<pipeline MAIL, RCPT, RCPT>, 250 OK 0, 251 OK 1, 252 OK 2, 253 OK 3");
   }
 
   private void setExtensions(Extension... extensions) {
@@ -899,8 +899,8 @@ public class SmtpSessionTest {
     private List<String> entries = Lists.newArrayList();
 
     @Override
-    public CompletableFuture<List<SmtpResponse>> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
-      entries.add(command.name().toString());
+    public CompletableFuture<List<SmtpResponse>> aroundRequest(SmtpRequest request, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
+      entries.add(request.command().name().toString());
       return logResponses(next);
     }
 
@@ -911,8 +911,8 @@ public class SmtpSessionTest {
     }
 
     @Override
-    public CompletableFuture<List<SmtpResponse>> aroundPipelinedSequence(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
-      entries.add("<pipeline>");
+    public CompletableFuture<List<SmtpResponse>> aroundPipelinedSequence(List<SmtpRequest> requests, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
+      entries.add("<pipeline " + requests.stream().map(r -> r.command().name()).collect(Collectors.joining(", ")) + ">");
       return logResponses(next);
     }
 
