@@ -11,7 +11,7 @@ import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpResponse;
 
 public class CompositeSendInterceptor implements SendInterceptor {
-  private final SendInterceptor rootSendInterceptor;
+  private final SendInterceptor rootInterceptor;
 
   public static CompositeSendInterceptor of(SendInterceptor... sendInterceptors) {
     return new CompositeSendInterceptor(Lists.newArrayList(sendInterceptors));
@@ -25,52 +25,52 @@ public class CompositeSendInterceptor implements SendInterceptor {
     Preconditions.checkNotNull(sendInterceptors);
     Preconditions.checkArgument(!sendInterceptors.isEmpty(), "sendInterceptors must not be empty");
 
-    SendInterceptor root = sendInterceptors.get(0);
+    SendInterceptor rootInterceptor = sendInterceptors.get(0);
 
     for (int i = 1; i < sendInterceptors.size(); i++) {
-      root = new InterceptorWrapper(root, sendInterceptors.get(i));
+      rootInterceptor = new InterceptorWrapper(rootInterceptor, sendInterceptors.get(i));
     }
 
-    rootSendInterceptor = root;
+    this.rootInterceptor = rootInterceptor;
   }
 
   @Override
   public CompletableFuture<List<SmtpResponse>> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
-    return rootSendInterceptor.aroundCommand(command, next);
+    return rootInterceptor.aroundCommand(command, next);
   }
 
   @Override
   public CompletableFuture<List<SmtpResponse>> aroundData(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
-    return rootSendInterceptor.aroundData(next);
+    return rootInterceptor.aroundData(next);
   }
 
   @Override
   public CompletableFuture<List<SmtpResponse>> aroundPipelinedSequence(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
-    return rootSendInterceptor.aroundPipelinedSequence(next);
+    return rootInterceptor.aroundPipelinedSequence(next);
   }
 
   private static class InterceptorWrapper implements SendInterceptor {
-    private final SendInterceptor thisSendInterceptor;
-    private final SendInterceptor nextSendInterceptor;
+    private final SendInterceptor thisInterceptor;
+    private final SendInterceptor nextInterceptor;
 
-    public InterceptorWrapper(SendInterceptor thisSendInterceptor, SendInterceptor nextSendInterceptor) {
-      this.thisSendInterceptor = thisSendInterceptor;
-      this.nextSendInterceptor = nextSendInterceptor;
+    public InterceptorWrapper(SendInterceptor thisInterceptor, SendInterceptor nextInterceptor) {
+      this.thisInterceptor = thisInterceptor;
+      this.nextInterceptor = nextInterceptor;
     }
 
     @Override
     public CompletableFuture<List<SmtpResponse>> aroundCommand(SmtpCommand command, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
-      return thisSendInterceptor.aroundCommand(command, () -> nextSendInterceptor.aroundCommand(command, next));
+      return thisInterceptor.aroundCommand(command, () -> nextInterceptor.aroundCommand(command, next));
     }
 
     @Override
     public CompletableFuture<List<SmtpResponse>> aroundData(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
-      return thisSendInterceptor.aroundData(() -> nextSendInterceptor.aroundData(next));
+      return thisInterceptor.aroundData(() -> nextInterceptor.aroundData(next));
     }
 
     @Override
     public CompletableFuture<List<SmtpResponse>> aroundPipelinedSequence(Supplier<CompletableFuture<List<SmtpResponse>>> next) {
-      return thisSendInterceptor.aroundData(() -> nextSendInterceptor.aroundPipelinedSequence(next));
+      return thisInterceptor.aroundData(() -> nextInterceptor.aroundPipelinedSequence(next));
     }
   }
 }
