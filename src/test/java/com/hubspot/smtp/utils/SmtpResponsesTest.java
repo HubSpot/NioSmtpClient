@@ -4,17 +4,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.Test;
 
+import com.google.common.collect.Lists;
+
 import io.netty.handler.codec.smtp.DefaultSmtpResponse;
 import io.netty.handler.codec.smtp.SmtpResponse;
 
 public class SmtpResponsesTest {
   private static final SmtpResponse OK_RESPONSE = new DefaultSmtpResponse(250, "ARG1", "ARG2");
+  private static final SmtpResponse EHLO_RESPONSE = new DefaultSmtpResponse(250, "PIPELINING", "CHUNKING");
   private static final SmtpResponse TRANSIENT_ERROR_RESPONSE = new DefaultSmtpResponse(400);
   private static final SmtpResponse PERMANENT_ERROR_RESPONSE = new DefaultSmtpResponse(500);
 
   @Test
   public void itFormatsResponsesAsAString() {
     assertThat(SmtpResponses.toString(OK_RESPONSE)).isEqualTo("250 ARG1 ARG2");
+  }
+
+  @Test
+  public void itFormatsResponsesAsALines() {
+    assertThat(SmtpResponses.getLines(EHLO_RESPONSE)).isEqualTo(Lists.newArrayList("250-PIPELINING", "250 CHUNKING"));
   }
 
   @Test
