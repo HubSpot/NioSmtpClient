@@ -19,6 +19,10 @@ public final class SmtpResponses {
   }
 
   public static List<String> getLines(SmtpResponse response) {
+    if (response.details().size() == 0) {
+      return ImmutableList.of(Integer.toString(response.code()));
+    }
+
     String[] lines = new String[response.details().size()];
 
     for (int i = 0; i < response.details().size(); i++) {
