@@ -1,6 +1,9 @@
 package com.hubspot.smtp.utils;
 
+import java.util.List;
+
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 
 import io.netty.handler.codec.smtp.SmtpResponse;
 
@@ -13,6 +16,28 @@ public final class SmtpResponses {
 
   public static String toString(SmtpResponse response) {
     return response.code() + " " + SPACE_JOINER.join(response.details());
+  }
+
+  public static List<String> getLines(SmtpResponse response) {
+    String[] lines = new String[response.details().size()];
+
+    for (int i = 0; i < response.details().size(); i++) {
+      StringBuilder responseBuilder = new StringBuilder();
+
+      responseBuilder.append(response.code());
+
+      if (i == response.details().size() - 1) {
+        responseBuilder.append(" ");
+      } else {
+        responseBuilder.append("-");
+      }
+
+      responseBuilder.append(response.details().get(i));
+
+      lines[i] = responseBuilder.toString();
+    }
+
+    return ImmutableList.copyOf(lines);
   }
 
   public static boolean isTransientError(SmtpResponse response) {
