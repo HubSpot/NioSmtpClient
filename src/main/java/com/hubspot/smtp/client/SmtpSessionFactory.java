@@ -16,7 +16,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.smtp.SmtpResponse;
@@ -25,11 +24,11 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 public class SmtpSessionFactory implements Closeable  {
   private static final Logger LOG = LoggerFactory.getLogger(SmtpSessionFactory.class);
 
-  private final EventLoopGroup eventLoopGroup;
   private final ChannelGroup allChannels;
+  private final SmtpSessionFactoryConfig factoryConfig;
 
-  public SmtpSessionFactory(EventLoopGroup eventLoopGroup) {
-    this.eventLoopGroup = eventLoopGroup;
+  public SmtpSessionFactory(SmtpSessionFactoryConfig factoryConfig) {
+    this.factoryConfig = factoryConfig;
 
     allChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   }
@@ -39,9 +38,9 @@ public class SmtpSessionFactory implements Closeable  {
     CompletableFuture<List<SmtpResponse>> initialResponseFuture = responseHandler.createResponseFuture(1, () -> "initial response");
 
     Bootstrap bootstrap = new Bootstrap()
-        .group(eventLoopGroup)
-        .channel(config.getChannelClass())
-        .option(ChannelOption.ALLOCATOR, config.getAllocator())
+        .group(factoryConfig.getEventLoopGroup())
+        .channel(factoryConfig.getChannelClass())
+        .option(ChannelOption.ALLOCATOR, factoryConfig.getAllocator())
         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) getMillis(config.getConnectionTimeout()))
         .remoteAddress(config.getRemoteAddress())
         .localAddress(config.getLocalAddress().orElse(null))
@@ -54,11 +53,11 @@ public class SmtpSessionFactory implements Closeable  {
         Channel channel = ((ChannelFuture) f).channel();
         allChannels.add(channel);
 
-        SmtpSession session = new SmtpSession(channel, responseHandler, config);
+        SmtpSession session = new SmtpSession(channel, responseHandler, config, factoryConfig.getExecutor(), factoryConfig.getSslEngineSupplier());
         applyOnExecutor(config, initialResponseFuture, r -> connectFuture.complete(new SmtpClientResponse(session, r.get(0))));
       } else {
         LOG.error("Could not connect to {}", config.getRemoteAddress(), f.cause());
-        config.getEffectiveExecutor().execute(() -> connectFuture.completeExceptionally(f.cause()));
+        factoryConfig.getExecutor().execute(() -> connectFuture.completeExceptionally(f.cause()));
       }
     });
 
@@ -77,7 +76,7 @@ public class SmtpSessionFactory implements Closeable  {
       }
 
       return mapper.apply(rs);
-    }, config.getEffectiveExecutor());
+    }, factoryConfig.getExecutor());
   }
 
   @Override
