@@ -21,6 +21,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import javax.net.ssl.SSLEngine;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
@@ -82,17 +84,19 @@ public class SmtpSession {
   private final ResponseHandler responseHandler;
   private final SmtpSessionConfig config;
   private final Executor executor;
+  private final Supplier<SSLEngine> sslEngineSupplier;
   private final CompletableFuture<Void> closeFuture;
   private final AtomicInteger chunkedBytesSent = new AtomicInteger(0);
 
   private volatile boolean requiresRset = false;
   private volatile EhloResponse ehloResponse = EhloResponse.EMPTY;
 
-  SmtpSession(Channel channel, ResponseHandler responseHandler, SmtpSessionConfig config) {
+  SmtpSession(Channel channel, ResponseHandler responseHandler, SmtpSessionConfig config, Executor executor, Supplier<SSLEngine> sslEngineSupplier) {
     this.channel = channel;
     this.responseHandler = responseHandler;
     this.config = config;
-    this.executor = config.getEffectiveExecutor();
+    this.executor = executor;
+    this.sslEngineSupplier = sslEngineSupplier;
     this.closeFuture = new CompletableFuture<>();
 
     this.channel.pipeline().addLast(new ErrorHandler());
@@ -126,7 +130,7 @@ public class SmtpSession {
   private CompletionStage<SmtpClientResponse> performTlsHandshake(SmtpClientResponse r) {
     CompletableFuture<SmtpClientResponse> ourFuture = new CompletableFuture<>();
 
-    SslHandler sslHandler = new SslHandler(config.getSslEngineSupplier().get());
+    SslHandler sslHandler = new SslHandler(sslEngineSupplier.get());
     channel.pipeline().addFirst(sslHandler);
 
     sslHandler.handshakeFuture().addListener(nettyFuture -> {
@@ -497,7 +501,7 @@ public class SmtpSession {
   }
 
   private <R, T> CompletableFuture<R> applyOnExecutor(CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
-    if (executor == SmtpSessionConfig.DIRECT_EXECUTOR) {
+    if (executor == SmtpSessionFactoryConfig.DIRECT_EXECUTOR) {
       return eventLoopFuture.thenApply(mapper);
     }
 

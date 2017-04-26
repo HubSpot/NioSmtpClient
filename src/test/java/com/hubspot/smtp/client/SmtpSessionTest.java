@@ -17,6 +17,8 @@ import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import javax.net.ssl.SSLEngine;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,7 +75,8 @@ public class SmtpSessionTest {
   private static final SmtpRequest HELO_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELO);
   private static final SmtpRequest HELP_REQUEST = new DefaultSmtpRequest(SmtpCommand.HELP);
 
-  private static final SmtpSessionConfig CONFIG = SmtpSessionConfig.forRemoteAddress("127.0.0.1", 25).withExecutor(SmtpSessionConfig.DIRECT_EXECUTOR);
+  private static final SmtpSessionConfig CONFIG = SmtpSessionConfig.forRemoteAddress("127.0.0.1", 25);
+  private static final Supplier<SSLEngine> SSL_ENGINE_SUPPLIER = SmtpSessionFactoryConfig.nonProductionConfig().getSslEngineSupplier();
 
   private MessageContent smtpContent;
   private MessageContent sevenBitContent;
@@ -120,7 +123,7 @@ public class SmtpSessionTest {
     });
 
     log = new LoggingInterceptor();
-    session = new SmtpSession(channel, responseHandler, CONFIG.withSendInterceptor(log));
+    session = new SmtpSession(channel, responseHandler, CONFIG.withSendInterceptor(log), SmtpSessionFactoryConfig.DIRECT_EXECUTOR, SSL_ENGINE_SUPPLIER);
     session.parseEhloResponse(Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN", "CHUNKING"));
   }
 
@@ -224,7 +227,7 @@ public class SmtpSessionTest {
   @Test
   public void itExecutesReturnedFuturesOnTheProvidedExecutor() {
     ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("SmtpSessionTestExecutor").build());
-    SmtpSession session = new SmtpSession(channel, responseHandler, CONFIG.withExecutor(executorService));
+    SmtpSession session = new SmtpSession(channel, responseHandler, CONFIG, executorService, SSL_ENGINE_SUPPLIER);
 
     CompletableFuture<SmtpClientResponse> future = session.send(SMTP_REQUEST);
     CompletableFuture<Void> assertionFuture = future.thenRun(() -> assertThat(Thread.currentThread().getName()).contains("SmtpSessionTestExecutor"));
@@ -236,7 +239,7 @@ public class SmtpSessionTest {
   @Test
   public void itExecutesReturnedExceptionalFuturesOnTheProvidedExecutor() {
     ExecutorService executorService = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("SmtpSessionTestExecutor").build());
-    SmtpSession session = new SmtpSession(channel, responseHandler, CONFIG.withExecutor(executorService));
+    SmtpSession session = new SmtpSession(channel, responseHandler, CONFIG, executorService, SSL_ENGINE_SUPPLIER);
 
     CompletableFuture<SmtpClientResponse> future = session.send(SMTP_REQUEST);
     CompletableFuture<Boolean> assertionFuture = future.handle((r, e) -> {
@@ -803,14 +806,14 @@ public class SmtpSessionTest {
   public void itDeterminesEncryptionStatusByCheckingPipeline() {
     assertThat(session.isEncrypted()).isFalse();
 
-    when(pipeline.get(SslHandler.class)).thenReturn(new SslHandler(CONFIG.getSslEngineSupplier().get()));
+    when(pipeline.get(SslHandler.class)).thenReturn(new SslHandler(SSL_ENGINE_SUPPLIER.get()));
 
     assertThat(session.isEncrypted()).isTrue();
   }
 
   @Test
   public void itThrowsWhenStartTlsIsCalledIfEncryptionIsActive() {
-    when(pipeline.get(SslHandler.class)).thenReturn(new SslHandler(CONFIG.getSslEngineSupplier().get()));
+    when(pipeline.get(SslHandler.class)).thenReturn(new SslHandler(SSL_ENGINE_SUPPLIER.get()));
 
     assertThatThrownBy(() -> session.startTls())
         .isInstanceOf(IllegalStateException.class)

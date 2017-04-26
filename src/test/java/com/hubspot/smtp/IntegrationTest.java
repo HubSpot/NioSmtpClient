@@ -51,6 +51,7 @@ import com.hubspot.smtp.client.SmtpClientResponse;
 import com.hubspot.smtp.client.SmtpSession;
 import com.hubspot.smtp.client.SmtpSessionConfig;
 import com.hubspot.smtp.client.SmtpSessionFactory;
+import com.hubspot.smtp.client.SmtpSessionFactoryConfig;
 import com.hubspot.smtp.messages.MessageContent;
 import com.hubspot.smtp.messages.MessageContentEncoding;
 
@@ -91,7 +92,7 @@ public class IntegrationTest {
     serverAddress = new InetSocketAddress(getFreePort());
     serverLog = mock(Logger.class);
     smtpServer = createAndStartSmtpServer(serverLog, serverAddress);
-    sessionFactory = new SmtpSessionFactory(EVENT_LOOP_GROUP);
+    sessionFactory = new SmtpSessionFactory(SmtpSessionFactoryConfig.nonProductionConfig().withSslEngineSupplier(this::createInsecureSSLEngine));
 
     when(serverLog.isDebugEnabled()).thenReturn(true);
   }
@@ -370,11 +371,13 @@ public class IntegrationTest {
     Executor executor = Executors.newFixedThreadPool(50);
 
     // Don't use chunking because our James implementation is naive
-    SmtpSessionConfig pipeliningConfig = getDefaultConfig().withExecutor(executor).withDisabledExtensions(EnumSet.of(Extension.CHUNKING));
-    SmtpSessionConfig nonPipeliningConfig = pipeliningConfig.withDisabledExtensions(EnumSet.of(Extension.CHUNKING, Extension.PIPELINING));
+    SmtpSessionFactory factory = new SmtpSessionFactory(SmtpSessionFactoryConfig.nonProductionConfig().withExecutor(executor));
+
+    SmtpSessionConfig pipeliningConfig = getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.CHUNKING));
+    SmtpSessionConfig nonPipeliningConfig = getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.CHUNKING, Extension.PIPELINING));
 
     for (int i = 0; i < 100; i++) {
-      futures.add(connect(i % 2 == 0 ? pipeliningConfig : nonPipeliningConfig)
+      futures.add(factory.connect(i % 2 == 0 ? pipeliningConfig : nonPipeliningConfig)
           .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
           .thenCompose(r -> assertSuccess(r).send(RETURN_PATH, RECIPIENT, createMessageContent()))
           .thenCompose(r -> assertSuccess(r).send(RETURN_PATH, RECIPIENT, createMessageContent()))
@@ -411,7 +414,7 @@ public class IntegrationTest {
   }
 
   private SmtpSessionConfig getDefaultConfig() {
-    return SmtpSessionConfig.forRemoteAddress(serverAddress).withSslEngineSupplier(this::createInsecureSSLEngine);
+    return SmtpSessionConfig.forRemoteAddress(serverAddress);
   }
 
   private SSLEngine createInsecureSSLEngine() {
