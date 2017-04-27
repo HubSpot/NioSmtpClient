@@ -9,7 +9,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.smtp.SmtpRequestEncoder;
 import io.netty.handler.codec.smtp.SmtpResponseDecoder;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.handler.timeout.ReadTimeoutHandler;
 
 class Initializer extends ChannelInitializer<SocketChannel> {
   private static final int MAX_LINE_LENGTH = 1000;
@@ -33,7 +32,6 @@ class Initializer extends ChannelInitializer<SocketChannel> {
     handlers.add(new SmtpRequestEncoder());
     handlers.add(new SmtpResponseDecoder(MAX_LINE_LENGTH));
     handlers.add(new ChunkedWriteHandler());
-    handlers.add(new ReadTimeoutHandler(Math.toIntExact(config.getReadTimeout().getSeconds())));
 
     config.getKeepAliveTimeout().ifPresent(timeout -> handlers.add(new KeepAliveHandler(responseHandler, config.getConnectionId(), timeout)));
 

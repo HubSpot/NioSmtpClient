@@ -1,26 +1,36 @@
 package com.hubspot.smtp.client;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.handler.timeout.ReadTimeoutException;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
 
 class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
   private static final Logger LOG = LoggerFactory.getLogger(ResponseHandler.class);
+  private static final HashedWheelTimer TIMER = new HashedWheelTimer(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("response-timer-%d").build());
 
   private final AtomicReference<ResponseCollector> responseCollector = new AtomicReference<>();
   private final String connectionId;
+  private final Duration responseTimeout;
 
-  ResponseHandler(String connectionId) {
+  ResponseHandler(String connectionId, Duration responseTimeout) {
     this.connectionId = connectionId;
+    this.responseTimeout = responseTimeout;
   }
 
   CompletableFuture<List<SmtpResponse>> createResponseFuture(int expectedResponses, Supplier<String> debugStringSupplier) {
@@ -40,7 +50,13 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
     // although the future field may have been written in another thread,
     // the compareAndSet call above has volatile semantics and
     // ensures the write will be visible
-    return collector.getFuture();
+    CompletableFuture<List<SmtpResponse>> responseFuture = collector.getFuture();
+
+    // complete exceptionally if the timeout is exceeded
+    Timeout timeout = TIMER.newTimeout(ignored -> responseFuture.completeExceptionally(new TimeoutException()), responseTimeout.toMillis(), TimeUnit.MILLISECONDS);
+    responseFuture.whenComplete((ignored1, ignored2) -> timeout.cancel());
+
+    return responseFuture;
   }
 
   boolean isResponsePending() {
