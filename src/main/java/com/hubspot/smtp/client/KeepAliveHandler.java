@@ -43,6 +43,7 @@ class KeepAliveHandler extends IdleStateHandler {
     } else if (responseHandler.isResponsePending()) {
       LOG.warn("[{}] Waiting for a response, will not send a NOOP to keep the connection alive", connectionId);
     } else {
+      LOG.debug("[{}] Sending NOOP", connectionId);
       ctx.channel().writeAndFlush(new DefaultSmtpRequest(SmtpCommand.NOOP));
       expectingNoopResponse = true;
     }
@@ -51,6 +52,7 @@ class KeepAliveHandler extends IdleStateHandler {
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     if (expectingNoopResponse && msg instanceof SmtpResponse) {
+      LOG.debug("[{}] NOOP response received {}", connectionId, SmtpResponses.toString((SmtpResponse) msg));
       swallowNoopResponse((SmtpResponse) msg);
       sendPendingWrites(ctx);
       return;
