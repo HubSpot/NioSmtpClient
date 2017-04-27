@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -29,7 +30,7 @@ public class ResponseHandlerTest {
 
   @Before
   public void setup() {
-    responseHandler = new ResponseHandler(CONNECTION_ID);
+    responseHandler = new ResponseHandler(CONNECTION_ID, Duration.ofMinutes(2));
     context = mock(ChannelHandlerContext.class);
   }
 
@@ -171,5 +172,16 @@ public class ResponseHandlerTest {
     assertThatThrownBy(f::get)
         .hasCauseInstanceOf(ChannelClosedException.class)
         .hasMessageEndingWith(CONNECTION_ID_PREFIX + "Handled channelInactive while waiting for a response to [" + DEBUG_STRING.get() + "]");
+  }
+
+  @Test
+  public void itCompletesExceptionallyIfTheResonseTimeoutIsExceeded() throws Exception {
+    ResponseHandler impatientHandler = new ResponseHandler(CONNECTION_ID, Duration.ofMillis(200));
+
+    CompletableFuture<List<SmtpResponse>> responseFuture = impatientHandler.createResponseFuture(1, DEBUG_STRING);
+    assertThat(responseFuture.isCompletedExceptionally()).isFalse();
+
+    Thread.sleep(300);
+    assertThat(responseFuture.isCompletedExceptionally()).isTrue();
   }
 }
