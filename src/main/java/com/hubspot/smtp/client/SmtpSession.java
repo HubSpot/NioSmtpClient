@@ -102,6 +102,10 @@ public class SmtpSession {
     this.channel.pipeline().addLast(new ErrorHandler());
   }
 
+  public String getConnectionId() {
+    return config.getConnectionId();
+  }
+
   public CompletableFuture<Void> getCloseFuture() {
     return closeFuture;
   }
