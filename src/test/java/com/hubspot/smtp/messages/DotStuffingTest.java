@@ -32,6 +32,7 @@ public class DotStuffingTest {
     assertThat(dotStuffUsingByteBuf("abc\r\n.def")).isEqualTo("abc\r\n..def" + CRLF);
     assertThat(dotStuffUsingByteBuf("abc\r\n.")).isEqualTo("abc\r\n.." + CRLF);
     assertThat(dotStuffUsingByteBuf("abc\r\n.def\r\n.ghi\r\n.")).isEqualTo("abc\r\n..def\r\n..ghi\r\n.." + CRLF);
+    assertThat(dotStuffUsingByteBuf("abc\r\ndef\r\n.ghi\r\n.")).isEqualTo("abc\r\ndef\r\n..ghi\r\n.." + CRLF);
 
     // does not add
     assertThat(dotStuffUsingByteBuf("abc\r\ndef.")).isEqualTo("abc\r\ndef." + CRLF);
