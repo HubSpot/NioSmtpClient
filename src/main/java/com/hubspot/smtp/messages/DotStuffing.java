@@ -107,7 +107,7 @@ final class DotStuffing {
         if (i + 1 < length && buffer.getByte(i + 1) == DOT) {
           return i + 1;
         } else {
-          break;
+          continue;
         }
       }
     }
