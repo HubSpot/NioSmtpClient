@@ -13,9 +13,11 @@ import com.google.common.collect.Iterables;
 import com.google.common.primitives.Longs;
 
 public class EhloResponse {
-  static final EhloResponse EMPTY = EhloResponse.parse(Collections.emptyList());
+  static final EhloResponse EMPTY = EhloResponse.parse("", Collections.emptyList());
 
   private static final Splitter WHITESPACE_SPLITTER = Splitter.on(CharMatcher.WHITESPACE);
+
+  private final String ehloDomain;
   private final ImmutableSet<String> supportedExtensions;
 
   private EnumSet<Extension> extensions;
@@ -23,17 +25,17 @@ public class EhloResponse {
   private boolean isAuthPlainSupported;
   private boolean isAuthLoginSupported;
 
-
-  public static EhloResponse parse(Iterable<CharSequence> lines) {
-    return parse(lines, EnumSet.noneOf(Extension.class));
+  public static EhloResponse parse(String ehloDomain, Iterable<CharSequence> lines) {
+    return parse(ehloDomain, lines, EnumSet.noneOf(Extension.class));
   }
 
-  public static EhloResponse parse(Iterable<CharSequence> lines, EnumSet<Extension> disabledExtensions) {
-    return new EhloResponse(lines, disabledExtensions);
+  public static EhloResponse parse(String ehloDomain, Iterable<CharSequence> lines, EnumSet<Extension> disabledExtensions) {
+    return new EhloResponse(ehloDomain, lines, disabledExtensions);
   }
 
-  private EhloResponse(Iterable<CharSequence> lines, EnumSet<Extension> disabledExtensions) {
-    extensions = EnumSet.noneOf(Extension.class);
+  private EhloResponse(String ehloDomain, Iterable<CharSequence> lines, EnumSet<Extension> disabledExtensions) {
+    this.ehloDomain = ehloDomain;
+    this.extensions = EnumSet.noneOf(Extension.class);
 
     for (CharSequence line : lines) {
       List<String> parts = WHITESPACE_SPLITTER.splitToList(line);
@@ -76,6 +78,10 @@ public class EhloResponse {
         isAuthLoginSupported = true;
       }
     }
+  }
+
+  public String getEhloDomain() {
+    return ehloDomain;
   }
 
   public boolean isSupported(Extension ext) {

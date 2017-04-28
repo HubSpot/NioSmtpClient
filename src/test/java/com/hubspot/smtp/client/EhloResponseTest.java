@@ -37,7 +37,7 @@ public class EhloResponseTest {
 
   @Test
   public void itIgnoresDisabledExtensions() {
-    EhloResponse response = EhloResponse.parse(Lists.newArrayList("smtp.example.com Hello client.example.com", "8BITMIME", "STARTTLS"),
+    EhloResponse response = EhloResponse.parse("", Lists.newArrayList("smtp.example.com Hello client.example.com", "8BITMIME", "STARTTLS"),
         EnumSet.of(Extension.EIGHT_BIT_MIME));
 
     assertThat(response.isSupported(Extension.EIGHT_BIT_MIME)).isFalse();
@@ -111,6 +111,6 @@ public class EhloResponseTest {
   }
 
   private EhloResponse parse(CharSequence... lines) {
-    return EhloResponse.parse(Lists.newArrayList(lines));
+    return EhloResponse.parse("", Lists.newArrayList(lines));
   }
 }
