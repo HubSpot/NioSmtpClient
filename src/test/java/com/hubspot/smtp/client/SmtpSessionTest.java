@@ -77,6 +77,7 @@ public class SmtpSessionTest {
 
   private static final SmtpSessionConfig CONFIG = SmtpSessionConfig.forRemoteAddress("127.0.0.1", 25);
   private static final Supplier<SSLEngine> SSL_ENGINE_SUPPLIER = SmtpSessionFactoryConfig.nonProductionConfig().getSslEngineSupplier();
+  private static final String EHLO_DOMAIN = "example.com";
 
   private MessageContent smtpContent;
   private MessageContent sevenBitContent;
@@ -124,7 +125,7 @@ public class SmtpSessionTest {
 
     log = new LoggingInterceptor();
     session = new SmtpSession(channel, responseHandler, CONFIG.withSendInterceptor(log), SmtpSessionFactoryConfig.DIRECT_EXECUTOR, SSL_ENGINE_SUPPLIER);
-    session.parseEhloResponse(Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN", "CHUNKING"));
+    session.parseEhloResponse(EHLO_DOMAIN, Lists.newArrayList("PIPELINING", "AUTH PLAIN LOGIN", "CHUNKING"));
   }
 
   @After
@@ -166,7 +167,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itThrowsIllegalArgumentIfTheSubmittedMessageSizeIsLargerThanTheMaximum() {
-    session.parseEhloResponse(Lists.newArrayList("SIZE 1024"));
+    session.parseEhloResponse(EHLO_DOMAIN, Lists.newArrayList("SIZE 1024"));
 
     MessageContent largeMessage = MessageContent.of(ByteSource.wrap(new byte[1025]));
 
@@ -253,7 +254,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itThrowsIllegalStateIfPipeliningIsNotSupported() {
-    session.parseEhloResponse(Collections.emptyList());
+    resetEhloExtensions();
 
     assertThatThrownBy(() -> session.sendPipelined(smtpContent, MAIL_REQUEST, RCPT_REQUEST, DATA_REQUEST))
         .isInstanceOf(IllegalStateException.class)
@@ -329,7 +330,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itWillNotSendChunksUnlessTheServerSupportsIt() {
-    session.parseEhloResponse(Collections.emptyList());
+    resetEhloExtensions();
 
     assertThatThrownBy(() -> session.sendChunk(Unpooled.copiedBuffer(new byte[1]), true))
         .isInstanceOf(IllegalStateException.class)
@@ -338,7 +339,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itEnforcesMessageSizeForChunkedMessages() {
-    session.parseEhloResponse(Lists.newArrayList("CHUNKING", "SIZE 1024"));
+    session.parseEhloResponse(EHLO_DOMAIN, Lists.newArrayList("CHUNKING", "SIZE 1024"));
 
     // the first message should count towards the message size
     session.sendChunk(Unpooled.copiedBuffer(new byte[1000]), false);
@@ -350,7 +351,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itResetsTheChunkedMessageSizeForTheLastChunk() {
-    session.parseEhloResponse(Lists.newArrayList("CHUNKING", "SIZE 1024"));
+    session.parseEhloResponse(EHLO_DOMAIN, Lists.newArrayList("CHUNKING", "SIZE 1024"));
 
     session.sendChunk(Unpooled.copiedBuffer(new byte[1000]), true);
     session.sendChunk(Unpooled.copiedBuffer(new byte[1000]), true);
@@ -382,7 +383,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itWillNotAuthenticateWithAuthPlainUnlessTheServerSupportsIt() {
-    session.parseEhloResponse(Collections.emptyList());
+    resetEhloExtensions();
 
     assertThatThrownBy(() -> session.authPlain("user", "password"))
         .isInstanceOf(IllegalStateException.class)
@@ -404,7 +405,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itWillNotAuthenticateWithAuthLoginUnlessTheServerSupportsIt() {
-    session.parseEhloResponse(Collections.emptyList());
+    resetEhloExtensions();
 
     assertThatThrownBy(() -> session.authLogin("user", "password"))
         .isInstanceOf(IllegalStateException.class)
@@ -596,7 +597,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itSendsEmailsUsingDataIfTheContentIs7BitWithoutPipeliningAndMultipleRecipients() throws Exception {
-    session.parseEhloResponse(Collections.emptyList());
+    resetEhloExtensions();
 
     when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(Lists.newArrayList(OK_RESPONSE)));
 
@@ -705,7 +706,7 @@ public class SmtpSessionTest {
   }
 
   private void setExtensions(Extension... extensions) {
-    session.parseEhloResponse(Arrays.stream(extensions).map(Extension::getLowerCaseName).collect(Collectors.toList()));
+    session.parseEhloResponse(EHLO_DOMAIN, Arrays.stream(extensions).map(Extension::getLowerCaseName).collect(Collectors.toList()));
   }
 
   private void assertResponsesMapped(int responsesExpected, CompletableFuture<SmtpClientResponse> future) throws Exception {
@@ -730,7 +731,7 @@ public class SmtpSessionTest {
 
   @Test
   public void itIncludesCommandsAndArgsInTheDebugString() {
-    assertThat(SmtpSession.createDebugString(new DefaultSmtpRequest("EHLO", "example.com"), new DefaultSmtpRequest("AUTH", "super-secret")))
+    assertThat(SmtpSession.createDebugString(new DefaultSmtpRequest("EHLO", EHLO_DOMAIN), new DefaultSmtpRequest("AUTH", "super-secret")))
         .isEqualTo("EHLO example.com, <redacted-auth-command>");
 
   }
@@ -861,13 +862,23 @@ public class SmtpSessionTest {
   public void itReturnsTheStartTlsResponseIfTheTlsHandshakeSucceeds() throws Exception {
     CompletableFuture<SmtpClientResponse> f = session.startTls();
     responseFuture.complete(Lists.newArrayList(OK_RESPONSE));
-    SslHandler sslHandler = getSslHandler();
+
+    // respond to the ehlo sent after starttls
+    secondResponseFuture.complete(Lists.newArrayList(new DefaultSmtpResponse(250,
+        "smtp.example.com Hello client.example.com",
+        "AUTH PLAIN LOGIN",
+        "PIPELINING")));
 
     // the handshake succeeds
+    SslHandler sslHandler = getSslHandler();
     ((DefaultPromise<Channel>) sslHandler.handshakeFuture()).setSuccess(channel);
 
     assertThat(f.isDone()).isTrue();
     assertThat(f.get().getResponses().get(0).code()).isEqualTo(OK_RESPONSE.code());
+
+    // check EHLO is parsed again
+    assertThat(session.getEhloResponse().isSupported(Extension.PIPELINING)).isTrue();
+    assertThat(session.getEhloResponse().isSupported(Extension.STARTTLS)).isFalse();
   }
 
   private SslHandler getSslHandler() throws Exception {
@@ -892,6 +903,10 @@ public class SmtpSessionTest {
     ArgumentCaptor<ChannelHandler> captor = ArgumentCaptor.forClass(ChannelHandler.class);
     verify(pipeline).addLast(captor.capture());
     return (ChannelInboundHandler) captor.getValue();
+  }
+
+  private void resetEhloExtensions() {
+    session.parseEhloResponse(EHLO_DOMAIN, Collections.emptyList());
   }
 
   private SmtpRequest req(SmtpCommand command, CharSequence... parameters) {

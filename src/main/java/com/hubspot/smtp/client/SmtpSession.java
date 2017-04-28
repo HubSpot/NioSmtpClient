@@ -122,11 +122,13 @@ public class SmtpSession {
   public CompletableFuture<SmtpClientResponse> startTls() {
     Preconditions.checkState(!isEncrypted(), "This connection is already using TLS");
 
-    return send(new DefaultSmtpRequest(STARTTLS_COMMAND)).thenCompose(r -> {
-      if (r.containsError()) {
-        return CompletableFuture.completedFuture(r);
+    return send(new DefaultSmtpRequest(STARTTLS_COMMAND)).thenCompose(startTlsResponse -> {
+      if (startTlsResponse.containsError()) {
+        return CompletableFuture.completedFuture(startTlsResponse);
       } else {
-        return performTlsHandshake(r);
+        return performTlsHandshake(startTlsResponse)
+            .thenCompose(ignored -> send(SmtpRequests.ehlo(ehloResponse.getEhloDomain())))
+            .thenApply(ignored -> startTlsResponse);
       }
     });
   }
@@ -308,7 +310,8 @@ public class SmtpSession {
       if (request.command().equals(SmtpCommand.EHLO)) {
         responseFuture = responseFuture.whenComplete((responses, ignored) -> {
           if (responses != null) {
-            parseEhloResponse(responses.get(0).details());
+            String ehloDomain = request.parameters().isEmpty() ? "" : request.parameters().get(0).toString();
+            parseEhloResponse(ehloDomain, responses.get(0).details());
           }
         });
       }
@@ -459,8 +462,8 @@ public class SmtpSession {
   }
 
   @VisibleForTesting
-  void parseEhloResponse(Iterable<CharSequence> response) {
-    ehloResponse = EhloResponse.parse(response, config.getDisabledExtensions());
+  void parseEhloResponse(String ehloDomain, Iterable<CharSequence> response) {
+    ehloResponse = EhloResponse.parse(ehloDomain, response, config.getDisabledExtensions());
   }
 
   @VisibleForTesting
