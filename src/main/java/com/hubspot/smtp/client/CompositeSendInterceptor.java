@@ -61,7 +61,7 @@ public class CompositeSendInterceptor implements SendInterceptor {
     private final SendInterceptor thisInterceptor;
     private final SendInterceptor nextInterceptor;
 
-    public InterceptorWrapper(SendInterceptor thisInterceptor, SendInterceptor nextInterceptor) {
+    InterceptorWrapper(SendInterceptor thisInterceptor, SendInterceptor nextInterceptor) {
       this.thisInterceptor = thisInterceptor;
       this.nextInterceptor = nextInterceptor;
     }
