@@ -31,6 +31,14 @@ public class DotStuffingChunkedStreamTest {
     }
   }
 
+  @Test
+  public void itReturnsNullIfThereAreNoMoreBytesInTheStream() throws Exception {
+    ByteArrayInputStream stream = new ByteArrayInputStream(new byte[0]);
+    DotStuffingChunkedStream chunkedStream = new DotStuffingChunkedStream(stream, SANE_CHUNK_SIZE);
+
+    assertThat(chunkedStream.readChunk(ALLOCATOR)).isNull();
+  }
+
   private void assertDotStuffingWithChunkSize(int chunkSize) throws Exception {
     // adds
     assertThat(dotStuff(".", chunkSize)).isEqualTo(".." + CRLF);
