@@ -19,15 +19,11 @@ abstract class AbstractSmtpSessionConfig {
   public abstract InetSocketAddress getRemoteAddress();
   public abstract Optional<InetSocketAddress> getLocalAddress();
   public abstract Optional<Duration> getKeepAliveTimeout();
+  public abstract Optional<Duration> getReadTimeout();
   public abstract Optional<SendInterceptor> getSendInterceptor();
 
   @Default
   public Duration getConnectionTimeout() {
-    return Duration.ofMinutes(2);
-  }
-
-  @Default
-  public Duration getReadTimeout() {
     return Duration.ofMinutes(2);
   }
 
