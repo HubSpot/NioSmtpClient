@@ -316,7 +316,7 @@
 <dl>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#hashCode--">hashCode()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
-<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>sendInterceptor</code>, <code>connectionTimeout</code>, <code>readTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>.</div>
+<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>readTimeout</code>, <code>sendInterceptor</code>, <code>connectionTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionFactoryConfig.html#hashCode--">hashCode()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionFactoryConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionFactoryConfig</a></dt>
 <dd>
@@ -434,7 +434,11 @@
 <dl>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#readTimeout-java.time.Duration-">readTimeout(Duration)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></dt>
 <dd>
-<div class="block">Initializes the value for the <code>readTimeout</code> attribute.</div>
+<div class="block">Initializes the optional value <code>readTimeout</code> to readTimeout.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#readTimeout-java.util.Optional-">readTimeout(Optional&lt;Duration&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></dt>
+<dd>
+<div class="block">Initializes the optional value <code>readTimeout</code> to readTimeout.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#remoteAddress-java.net.InetSocketAddress-">remoteAddress(InetSocketAddress)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></dt>
 <dd>
@@ -625,7 +629,11 @@ the order they are declared.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withReadTimeout-java.time.Duration-">withReadTimeout(Duration)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
-<div class="block">Copy the current immutable object by setting a value for the <code>readTimeout</code> attribute.</div>
+<div class="block">Copy the current immutable object by setting a <i>present</i> value for the optional <code>readTimeout</code> attribute.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withReadTimeout-java.util.Optional-">withReadTimeout(Optional&lt;Duration&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
+<dd>
+<div class="block">Copy the current immutable object by setting an optional value for the <code>readTimeout</code> attribute.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withRemoteAddress-java.net.InetSocketAddress-">withRemoteAddress(InetSocketAddress)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>

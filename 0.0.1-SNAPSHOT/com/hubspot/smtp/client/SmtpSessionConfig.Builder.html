@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -196,22 +196,28 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#readTimeout-java.time.Duration-">readTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;readTimeout)</code>
-<div class="block">Initializes the value for the <code>readTimeout</code> attribute.</div>
+<div class="block">Initializes the optional value <code>readTimeout</code> to readTimeout.</div>
 </td>
 </tr>
 <tr id="i10" class="altColor">
+<td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#readTimeout-java.util.Optional-">readTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;readTimeout)</code>
+<div class="block">Initializes the optional value <code>readTimeout</code> to readTimeout.</div>
+</td>
+</tr>
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#remoteAddress-java.net.InetSocketAddress-">remoteAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&nbsp;remoteAddress)</code>
 <div class="block">Initializes the value for the <code>remoteAddress</code> attribute.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#sendInterceptor-java.util.Optional-">sendInterceptor</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&gt;&nbsp;sendInterceptor)</code>
 <div class="block">Initializes the optional value <code>sendInterceptor</code> to sendInterceptor.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#sendInterceptor-com.hubspot.smtp.client.SendInterceptor-">sendInterceptor</a></span>(<a href="../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>
 <div class="block">Initializes the optional value <code>sendInterceptor</code> to sendInterceptor.</div>
@@ -337,6 +343,38 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 </dl>
 </li>
 </ul>
+<a name="readTimeout-java.time.Duration-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>readTimeout</h4>
+<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a>&nbsp;readTimeout(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;readTimeout)</pre>
+<div class="block">Initializes the optional value <code>readTimeout</code> to readTimeout.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>readTimeout</code> - The value for readTimeout</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>this</code> builder for chained invocation</dd>
+</dl>
+</li>
+</ul>
+<a name="readTimeout-java.util.Optional-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>readTimeout</h4>
+<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a>&nbsp;readTimeout(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;readTimeout)</pre>
+<div class="block">Initializes the optional value <code>readTimeout</code> to readTimeout.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>readTimeout</code> - The value for readTimeout</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>this</code> builder for use in a chained invocation</dd>
+</dl>
+</li>
+</ul>
 <a name="sendInterceptor-com.hubspot.smtp.client.SendInterceptor-">
 <!--   -->
 </a>
@@ -381,23 +419,6 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>connectionTimeout</code> - The value for connectionTimeout</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd><code>this</code> builder for use in a chained invocation</dd>
-</dl>
-</li>
-</ul>
-<a name="readTimeout-java.time.Duration-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>readTimeout</h4>
-<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a>&nbsp;readTimeout(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;readTimeout)</pre>
-<div class="block">Initializes the value for the <code>readTimeout</code> attribute.
- <p><em>If not set, this attribute will have a default value as returned by the initializer of <code>readTimeout</code>.</em></div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>readTimeout</code> - The value for readTimeout</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd><code>this</code> builder for use in a chained invocation</dd>
 </dl>
