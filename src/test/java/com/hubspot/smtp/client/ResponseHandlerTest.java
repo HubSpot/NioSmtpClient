@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
@@ -30,7 +31,7 @@ public class ResponseHandlerTest {
 
   @Before
   public void setup() {
-    responseHandler = new ResponseHandler(CONNECTION_ID, Duration.ofMinutes(2));
+    responseHandler = new ResponseHandler(CONNECTION_ID, Optional.empty());
     context = mock(ChannelHandlerContext.class);
   }
 
@@ -176,7 +177,7 @@ public class ResponseHandlerTest {
 
   @Test
   public void itCompletesExceptionallyIfTheResonseTimeoutIsExceeded() throws Exception {
-    ResponseHandler impatientHandler = new ResponseHandler(CONNECTION_ID, Duration.ofMillis(200));
+    ResponseHandler impatientHandler = new ResponseHandler(CONNECTION_ID, Optional.of(Duration.ofMillis(200)));
 
     CompletableFuture<List<SmtpResponse>> responseFuture = impatientHandler.createResponseFuture(1, DEBUG_STRING);
     assertThat(responseFuture.isCompletedExceptionally()).isFalse();

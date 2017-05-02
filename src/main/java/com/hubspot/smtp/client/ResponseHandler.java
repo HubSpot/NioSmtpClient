@@ -2,6 +2,7 @@ package com.hubspot.smtp.client;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -26,9 +27,9 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
 
   private final AtomicReference<ResponseCollector> responseCollector = new AtomicReference<>();
   private final String connectionId;
-  private final Duration responseTimeout;
+  private final Optional<Duration> responseTimeout;
 
-  ResponseHandler(String connectionId, Duration responseTimeout) {
+  ResponseHandler(String connectionId, Optional<Duration> responseTimeout) {
     this.connectionId = connectionId;
     this.responseTimeout = responseTimeout;
   }
@@ -52,11 +53,16 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
     // ensures the write will be visible
     CompletableFuture<List<SmtpResponse>> responseFuture = collector.getFuture();
 
-    // complete exceptionally if the timeout is exceeded
-    Timeout timeout = TIMER.newTimeout(ignored -> responseFuture.completeExceptionally(new TimeoutException()), responseTimeout.toMillis(), TimeUnit.MILLISECONDS);
-    responseFuture.whenComplete((ignored1, ignored2) -> timeout.cancel());
+    applyResponseTimeout(responseFuture);
 
     return responseFuture;
+  }
+
+  private void applyResponseTimeout(CompletableFuture<List<SmtpResponse>> responseFuture) {
+    responseTimeout.ifPresent(timeout -> {
+      Timeout hwtTimeout = TIMER.newTimeout(ignored -> responseFuture.completeExceptionally(new TimeoutException()), timeout.toMillis(), TimeUnit.MILLISECONDS);
+      responseFuture.whenComplete((ignored1, ignored2) -> hwtTimeout.cancel());
+    });
   }
 
   boolean isResponsePending() {
