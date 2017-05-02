@@ -24,6 +24,9 @@ class DotStuffingChunkedStream extends ChunkedStream {
   @Override
   public ByteBuf readChunk(ByteBufAllocator allocator) throws Exception {
     ByteBuf chunk = super.readChunk(allocator);
+    if (chunk == null) {
+      return null;
+    }
 
     byte[] prevChunkTrailingBytes = new byte[2];
     prevChunkTrailingBytes[0] = trailingBytes[0];
