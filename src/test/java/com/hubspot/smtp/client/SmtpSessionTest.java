@@ -49,6 +49,7 @@ import io.netty.channel.DefaultChannelPromise;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.DefaultSmtpResponse;
 import io.netty.handler.codec.smtp.SmtpCommand;
+import io.netty.handler.codec.smtp.SmtpContent;
 import io.netty.handler.codec.smtp.SmtpRequest;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.handler.ssl.SslHandler;
@@ -496,6 +497,41 @@ public class SmtpSessionTest {
     order.verify(channel).flush();
 
     assertThat(log.getLog()).isEqualTo("<pipeline MAIL, RCPT>, <pipeline RSET, MAIL, RCPT>");
+  }
+
+  @Test
+  public void itDoesNotPipelineRsetUnlessSupportedByTheServer() {
+    resetEhloExtensions();
+    when(responseHandler.createResponseFuture(anyInt(), any())).thenAnswer(a -> CompletableFuture.completedFuture(Lists.newArrayList(OK_RESPONSE)));
+
+    session.send(ALICE, BOB, MessageContent.of(Unpooled.copiedBuffer(MESSAGE_BYTES))).join();
+    session.send(ALICE, BOB, MessageContent.of(Unpooled.copiedBuffer(MESSAGE_BYTES))).join();
+
+    InOrder order = inOrder(channel);
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).flush();
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).flush();
+    order.verify(channel).write(req(SmtpCommand.DATA));
+    order.verify(channel).flush();
+    order.verify(channel, times(2)).write(any(SmtpContent.class));
+    order.verify(channel).flush();
+
+    order.verify(channel).write(req(SmtpCommand.RSET));
+    order.verify(channel).flush();
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).flush();
+    order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
+    order.verify(channel).flush();
+    order.verify(channel).write(req(SmtpCommand.DATA));
+    order.verify(channel).flush();
+    order.verify(channel, times(2)).write(any(SmtpContent.class));
+    order.verify(channel).flush();
+
+    assertThat(log.getLog()).isEqualTo(
+        "MAIL, 250 OK, RCPT, 250 OK, DATA, 250 OK, <contents>, 250 OK, " +
+        "RSET, 250 OK, " +
+        "MAIL, 250 OK, RCPT, 250 OK, DATA, 250 OK, <contents>, 250 OK");
   }
 
   @Test
