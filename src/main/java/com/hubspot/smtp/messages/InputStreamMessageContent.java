@@ -16,6 +16,7 @@ import io.netty.buffer.ByteBufAllocator;
 
 public class InputStreamMessageContent extends MessageContent {
   private static final float UNCOUNTED = -1F;
+  private static final float DEFAULT_8BIT_PROPORTION = 0.1F;
   private static final int READ_LIMIT = 8192;
 
   private final Supplier<InputStream> streamSupplier;
@@ -92,6 +93,15 @@ public class InputStreamMessageContent extends MessageContent {
     int eightBitCharCount = 0;
 
     InputStream inputStream = getStream();
+
+    if (!inputStream.markSupported()) {
+      // if we can't examine the stream non-destructively,
+      // assume it has some 8 bit characters, but not enough
+      // to require encoding the body as base64
+      eightBitCharProportion = DEFAULT_8BIT_PROPORTION;
+      return eightBitCharProportion;
+    }
+
     inputStream.mark(READ_LIMIT);
 
     try {
@@ -109,7 +119,7 @@ public class InputStreamMessageContent extends MessageContent {
       eightBitCharProportion = 1.0F * eightBitCharCount / bytesRead;
 
     } catch (IOException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
 
     return eightBitCharProportion;
