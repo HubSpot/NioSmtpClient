@@ -289,7 +289,11 @@ public class SmtpSession {
 
   private SendSequence beginSequence(Optional<SendInterceptor> sequenceInterceptor, int expectedResponses, Object... objects) {
     if (requiresRset) {
-      return new SendSequence(sequenceInterceptor, expectedResponses + 1, ObjectArrays.concat(SmtpRequests.rset(), objects));
+      if (ehloResponse.isSupported(Extension.PIPELINING)) {
+        return new SendSequence(sequenceInterceptor, expectedResponses + 1, ObjectArrays.concat(SmtpRequests.rset(), objects));
+      } else {
+        return new SendSequence(sequenceInterceptor, 1,  SmtpRequests.rset()).thenSend(objects);
+      }
     } else {
       requiresRset = true;
       return new SendSequence(sequenceInterceptor, expectedResponses, objects);
