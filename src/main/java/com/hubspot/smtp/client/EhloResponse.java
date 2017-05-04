@@ -24,6 +24,7 @@ public class EhloResponse {
   private Optional<Long> maxMessageSize = Optional.empty();
   private boolean isAuthPlainSupported;
   private boolean isAuthLoginSupported;
+  private boolean isAuthXoauth2Supported;
 
   public static EhloResponse parse(String ehloDomain, Iterable<CharSequence> lines) {
     return parse(ehloDomain, lines, EnumSet.noneOf(Extension.class));
@@ -76,6 +77,8 @@ public class EhloResponse {
         isAuthPlainSupported = true;
       } else if (s.equalsIgnoreCase("login")) {
         isAuthLoginSupported = true;
+      } else if (s.equalsIgnoreCase("xoauth2")) {
+        isAuthXoauth2Supported = true;
       }
     }
   }
@@ -94,6 +97,10 @@ public class EhloResponse {
 
   public boolean isAuthLoginSupported() {
     return isAuthLoginSupported;
+  }
+
+  public boolean isAuthXoauth2Supported() {
+    return isAuthXoauth2Supported;
   }
 
   public Optional<Long> getMaxMessageSize() {
