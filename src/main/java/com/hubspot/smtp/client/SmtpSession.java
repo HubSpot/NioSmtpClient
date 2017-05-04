@@ -78,6 +78,7 @@ public class SmtpSession {
   private static final SmtpCommand BDAT_COMMAND = SmtpCommand.valueOf("BDAT");
   private static final String AUTH_PLAIN_MECHANISM = "PLAIN";
   private static final String AUTH_LOGIN_MECHANISM = "LOGIN";
+  private static final String AUTH_XOAUTH2_MECHANISM = "XOAUTH2";
   private static final String CRLF = "\r\n";
 
   private final Channel channel;
@@ -401,6 +402,13 @@ public class SmtpSession {
 
     String s = String.format("%s\0%s\0%s", username, username, password);
     return send(new DefaultSmtpRequest(AUTH_COMMAND, AUTH_PLAIN_MECHANISM, encodeBase64(s)));
+  }
+
+  public CompletableFuture<SmtpClientResponse> authXoauth2(String username, String accessToken) {
+    Preconditions.checkState(ehloResponse.isAuthXoauth2Supported(), "Auth xoauth2 is not supported on this server");
+
+    String s = String.format("user=%s\001auth=Bearer %s\001\001", username, accessToken);
+    return send(new DefaultSmtpRequest(AUTH_COMMAND, AUTH_XOAUTH2_MECHANISM, encodeBase64(s)));
   }
 
   public CompletableFuture<SmtpClientResponse> authLogin(String username, String password) {
