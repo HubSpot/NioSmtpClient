@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
@@ -21,6 +22,7 @@ abstract class AbstractSmtpSessionConfig {
   public abstract Optional<Duration> getKeepAliveTimeout();
   public abstract Optional<Duration> getReadTimeout();
   public abstract Optional<SendInterceptor> getSendInterceptor();
+  public abstract Optional<Consumer<Throwable>> getExceptionHandler();
 
   @Default
   public Duration getConnectionTimeout() {
