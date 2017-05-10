@@ -7,6 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -28,10 +29,12 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
   private final AtomicReference<ResponseCollector> responseCollector = new AtomicReference<>();
   private final String connectionId;
   private final Optional<Duration> responseTimeout;
+  private final Optional<Consumer<Throwable>> exceptionHandler;
 
-  ResponseHandler(String connectionId, Optional<Duration> responseTimeout) {
+  ResponseHandler(String connectionId, Optional<Duration> responseTimeout, Optional<Consumer<Throwable>> exceptionHandler) {
     this.connectionId = connectionId;
     this.responseTimeout = responseTimeout;
+    this.exceptionHandler = exceptionHandler;
   }
 
   CompletableFuture<List<SmtpResponse>> createResponseFuture(int expectedResponses, Supplier<String> debugStringSupplier) {
@@ -98,7 +101,11 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
       collector.completeExceptionally(cause);
     }
 
-    super.exceptionCaught(ctx, cause);
+    if (exceptionHandler.isPresent()) {
+      exceptionHandler.get().accept(cause);
+    } else {
+      super.exceptionCaught(ctx, cause);
+    }
   }
 
   @Override

@@ -32,7 +32,7 @@ public class SmtpSessionFactory implements Closeable  {
   }
 
   public CompletableFuture<SmtpClientResponse> connect(SmtpSessionConfig config) {
-    ResponseHandler responseHandler = new ResponseHandler(config.getConnectionId(), config.getReadTimeout());
+    ResponseHandler responseHandler = new ResponseHandler(config.getConnectionId(), config.getReadTimeout(), config.getExceptionHandler());
     CompletableFuture<List<SmtpResponse>> initialResponseFuture = responseHandler.createResponseFuture(1, () -> "initial response");
 
     Bootstrap bootstrap = new Bootstrap()

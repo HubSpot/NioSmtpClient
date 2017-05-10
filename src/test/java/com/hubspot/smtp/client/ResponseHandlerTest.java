@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.junit.Before;
@@ -31,7 +32,7 @@ public class ResponseHandlerTest {
 
   @Before
   public void setup() {
-    responseHandler = new ResponseHandler(CONNECTION_ID, Optional.empty());
+    responseHandler = new ResponseHandler(CONNECTION_ID, Optional.empty(), Optional.empty());
     context = mock(ChannelHandlerContext.class);
   }
 
@@ -176,13 +177,36 @@ public class ResponseHandlerTest {
   }
 
   @Test
-  public void itCompletesExceptionallyIfTheResonseTimeoutIsExceeded() throws Exception {
-    ResponseHandler impatientHandler = new ResponseHandler(CONNECTION_ID, Optional.of(Duration.ofMillis(200)));
+  public void itCompletesExceptionallyIfTheResponseTimeoutIsExceeded() throws Exception {
+    ResponseHandler impatientHandler = new ResponseHandler(CONNECTION_ID, Optional.of(Duration.ofMillis(200)), Optional.empty());
 
     CompletableFuture<List<SmtpResponse>> responseFuture = impatientHandler.createResponseFuture(1, DEBUG_STRING);
     assertThat(responseFuture.isCompletedExceptionally()).isFalse();
 
-    Thread.sleep(300);
+    Thread.sleep(400);
     assertThat(responseFuture.isCompletedExceptionally()).isTrue();
+  }
+
+  @Test
+  public void itPassesExceptionsToTheProvidedHandlerIfPresent() throws Exception {
+    Consumer<Throwable> exceptionHandler = (Consumer<Throwable>) mock(Consumer.class);
+    ResponseHandler responseHandler = new ResponseHandler(CONNECTION_ID, Optional.empty(), Optional.of(exceptionHandler));
+
+    Exception testException = new Exception("oh no");
+    responseHandler.exceptionCaught(null, testException);
+
+    verify(exceptionHandler).accept(testException);
+  }
+
+  @Test
+  public void itPassesExceptionsToTheSuperclassIfTheHandlerIsNotProvided() throws Exception {
+    ResponseHandler responseHandler = new ResponseHandler(CONNECTION_ID, Optional.empty(), Optional.empty());
+
+    Exception testException = new Exception("oh no");
+    ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+
+    responseHandler.exceptionCaught(ctx, testException);
+
+    verify(ctx).fireExceptionCaught(testException);
   }
 }
