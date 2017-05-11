@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
@@ -154,6 +155,10 @@ public class SmtpSession {
 
   public boolean isEncrypted() {
     return channel.pipeline().get(SslHandler.class) != null;
+  }
+
+  public Optional<SSLSession> getSSLSession() {
+    return Optional.ofNullable(channel.pipeline().get(SslHandler.class)).map(handler -> handler.engine().getSession());
   }
 
   public CompletableFuture<SmtpClientResponse> send(String from, String to, MessageContent content) {
