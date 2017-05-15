@@ -12,6 +12,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.primitives.Longs;
 
+/**
+ * The parsed response to the EHLO command.
+ *
+ * <p>This class is thread-safe.
+ */
 public class EhloResponse {
   static final EhloResponse EMPTY = EhloResponse.parse("", Collections.emptyList());
 
@@ -26,10 +31,28 @@ public class EhloResponse {
   private boolean isAuthLoginSupported;
   private boolean isAuthXoauth2Supported;
 
+  /**
+   * Parses an EHLO response.
+   *
+   * @param  ehloDomain the domain provided with the EHLO command (e.g. "example.com" if "EHLO example.com"
+   *                    was sent to the remote server)
+   * @param  lines the lines returned by the server
+   * @return an {@link EhloResponse} object representing the response
+   */
   public static EhloResponse parse(String ehloDomain, Iterable<CharSequence> lines) {
     return parse(ehloDomain, lines, EnumSet.noneOf(Extension.class));
   }
 
+  /**
+   * Parses an EHLO response.
+   *
+   * @param  ehloDomain the domain provided with the EHLO command (e.g. "example.com" if "EHLO example.com"
+   *                    was sent to the remote server)
+   * @param  lines the lines returned by the server
+   * @param  disabledExtensions extensions which should not be marked as supported in the returned {@code EhloResponse},
+   *                    even if the server says it supports them
+   * @return an {@link EhloResponse} object representing the response
+   */
   public static EhloResponse parse(String ehloDomain, Iterable<CharSequence> lines, EnumSet<Extension> disabledExtensions) {
     return new EhloResponse(ehloDomain, lines, disabledExtensions);
   }
@@ -83,30 +106,52 @@ public class EhloResponse {
     }
   }
 
+  /**
+   * Gets the domain provided with the EHLO command (e.g. "example.com" if "EHLO example.com"
+   * was sent to the remote server).
+   */
   public String getEhloDomain() {
     return ehloDomain;
   }
 
+  /**
+   * Gets whether the specified {@link Extension} is supported by the server.
+   */
   public boolean isSupported(Extension ext) {
     return extensions.contains(ext);
   }
 
+  /**
+   * Gets whether PLAIN authentication is supported.
+   */
   public boolean isAuthPlainSupported() {
     return isAuthPlainSupported;
   }
 
+  /**
+   * Gets whether LOGIN authentication is supported.
+   */
   public boolean isAuthLoginSupported() {
     return isAuthLoginSupported;
   }
 
+  /**
+   * Gets whether XOAUTH2 authentication is supported.
+   */
   public boolean isAuthXoauth2Supported() {
     return isAuthXoauth2Supported;
   }
 
+  /**
+   * Gets the maximum message size if specified by the server.
+   */
   public Optional<Long> getMaxMessageSize() {
     return maxMessageSize;
   }
 
+  /**
+   * Gets all the parsed {@link Extension} supported by the server.
+   */
   public Set<String> getSupportedExtensions() {
     return supportedExtensions;
   }

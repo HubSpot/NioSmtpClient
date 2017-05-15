@@ -10,6 +10,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
+/**
+ * A {@link MessageContent} implementation backed by a Netty {@code ByteBuf}.
+ *
+ */
 public class ByteBufMessageContent extends MessageContent {
   private static final long LONG_WITH_HIGH_BITS_SET = 0x8080808080808080L;
   private static final float UNCOUNTED = -1F;
@@ -35,6 +39,9 @@ public class ByteBufMessageContent extends MessageContent {
     return isTerminated(buffer) ? buffer : terminate(buffer);
   }
 
+  /**
+   * Returns a singleton iterator that just contains the wrapped {@code ByteBuf}.
+   */
   @Override
   public Iterator<ByteBuf> getContentChunkIterator(ByteBufAllocator allocator) {
     return Iterators.singletonIterator((ByteBuf) getContent());

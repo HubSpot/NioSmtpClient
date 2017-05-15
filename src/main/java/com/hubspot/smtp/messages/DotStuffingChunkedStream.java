@@ -6,6 +6,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.stream.ChunkedStream;
 
+/**
+ * A {@code ChunkedStream} implementation that applies the SMTP dot-stuffing algorithm
+ * to its contents.
+ *
+ * @see DotStuffing
+ */
 class DotStuffingChunkedStream extends ChunkedStream {
   private static final byte CR = '\r';
   private static final byte LF = '\n';

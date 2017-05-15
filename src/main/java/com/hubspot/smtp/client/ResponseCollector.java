@@ -9,6 +9,10 @@ import com.google.common.collect.Lists;
 
 import io.netty.handler.codec.smtp.SmtpResponse;
 
+/**
+ * Counts SMTP responses and wraps a future that will complete when all responses have been received.
+ *
+ */
 class ResponseCollector {
   private final CompletableFuture<List<SmtpResponse>> future;
   private final List<SmtpResponse> responses;

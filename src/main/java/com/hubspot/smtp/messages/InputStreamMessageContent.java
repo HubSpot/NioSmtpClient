@@ -14,6 +14,10 @@ import com.google.common.io.CharStreams;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 
+/**
+ * A {@link MessageContent} implementation backed by an {@code InputStream}.
+ *
+ */
 public class InputStreamMessageContent extends MessageContent {
   private static final float UNCOUNTED = -1F;
   private static final float DEFAULT_8BIT_PROPORTION = 0.1F;
@@ -46,6 +50,10 @@ public class InputStreamMessageContent extends MessageContent {
     return new CrlfTerminatingChunkedStream(getStream());
   }
 
+  /**
+   * Returns an iterator that lazily reads chunks of content from the wrapped stream,
+   * ensuring the last is terminated with CRLF.
+   */
   @Override
   public Iterator<ByteBuf> getContentChunkIterator(ByteBufAllocator allocator) {
     CrlfTerminatingChunkedStream chunkedStream = new CrlfTerminatingChunkedStream(getStream());

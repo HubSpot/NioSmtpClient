@@ -25,9 +25,16 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslContextBuilder;
 
+/**
+ * Shared configuration for all connections.
+ */
 @Immutable
 @Style(typeImmutable = "*", visibility = ImplementationVisibility.PUBLIC)
 abstract class AbstractSmtpSessionFactoryConfig {
+  /**
+   * A default {@code Executor} to use when executing {@code CompletableFuture} callbacks which simply executes
+   * the callback in the netty event loop. This Executor should only be use when you can be sure your callback code never blocks.
+   */
   public static final Executor DIRECT_EXECUTOR = Runnable::run;
 
   private static final com.google.common.base.Supplier<SmtpSessionFactoryConfig> NON_PRODUCTION_CONFIG = Suppliers.memoize(AbstractSmtpSessionFactoryConfig::createNonProductionConfig);
@@ -41,23 +48,43 @@ abstract class AbstractSmtpSessionFactoryConfig {
         .build();
   }
 
+  /**
+   * Creates a configuration with a default {@code NioEventLoopGroup} and {@code Executor}. This is
+   * NOT suitable for a production environment but is useful for testing.
+   */
   public static SmtpSessionFactoryConfig nonProductionConfig() {
     return NON_PRODUCTION_CONFIG.get();
   }
 
+  /**
+   * An {@code Executor} that will be used to call {@code CompletableFuture} callbacks.
+   */
   public abstract Executor getExecutor();
+
+  /**
+   * A Netty {@code EventLoopGroup} that will be used for all connections.
+   */
   public abstract EventLoopGroup getEventLoopGroup();
 
+  /**
+   * A Netty {@code ByteBufAllocator} that will be used for all connections.
+   */
   @Default
   public ByteBufAllocator getAllocator() {
     return PooledByteBufAllocator.DEFAULT;
   }
 
+  /**
+   * Creates an {@code SSLEngine} for use with STARTTLS connections.
+   */
   @Default
   public Supplier<SSLEngine> getSslEngineSupplier() {
     return this::createSSLEngine;
   }
 
+  /**
+   * A Netty {@code Channel} implementation that will be used for all connections.
+   */
   @Default
   public Class<? extends Channel> getChannelClass() {
     return NioSocketChannel.class;

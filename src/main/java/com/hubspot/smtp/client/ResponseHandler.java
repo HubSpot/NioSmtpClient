@@ -22,6 +22,10 @@ import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 
+/**
+ * A Netty handler that collects responses to SMTP commands and makes them available.
+ *
+ */
 class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
   private static final Logger LOG = LoggerFactory.getLogger(ResponseHandler.class);
   private static final HashedWheelTimer TIMER = new HashedWheelTimer(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("response-timer-%d").build());
