@@ -6,6 +6,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.stream.ChunkedStream;
 
+/**
+ * A {@code ChunkedStream} implementation that wraps an {@code InputStream}, appending
+ * CRLF only if the stream doesn't already end with that byte sequence.
+ *
+ */
 class CrlfTerminatingChunkedStream extends ChunkedStream {
   private static final byte CR = '\r';
   private static final byte LF = '\n';

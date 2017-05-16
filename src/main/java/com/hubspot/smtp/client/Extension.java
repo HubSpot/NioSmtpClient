@@ -5,6 +5,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * An Extended SMTP feature.
+ *
+ */
 public enum Extension {
   AUTH("auth"),
   CHUNKING("chunking"),

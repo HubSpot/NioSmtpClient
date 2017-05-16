@@ -19,18 +19,32 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.util.concurrent.GlobalEventExecutor;
 
+/**
+ * Creates {@link SmtpSession} instances by connecting to remote servers.
+ *
+ * <p>This class is thread-safe.
+ */
 public class SmtpSessionFactory implements Closeable  {
   private static final Logger LOG = LoggerFactory.getLogger(SmtpSessionFactory.class);
 
   private final ChannelGroup allChannels;
   private final SmtpSessionFactoryConfig factoryConfig;
 
+  /**
+   * Creates a new factory with the provided configuration.
+   */
   public SmtpSessionFactory(SmtpSessionFactoryConfig factoryConfig) {
     this.factoryConfig = factoryConfig;
 
     allChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   }
 
+  /**
+   * Connects to a remote server.
+   *
+   * @param  config the configuration to use for the connection
+   * @return a future representing the initial response from the server
+   */
   public CompletableFuture<SmtpClientResponse> connect(SmtpSessionConfig config) {
     ResponseHandler responseHandler = new ResponseHandler(config.getConnectionId(), config.getReadTimeout(), config.getExceptionHandler());
     CompletableFuture<List<SmtpResponse>> initialResponseFuture = responseHandler.createResponseFuture(1, () -> "initial response");
@@ -82,6 +96,11 @@ public class SmtpSessionFactory implements Closeable  {
     }
   }
 
+  /**
+   * Closes all sessions created by this factory.
+   *
+   * @return a future that will be completed when all sessions have been closed
+   */
   @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION") // https://github.com/findbugsproject/findbugs/issues/79
   public CompletableFuture<Void> closeAsync() {
     CompletableFuture<Void> returnedFuture = new CompletableFuture<>();

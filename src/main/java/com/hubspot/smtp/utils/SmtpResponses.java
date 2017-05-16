@@ -7,6 +7,10 @@ import com.google.common.collect.ImmutableList;
 
 import io.netty.handler.codec.smtp.SmtpResponse;
 
+/**
+ * Helps identify and print {@link SmtpResponse} instances.
+ *
+ */
 public final class SmtpResponses {
   private static final Joiner SPACE_JOINER = Joiner.on(" ");
 

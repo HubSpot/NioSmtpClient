@@ -11,14 +11,38 @@ import com.google.common.collect.Lists;
 import io.netty.handler.codec.smtp.SmtpRequest;
 import io.netty.handler.codec.smtp.SmtpResponse;
 
+/**
+ * A chain of {@link SendInterceptor} instances that will call each other in turn.
+ *
+ * <p>Construct a chain by passing a list of {@code SendInterceptor}s to the
+ * {@code of} method.
+ *
+ * <pre>{@code
+ *  CompositeSendInterceptor composite = CompositeSendInterceptor.of(
+ *    new SendInterceptorA(),
+ *    new SendInterceptorB(),
+ *    new SendInterceptorC());}</pre>
+ *
+ * <p>With this chain, {@code SendInterceptorA} will be called first, and
+ * the {@code next} parameter of each of its {@code around} methods
+ * will refer to the future returned by {@code SendInterceptorB}.
+ *
+ * <p>This class is thread-safe.
+ */
 public class CompositeSendInterceptor implements SendInterceptor {
   private final SendInterceptor rootInterceptor;
   private final List<SendInterceptor> sendInterceptors;
 
+  /**
+   * Creates a chain of {@link SendInterceptor} instances that will call each other in turn.
+   */
   public static CompositeSendInterceptor of(SendInterceptor... sendInterceptors) {
     return new CompositeSendInterceptor(Lists.newArrayList(sendInterceptors));
   }
 
+  /**
+   * Creates a chain of {@link SendInterceptor} instances that will call each other in turn.
+   */
   public static CompositeSendInterceptor of(List<SendInterceptor> interceptors) {
     return new CompositeSendInterceptor(interceptors);
   }

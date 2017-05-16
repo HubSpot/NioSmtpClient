@@ -51,6 +51,13 @@ import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedInput;
 
+/**
+ * An open connection to an SMTP server which can be used to send messages and other commands.
+ *
+ * <p>{@link SmtpSession} instances can be created with {@link SmtpSessionFactory#connect(SmtpSessionConfig)}.
+ *
+ * <p>This class is thread-safe.
+ */
 public class SmtpSession {
   // https://tools.ietf.org/html/rfc2920#section-3.1
   // In particular, the commands RSET, MAIL FROM, SEND FROM, SOML FROM, SAML FROM,
@@ -104,23 +111,57 @@ public class SmtpSession {
     this.channel.pipeline().addLast(new ErrorHandler());
   }
 
+  /**
+   * Returns the {@code connectionId} defined by the {@link SmtpSessionConfig} used when connecting to this server.
+   */
   public String getConnectionId() {
     return config.getConnectionId();
   }
 
+  /**
+   * Returns a {@code CompletableFuture} that will be completed when this session is closed.
+   */
   public CompletableFuture<Void> getCloseFuture() {
     return closeFuture;
   }
 
+  /**
+   * Returns an {@link EhloResponse} representing the capabilities of the connection server.
+   *
+   * <p>If the EHLO command has not been sent, or the response could not be parsed, this
+   * method will return an empty {@code EhloResponse} that assumes no extended SMTP features
+   * are available.
+   */
   public EhloResponse getEhloResponse() {
     return ehloResponse;
   }
 
+  /**
+   * Closes this session.
+   *
+   * @return a {@code CompletableFuture} that will be completed when the session is closed.
+   */
   public CompletableFuture<Void> close() {
     this.channel.close();
     return closeFuture;
   }
 
+  /**
+   * Sends the STARTTLS command and tries to use TLS for this session.
+   *
+   * <p>If the server returns an error response (with {@code code >= 400}), this method
+   * will return a {@code CompletableFuture<SmtpClientResponse>} with that error response
+   * and TLS will not be active.
+   *
+   * <p>If the TLS handshake fails, this method will return a {@code CompletableFuture<SmtpClientResponse>}
+   * that contains the exception thrown by the handshake process.
+   *
+   * <p>Once the TLS handshake has completed, the EHLO command will be sent again in accordance
+   * with the spec. The EHLO response will be parsed and available from {@link SmtpSession#getEhloResponse()}.
+   *
+   * @return a future containing the response to the STARTTLS command
+   * @throws IllegalStateException if TLS is already active
+   */
   public CompletableFuture<SmtpClientResponse> startTls() {
     Preconditions.checkState(!isEncrypted(), "This connection is already using TLS");
 
@@ -153,26 +194,99 @@ public class SmtpSession {
     return ourFuture;
   }
 
+  /**
+   * Returns true if TLS is active on the session.
+   */
   public boolean isEncrypted() {
     return channel.pipeline().get(SslHandler.class) != null;
   }
 
+  /**
+   * Returns the {@link SSLSession} used by the current session, or {@link Optional#empty()} if the session
+   * is not using TLS.
+   */
   public Optional<SSLSession> getSSLSession() {
     return Optional.ofNullable(channel.pipeline().get(SslHandler.class)).map(handler -> handler.engine().getSession());
   }
 
+  /**
+   * Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.
+   *
+   * This method behaves as {@link SmtpSession#send(String, Collection, MessageContent, SendInterceptor)} but
+   * only specifies one recipient and does not use a {@link SendInterceptor}.
+   */
   public CompletableFuture<SmtpClientResponse> send(String from, String to, MessageContent content) {
     return send(from, Collections.singleton(to), content, Optional.empty());
   }
 
+  /**
+   * Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.
+   *
+   * This method behaves as {@link SmtpSession#send(String, Collection, MessageContent, SendInterceptor)} but
+   * only specifies one recipient.
+   */
   public CompletableFuture<SmtpClientResponse> send(String from, String to, MessageContent content, SendInterceptor sendInterceptor) {
     return send(from, Collections.singleton(to), content, Optional.of(sendInterceptor));
   }
 
+  /**
+   * Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.
+   *
+   * This method behaves as {@link SmtpSession#send(String, Collection, MessageContent, SendInterceptor)} but
+   * does not use a {@link SendInterceptor}.
+   */
   public CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content) {
     return send(from, recipients, content, Optional.empty());
   }
 
+  /**
+   * Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.
+   *
+   * <p>This method sends multiple commands to the remote server, and may use pipelining and other features
+   * if supported. If any command receives an error response (i.e. with {@code code >= 400}),
+   * the sequence of commands is aborted.
+   *
+   * <p>Because this method adapts to the capabilities of the server, it may send different sequences of commands
+   * for the same inputs. For example, communication with a server without extended SMTP support might look as
+   * follows:
+   *
+   * <pre>{@code
+   *  CLIENT: MAIL FROM:<from@example.com>
+   *  SERVER: 250 OK
+   *  CLIENT: RCPT TO:<to@example.com>
+   *  SERVER: 250 OK
+   *  CLIENT: DATA
+   *  SERVER: 354 Start mail input; end with <CRLF>.
+   *  CLIENT: <message data>}</pre>
+   *
+   * <p>Communication with a modern server that supports pipelining and chunking might look different:
+   *
+   * <pre>{@code
+   *  CLIENT: MAIL FROM:<from@example.com>
+   *  CLIENT: RCPT TO:<to@example.com>
+   *  CLIENT: BDAT 7287 LAST
+   *  CLIENT: <binary message data>
+   *  SERVER: 250 OK
+   *  SERVER: 250 OK
+   *  SERVER: 250 OK}</pre>
+   *
+   * <p>This command assumes the EHLO command has been sent and its result has been parsed.
+   *
+   * <p>Dot-stuffing will be performed automatically unless SMTP chunking (which does not require dot-stuffing)
+   * is available.
+   *
+   * @param  from the sender of the message, surrounded by < and >, e.g. {@code "<alice@example.com>"}
+   * @param  recipients a list of the intended recipients, each surrounded by < and >, e.g. {@code ["<bob@example.com>", "<carol@example.com>"]}
+   * @param  content a {@link MessageContent} with the contents of the message
+   * @param  sendInterceptor a {@link SendInterceptor} which will be called before commands and data are sent
+   * @return a {@code CompletableFuture<SmtpClientResponse>} that will contain each of the responses received
+   *         from the remote server, or an exception if the send failed unexpectedly.
+   * @throws NullPointerException if any of the arguments are null
+   * @throws IllegalArgumentException if {@code recipients} is empty
+   * @throws MessageTooLargeException if the EHLO response indicated a maximum message size that would be
+   *         exceeded by {@code content}. Note if {@link MessageContent#size()} is not specified this check
+   *         is not performed.
+   */
   public CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content, SendInterceptor sendInterceptor) {
     return send(from, recipients, content, Optional.of(sendInterceptor));
   }
@@ -310,6 +424,17 @@ public class SmtpSession {
     return content;
   }
 
+  /**
+   * Sends a command to the remote server and waits for a response.
+   *
+   * <p>If the command is EHLO, the server's response will be parsed and available from
+   * {@link SmtpSession#getEhloResponse()}.
+   *
+   * @param  request the command and arguments to send
+   * @return a {@code CompletableFuture<SmtpClientResponse>} that will contain the response received
+   *         from the remote server, or an exception if the send failed unexpectedly.
+   * @throws NullPointerException if request is null
+   */
   public CompletableFuture<SmtpClientResponse> send(SmtpRequest request) {
     Preconditions.checkNotNull(request);
 
@@ -330,6 +455,20 @@ public class SmtpSession {
     }), this::wrapFirstResponse);
   }
 
+  /**
+   * Sends message content to the remote server and waits for a response.
+   *
+   * <p>This method should be called when the server is in the "waiting for data" state,
+   * i.e. when the DATA command has been sent and the server has returned a 354 response.
+   *
+   * @param  content the message contents to send
+   * @return a {@code CompletableFuture<SmtpClientResponse>} that will contain the response received
+   *         from the remote server, or an exception if the send failed unexpectedly.
+   * @throws NullPointerException if content is null
+   * @throws MessageTooLargeException if the EHLO response indicated a maximum message size that would be
+   *         exceeded by {@code content}. Note if {@link MessageContent#size()} is not specified this check
+   *         is not performed.
+   */
   public CompletableFuture<SmtpClientResponse> send(MessageContent content) {
     Preconditions.checkNotNull(content);
     checkMessageSize(content.size());
@@ -344,6 +483,24 @@ public class SmtpSession {
     }), this::wrapFirstResponse);
   }
 
+  /**
+   * Sends binary message content to the remote server and waits for a response.
+   *
+   * <p>This method sends a BDAT command, immediately followed by the message contents,
+   * and depends on server support for SMTP chunking.
+   *
+   * @param  data the message contents to send
+   * @param  isLast whether this is the last message chunk, and should included the LAST keyword
+   *                with the BDAT command.
+   * @return a {@code CompletableFuture<SmtpClientResponse>} that will contain the response received
+   *         from the remote server, or an exception if the send failed unexpectedly.
+   * @throws NullPointerException if data is null
+   * @throws IllegalStateException if the server does not support chunking, or if the EHLO response has
+   *         not been received.
+   * @throws MessageTooLargeException if the EHLO response indicated a maximum message size that would be
+   *         exceeded by {@code content}. Note if {@link MessageContent#size()} is not specified this check
+   *         is not performed.
+   */
   public CompletableFuture<SmtpClientResponse> sendChunk(ByteBuf data, boolean isLast) {
     Preconditions.checkState(ehloResponse.isSupported(Extension.CHUNKING), "Chunking is not supported on this server");
     Preconditions.checkNotNull(data);
@@ -371,10 +528,42 @@ public class SmtpSession {
     }), this::wrapFirstResponse);
   }
 
+  /**
+   * Sends a series of commands to the server without waiting for a response.
+   *
+   * <p>This is identical to {@link SmtpSession#sendPipelined(MessageContent, SmtpRequest...)} but it
+   * does not send any message content.
+   */
   public CompletableFuture<SmtpClientResponse> sendPipelined(SmtpRequest... requests) {
     return sendPipelined(null, requests);
   }
 
+  /**
+   * Sends a series of commands to the server without waiting for a response.
+   *
+   * <p>This method reduces latency by sending all the specified commands without waiting
+   * for the server to respond to each one in turn. It depends on server support for SMTP pipelining.
+   *
+   * <p>The server will send a response for each command included in the pipelined sequence. These are
+   * available from {@link SmtpClientResponse#getResponses()}.
+   *
+   * <p>According to the pipelining spec, the contents of one message can be sent together with
+   * a RSET and metadata for a <i>subsequent</i> message. As such, the {@code content} and {@code requests}
+   * arguments to this method refer to different e-mails.
+   *
+   * @param  content the content to send
+   * @param  requests the commands to send
+   * @return a {@code CompletableFuture<SmtpClientResponse>} that will contain the responses received
+   *         from the remote server, or an exception if the send failed unexpectedly
+   * @throws NullPointerException if requests is null
+   * @throws IllegalArgumentException if the sequence of commands in {@code requests} is not valid
+   *         according to the pipelining spec
+   * @throws IllegalStateException if the server does not support pipelining, or if the EHLO response has
+   *         not been received
+   * @throws MessageTooLargeException if the EHLO response indicated a maximum message size that would be
+   *         exceeded by {@code content}. Note if {@link MessageContent#size()} is not specified this check
+   *         is not performed
+   */
   public CompletableFuture<SmtpClientResponse> sendPipelined(MessageContent content, SmtpRequest... requests) {
     Preconditions.checkState(ehloResponse.isSupported(Extension.PIPELINING), "Pipelining is not supported on this server");
     Preconditions.checkNotNull(requests);
@@ -406,6 +595,16 @@ public class SmtpSession {
     return new SmtpClientResponse(this, responses.get(0));
   }
 
+  /**
+   * Authenticates with the remote server using the PLAIN mechanism.
+   *
+   * @param  username the plaintext username used to authenticate
+   * @param  password the plaintext password used to authenticate
+   * @throws IllegalStateException if the server does not support PLAIN authentication,
+   *         or if the EHLO response has not been received
+   * @return a {@code CompletableFuture<SmtpClientResponse>} that will contain the response received
+   *         from the remote server, or an exception if the send failed unexpectedly
+   */
   public CompletableFuture<SmtpClientResponse> authPlain(String username, String password) {
     Preconditions.checkState(ehloResponse.isAuthPlainSupported(), "Auth plain is not supported on this server");
 
@@ -413,6 +612,17 @@ public class SmtpSession {
     return send(new DefaultSmtpRequest(AUTH_COMMAND, AUTH_PLAIN_MECHANISM, encodeBase64(s)));
   }
 
+
+  /**
+   * Authenticates with the remote server using the XOAUTH2 mechanism.
+   *
+   * @param  username the plaintext username used to authenticate
+   * @param  accessToken the access token used to authenticate
+   * @throws IllegalStateException if the server does not support XOAUTH2 authentication,
+   *         or if the EHLO response has not been received
+   * @return a {@code CompletableFuture<SmtpClientResponse>} that will contain the response received
+   *         from the remote server, or an exception if the send failed unexpectedly
+   */
   public CompletableFuture<SmtpClientResponse> authXoauth2(String username, String accessToken) {
     Preconditions.checkState(ehloResponse.isAuthXoauth2Supported(), "Auth xoauth2 is not supported on this server");
 
@@ -420,6 +630,22 @@ public class SmtpSession {
     return send(new DefaultSmtpRequest(AUTH_COMMAND, AUTH_XOAUTH2_MECHANISM, encodeBase64(s)));
   }
 
+  /**
+   * Authenticates with the remote server using the LOGIN mechanism.
+   *
+   * <p>This method will attempt to send two commands to the server: the first includes the
+   * username, the second specifies the password. The returned {@code SmtpClientResponse}
+   * will contain the response to just one command - the first if the username was
+   * rejected by the server, or the second if the username was accepted and the password
+   * was sent.
+   *
+   * @param  username the plaintext username used to authenticate
+   * @param  password the plaintext password used to authenticate
+   * @throws IllegalStateException if the server does not support LOGIN authentication,
+   *         or if the EHLO response has not been received
+   * @return a {@code CompletableFuture<SmtpClientResponse>} that will contain the response received
+   *         from the remote server, or an exception if the send failed unexpectedly
+   */
   public CompletableFuture<SmtpClientResponse> authLogin(String username, String password) {
     Preconditions.checkState(ehloResponse.isAuthLoginSupported(), "Auth login is not supported on this server");
 
