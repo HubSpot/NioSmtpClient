@@ -116,6 +116,7 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public class <span class="typeNameLabel">InputStreamMessageContent</span>
 extends <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></pre>
+<div class="block">A <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> implementation backed by an <code>InputStream</code>.</div>
 </li>
 </ul>
 </div>
@@ -160,31 +161,47 @@ extends <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" titl
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>float</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#get8bitCharacterProportion--">get8bitCharacterProportion</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#get8bitCharacterProportion--">get8bitCharacterProportion</a></span>()</code>
+<div class="block">Estimates the proportion of characters in this <code>MessageContent</code> that are eight-bit.</div>
+</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#getContent--">getContent</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#getContent--">getContent</a></span>()</code>
+<div class="block">Gets the raw message content in a form that can be written to a Netty channel.</div>
+</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#getContentAsString--">getContentAsString</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#getContentAsString--">getContentAsString</a></span>()</code>
+<div class="block">Gets the content interpreted as a UTF-8 string.</div>
+</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;io.netty.buffer.ByteBuf&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#getContentChunkIterator-io.netty.buffer.ByteBufAllocator-">getContentChunkIterator</a></span>(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#getContentChunkIterator-io.netty.buffer.ByteBufAllocator-">getContentChunkIterator</a></span>(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</code>
+<div class="block">Returns an iterator that lazily reads chunks of content from the wrapped stream,
+ ensuring the last is terminated with CRLF.</div>
+</td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#getDotStuffedContent--">getDotStuffedContent</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#getDotStuffedContent--">getDotStuffedContent</a></span>()</code>
+<div class="block">Gets the message content with dot-stuffing applied in a form that can be written to a Netty channel.</div>
+</td>
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#getEncoding--">getEncoding</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#getEncoding--">getEncoding</a></span>()</code>
+<div class="block">Gets the <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages"><code>MessageContentEncoding</code></a> of the content, indicating whether it
+ contains eight-bit characters.</div>
+</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/OptionalInt.html?is-external=true" title="class or interface in java.util">OptionalInt</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#size--">size</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html#size--">size</a></span>()</code>
+<div class="block">The size of the content, used to reject messages for servers that support the SIZE SMTP extension.</div>
+</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -252,6 +269,8 @@ extends <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" titl
 <li class="blockList">
 <h4>size</h4>
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/OptionalInt.html?is-external=true" title="class or interface in java.util">OptionalInt</a>&nbsp;size()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#size--">MessageContent</a></code></span></div>
+<div class="block">The size of the content, used to reject messages for servers that support the SIZE SMTP extension.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#size--">size</a></code>&nbsp;in class&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></dd>
@@ -265,6 +284,8 @@ extends <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" titl
 <li class="blockList">
 <h4>getContent</h4>
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;getContent()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getContent--">MessageContent</a></code></span></div>
+<div class="block">Gets the raw message content in a form that can be written to a Netty channel.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getContent--">getContent</a></code>&nbsp;in class&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></dd>
@@ -278,6 +299,8 @@ extends <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" titl
 <li class="blockList">
 <h4>getContentChunkIterator</h4>
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;io.netty.buffer.ByteBuf&gt;&nbsp;getContentChunkIterator(io.netty.buffer.ByteBufAllocator&nbsp;allocator)</pre>
+<div class="block">Returns an iterator that lazily reads chunks of content from the wrapped stream,
+ ensuring the last is terminated with CRLF.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getContentChunkIterator-io.netty.buffer.ByteBufAllocator-">getContentChunkIterator</a></code>&nbsp;in class&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></dd>
@@ -291,6 +314,8 @@ extends <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" titl
 <li class="blockList">
 <h4>getDotStuffedContent</h4>
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;getDotStuffedContent()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getDotStuffedContent--">MessageContent</a></code></span></div>
+<div class="block">Gets the message content with dot-stuffing applied in a form that can be written to a Netty channel.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getDotStuffedContent--">getDotStuffedContent</a></code>&nbsp;in class&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></dd>
@@ -304,6 +329,9 @@ extends <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" titl
 <li class="blockList">
 <h4>getEncoding</h4>
 <pre>public&nbsp;<a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;getEncoding()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getEncoding--">MessageContent</a></code></span></div>
+<div class="block">Gets the <a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages"><code>MessageContentEncoding</code></a> of the content, indicating whether it
+ contains eight-bit characters.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getEncoding--">getEncoding</a></code>&nbsp;in class&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></dd>
@@ -317,6 +345,11 @@ extends <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" titl
 <li class="blockList">
 <h4>get8bitCharacterProportion</h4>
 <pre>public&nbsp;float&nbsp;get8bitCharacterProportion()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#get8bitCharacterProportion--">MessageContent</a></code></span></div>
+<div class="block">Estimates the proportion of characters in this <code>MessageContent</code> that are eight-bit.
+
+ <p>This proportion can be used to calculate whether a message would be more efficient
+ if encoded as quoted-printable or base64.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#get8bitCharacterProportion--">get8bitCharacterProportion</a></code>&nbsp;in class&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></dd>
@@ -330,6 +363,10 @@ extends <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" titl
 <li class="blockList">
 <h4>getContentAsString</h4>
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getContentAsString()</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getContentAsString--">MessageContent</a></code></span></div>
+<div class="block">Gets the content interpreted as a UTF-8 string.
+
+ <p>This is intended for debugging purposes only.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html#getContentAsString--">getContentAsString</a></code>&nbsp;in class&nbsp;<code><a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></dd>

@@ -84,7 +84,9 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><a href="#com.hubspot.smtp.client">com.hubspot.smtp.client</a></td>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">This package contains classes to create and maintain connections to SMTP servers.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -105,73 +107,101 @@
 <tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#authLogin-java.lang.String-java.lang.String-">authLogin</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;username,
-         <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;password)</code>&nbsp;</td>
+         <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;password)</code>
+<div class="block">Authenticates with the remote server using the LOGIN mechanism.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#authPlain-java.lang.String-java.lang.String-">authPlain</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;username,
-         <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;password)</code>&nbsp;</td>
+         <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;password)</code>
+<div class="block">Authenticates with the remote server using the PLAIN mechanism.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#authXoauth2-java.lang.String-java.lang.String-">authXoauth2</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;username,
-           <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;accessToken)</code>&nbsp;</td>
+           <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;accessToken)</code>
+<div class="block">Authenticates with the remote server using the XOAUTH2 mechanism.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">SmtpSessionFactory.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSessionFactory.html#connect-com.hubspot.smtp.client.SmtpSessionConfig-">connect</a></span>(<a href="../../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;config)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">SmtpSessionFactory.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSessionFactory.html#connect-com.hubspot.smtp.client.SmtpSessionConfig-">connect</a></span>(<a href="../../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;config)</code>
+<div class="block">Connects to a remote server.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-com.hubspot.smtp.messages.MessageContent-">send</a></span>(<a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-com.hubspot.smtp.messages.MessageContent-">send</a></span>(<a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>
+<div class="block">Sends message content to the remote server and waits for a response.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-io.netty.handler.codec.smtp.SmtpRequest-">send</a></span>(io.netty.handler.codec.smtp.SmtpRequest&nbsp;request)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-io.netty.handler.codec.smtp.SmtpRequest-">send</a></span>(io.netty.handler.codec.smtp.SmtpRequest&nbsp;request)</code>
+<div class="block">Sends a command to the remote server and waits for a response.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-java.lang.String-java.util.Collection-com.hubspot.smtp.messages.MessageContent-">send</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;from,
     <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;recipients,
-    <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>&nbsp;</td>
+    <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>
+<div class="block">Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-java.lang.String-java.util.Collection-com.hubspot.smtp.messages.MessageContent-com.hubspot.smtp.client.SendInterceptor-">send</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;from,
     <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;recipients,
     <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content,
-    <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>&nbsp;</td>
+    <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>
+<div class="block">Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-java.lang.String-java.lang.String-com.hubspot.smtp.messages.MessageContent-">send</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;from,
     <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;to,
-    <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>&nbsp;</td>
+    <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>
+<div class="block">Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-java.lang.String-java.lang.String-com.hubspot.smtp.messages.MessageContent-com.hubspot.smtp.client.SendInterceptor-">send</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;from,
     <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;to,
     <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content,
-    <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>&nbsp;</td>
+    <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>
+<div class="block">Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#sendChunk-io.netty.buffer.ByteBuf-boolean-">sendChunk</a></span>(io.netty.buffer.ByteBuf&nbsp;data,
-         boolean&nbsp;isLast)</code>&nbsp;</td>
+         boolean&nbsp;isLast)</code>
+<div class="block">Sends binary message content to the remote server and waits for a response.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#sendPipelined-com.hubspot.smtp.messages.MessageContent-io.netty.handler.codec.smtp.SmtpRequest...-">sendPipelined</a></span>(<a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content,
-             io.netty.handler.codec.smtp.SmtpRequest...&nbsp;requests)</code>&nbsp;</td>
+             io.netty.handler.codec.smtp.SmtpRequest...&nbsp;requests)</code>
+<div class="block">Sends a series of commands to the server without waiting for a response.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#sendPipelined-io.netty.handler.codec.smtp.SmtpRequest...-">sendPipelined</a></span>(io.netty.handler.codec.smtp.SmtpRequest...&nbsp;requests)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#sendPipelined-io.netty.handler.codec.smtp.SmtpRequest...-">sendPipelined</a></span>(io.netty.handler.codec.smtp.SmtpRequest...&nbsp;requests)</code>
+<div class="block">Sends a series of commands to the server without waiting for a response.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#startTls--">startTls</a></span>()</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#startTls--">startTls</a></span>()</code>
+<div class="block">Sends the STARTTLS command and tries to use TLS for this session.</div>
+</td>
 </tr>
 </tbody>
 </table>

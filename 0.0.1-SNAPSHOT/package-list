@@ -1,4 +1,3 @@
-com.hubspot.smtp
 com.hubspot.smtp.client
 com.hubspot.smtp.messages
 com.hubspot.smtp.utils

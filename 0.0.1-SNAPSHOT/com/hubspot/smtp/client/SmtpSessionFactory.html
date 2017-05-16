@@ -116,6 +116,9 @@ var activeTableTab = "activeTableTab";
 <pre>public class <span class="typeNameLabel">SmtpSessionFactory</span>
 extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
 implements <a href="http://docs.oracle.com/javase/8/docs/api/java/io/Closeable.html?is-external=true" title="class or interface in java.io">Closeable</a></pre>
+<div class="block">Creates <a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client"><code>SmtpSession</code></a> instances by connecting to remote servers.
+
+ <p>This class is thread-safe.</div>
 </li>
 </ul>
 </div>
@@ -134,7 +137,9 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/io/Closeable.h
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionFactory.html#SmtpSessionFactory-com.hubspot.smtp.client.SmtpSessionFactoryConfig-">SmtpSessionFactory</a></span>(<a href="../../../../com/hubspot/smtp/client/SmtpSessionFactoryConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionFactoryConfig</a>&nbsp;factoryConfig)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionFactory.html#SmtpSessionFactory-com.hubspot.smtp.client.SmtpSessionFactoryConfig-">SmtpSessionFactory</a></span>(<a href="../../../../com/hubspot/smtp/client/SmtpSessionFactoryConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionFactoryConfig</a>&nbsp;factoryConfig)</code>
+<div class="block">Creates a new factory with the provided configuration.</div>
+</td>
 </tr>
 </table>
 </li>
@@ -157,11 +162,15 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/io/Closeable.h
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionFactory.html#closeAsync--">closeAsync</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionFactory.html#closeAsync--">closeAsync</a></span>()</code>
+<div class="block">Closes all sessions created by this factory.</div>
+</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionFactory.html#connect-com.hubspot.smtp.client.SmtpSessionConfig-">connect</a></span>(<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;config)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionFactory.html#connect-com.hubspot.smtp.client.SmtpSessionConfig-">connect</a></span>(<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;config)</code>
+<div class="block">Connects to a remote server.</div>
+</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -192,6 +201,7 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/io/Closeable.h
 <li class="blockList">
 <h4>SmtpSessionFactory</h4>
 <pre>public&nbsp;SmtpSessionFactory(<a href="../../../../com/hubspot/smtp/client/SmtpSessionFactoryConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionFactoryConfig</a>&nbsp;factoryConfig)</pre>
+<div class="block">Creates a new factory with the provided configuration.</div>
 </li>
 </ul>
 </li>
@@ -209,6 +219,13 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/io/Closeable.h
 <li class="blockList">
 <h4>connect</h4>
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;&nbsp;connect(<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;config)</pre>
+<div class="block">Connects to a remote server.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>config</code> - the configuration to use for the connection</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a future representing the initial response from the server</dd>
+</dl>
 </li>
 </ul>
 <a name="close--">
@@ -236,6 +253,11 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/io/Closeable.h
 <li class="blockList">
 <h4>closeAsync</h4>
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Void.html?is-external=true" title="class or interface in java.lang">Void</a>&gt;&nbsp;closeAsync()</pre>
+<div class="block">Closes all sessions created by this factory.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a future that will be completed when all sessions have been closed</dd>
+</dl>
 </li>
 </ul>
 </li>

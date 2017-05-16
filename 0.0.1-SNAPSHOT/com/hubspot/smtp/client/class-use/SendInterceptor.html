@@ -84,7 +84,9 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><a href="#com.hubspot.smtp.client">com.hubspot.smtp.client</a></td>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">This package contains classes to create and maintain connections to SMTP servers.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -104,7 +106,9 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/CompositeSendInterceptor.html" title="class in com.hubspot.smtp.client">CompositeSendInterceptor</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/CompositeSendInterceptor.html" title="class in com.hubspot.smtp.client">CompositeSendInterceptor</a></span></code>
+<div class="block">A chain of <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client"><code>SendInterceptor</code></a> instances that will call each other in turn.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -117,7 +121,10 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">SmtpSessionConfig.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getSendInterceptor--">getSendInterceptor</a></span>()</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">SmtpSessionConfig.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getSendInterceptor--">getSendInterceptor</a></span>()</code>
+<div class="block">A <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client"><code>SendInterceptor</code></a> that can intercept commands and data before
+ they are sent to the server.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&gt;</code></td>
@@ -134,21 +141,27 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/client/CompositeSendInterceptor.html" title="class in com.hubspot.smtp.client">CompositeSendInterceptor</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompositeSendInterceptor.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/CompositeSendInterceptor.html#of-com.hubspot.smtp.client.SendInterceptor...-">of</a></span>(<a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>...&nbsp;sendInterceptors)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompositeSendInterceptor.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/CompositeSendInterceptor.html#of-com.hubspot.smtp.client.SendInterceptor...-">of</a></span>(<a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>...&nbsp;sendInterceptors)</code>
+<div class="block">Creates a chain of <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client"><code>SendInterceptor</code></a> instances that will call each other in turn.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-java.lang.String-java.util.Collection-com.hubspot.smtp.messages.MessageContent-com.hubspot.smtp.client.SendInterceptor-">send</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;from,
     <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;recipients,
     <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content,
-    <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>&nbsp;</td>
+    <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>
+<div class="block">Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-java.lang.String-java.lang.String-com.hubspot.smtp.messages.MessageContent-com.hubspot.smtp.client.SendInterceptor-">send</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;from,
     <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;to,
     <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content,
-    <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>&nbsp;</td>
+    <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>
+<div class="block">Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></code></td>
@@ -173,7 +186,9 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/client/CompositeSendInterceptor.html" title="class in com.hubspot.smtp.client">CompositeSendInterceptor</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompositeSendInterceptor.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/CompositeSendInterceptor.html#of-java.util.List-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&gt;&nbsp;interceptors)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompositeSendInterceptor.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/CompositeSendInterceptor.html#of-java.util.List-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&gt;&nbsp;interceptors)</code>
+<div class="block">Creates a chain of <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client"><code>SendInterceptor</code></a> instances that will call each other in turn.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></code></td>

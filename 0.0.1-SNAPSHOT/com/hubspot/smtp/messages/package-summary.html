@@ -71,6 +71,10 @@
 <!-- ========= END OF TOP NAVBAR ========= -->
 <div class="header">
 <h1 title="Package" class="title">Package&nbsp;com.hubspot.smtp.messages</h1>
+<div class="docSummary">
+<div class="block">This package contains classes that represent the content of an email.</div>
+</div>
+<p>See:&nbsp;<a href="#package.description">Description</a></p>
 </div>
 <div class="contentContainer">
 <ul class="blockList">
@@ -84,15 +88,21 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><a href="../../../../com/hubspot/smtp/messages/ByteBufMessageContent.html" title="class in com.hubspot.smtp.messages">ByteBufMessageContent</a></td>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">A <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> implementation backed by a Netty <code>ByteBuf</code>.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><a href="../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html" title="class in com.hubspot.smtp.messages">InputStreamMessageContent</a></td>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">A <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> implementation backed by an <code>InputStream</code>.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></td>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">The contents of a message, including its headers.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -107,16 +117,31 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><a href="../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a></td>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Used to specify whether an instance of <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> contains
+ eight-bit characters.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><a href="../../../../com/hubspot/smtp/messages/MessageTermination.html" title="enum in com.hubspot.smtp.messages">MessageTermination</a></td>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Specifies whether message content should be terminated with CRLF.</div>
+</td>
 </tr>
 </tbody>
 </table>
 </li>
 </ul>
+<a name="package.description">
+<!--   -->
+</a>
+<h2 title="Package com.hubspot.smtp.messages Description">Package com.hubspot.smtp.messages Description</h2>
+<div class="block">This package contains classes that represent the content of an email.
+
+ <p>You can create <a href="../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> instances by calling
+ <a href="../../../../com/hubspot/smtp/messages/MessageContent.html#of-com.google.common.io.ByteSource-"><code>MessageContent.of(com.google.common.io.ByteSource)</code></a> or one of its
+ overloads. <code>MessageContent</code> instances can be passed to <a href="../../../../com/hubspot/smtp/client/SmtpSession.html#send-java.lang.String-java.lang.String-com.hubspot.smtp.messages.MessageContent-"><code>SmtpSession.send(java.lang.String, java.lang.String, com.hubspot.smtp.messages.MessageContent)</code></a>
+ to send an email.</div>
 </div>
 <!-- ======= START OF BOTTOM NAVBAR ====== -->
 <div class="bottomNav"><a name="navbar.bottom">

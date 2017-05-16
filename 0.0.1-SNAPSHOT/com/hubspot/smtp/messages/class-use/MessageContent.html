@@ -84,11 +84,15 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><a href="#com.hubspot.smtp.client">com.hubspot.smtp.client</a></td>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">This package contains classes to create and maintain connections to SMTP servers.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><a href="#com.hubspot.smtp.messages">com.hubspot.smtp.messages</a></td>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">This package contains classes that represent the content of an email.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -108,38 +112,50 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-com.hubspot.smtp.messages.MessageContent-">send</a></span>(<a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-com.hubspot.smtp.messages.MessageContent-">send</a></span>(<a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>
+<div class="block">Sends message content to the remote server and waits for a response.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-java.lang.String-java.util.Collection-com.hubspot.smtp.messages.MessageContent-">send</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;from,
     <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;recipients,
-    <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>&nbsp;</td>
+    <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>
+<div class="block">Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-java.lang.String-java.util.Collection-com.hubspot.smtp.messages.MessageContent-com.hubspot.smtp.client.SendInterceptor-">send</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;from,
     <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;recipients,
     <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content,
-    <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>&nbsp;</td>
+    <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>
+<div class="block">Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-java.lang.String-java.lang.String-com.hubspot.smtp.messages.MessageContent-">send</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;from,
     <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;to,
-    <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>&nbsp;</td>
+    <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content)</code>
+<div class="block">Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#send-java.lang.String-java.lang.String-com.hubspot.smtp.messages.MessageContent-com.hubspot.smtp.client.SendInterceptor-">send</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;from,
     <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;to,
     <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content,
-    <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>&nbsp;</td>
+    <a href="../../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;sendInterceptor)</code>
+<div class="block">Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SmtpSession.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/client/SmtpSession.html#sendPipelined-com.hubspot.smtp.messages.MessageContent-io.netty.handler.codec.smtp.SmtpRequest...-">sendPipelined</a></span>(<a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a>&nbsp;content,
-             io.netty.handler.codec.smtp.SmtpRequest...&nbsp;requests)</code>&nbsp;</td>
+             io.netty.handler.codec.smtp.SmtpRequest...&nbsp;requests)</code>
+<div class="block">Sends a series of commands to the server without waiting for a response.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -157,11 +173,15 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/ByteBufMessageContent.html" title="class in com.hubspot.smtp.messages">ByteBufMessageContent</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/ByteBufMessageContent.html" title="class in com.hubspot.smtp.messages">ByteBufMessageContent</a></span></code>
+<div class="block">A <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> implementation backed by a Netty <code>ByteBuf</code>.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html" title="class in com.hubspot.smtp.messages">InputStreamMessageContent</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/InputStreamMessageContent.html" title="class in com.hubspot.smtp.messages">InputStreamMessageContent</a></span></code>
+<div class="block">A <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> implementation backed by an <code>InputStream</code>.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -174,36 +194,50 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
-<td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-io.netty.buffer.ByteBuf-">of</a></span>(io.netty.buffer.ByteBuf&nbsp;messageBuffer)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-io.netty.buffer.ByteBuf-">of</a></span>(io.netty.buffer.ByteBuf&nbsp;messageBuffer)</code>
+<div class="block">Creates a <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> from a <code>ByteBuf</code> that might contain eight-bit characters.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-io.netty.buffer.ByteBuf-com.hubspot.smtp.messages.MessageContentEncoding-">of</a></span>(io.netty.buffer.ByteBuf&nbsp;messageBuffer,
-  <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>&nbsp;</td>
+  <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>
+<div class="block">Creates a <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> from a <code>ByteBuf</code> and specifies its <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages"><code>MessageContentEncoding</code></a>.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
-<td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-com.google.common.io.ByteSource-">of</a></span>(com.google.common.io.ByteSource&nbsp;byteSource)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-com.google.common.io.ByteSource-">of</a></span>(com.google.common.io.ByteSource&nbsp;byteSource)</code>
+<div class="block">Creates a <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> from a <code>ByteSource</code> that might contain eight-bit characters.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-com.google.common.io.ByteSource-com.hubspot.smtp.messages.MessageContentEncoding-">of</a></span>(com.google.common.io.ByteSource&nbsp;byteSource,
-  <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>&nbsp;</td>
+  <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>
+<div class="block">Creates a <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> from a <code>ByteSource</code> and specifies its <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages"><code>MessageContentEncoding</code></a>.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
-<td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-java.util.function.Supplier-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-java.util.function.Supplier-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream)</code>
+<div class="block">Creates a <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> from an <code>InputStream</code> that might contain eight-bit characters.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-java.util.function.Supplier-com.hubspot.smtp.messages.MessageContentEncoding-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream,
-  <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>&nbsp;</td>
+  <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>
+<div class="block">Creates a <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> from a <code>InputStream</code> and specifies its <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages"><code>MessageContentEncoding</code></a>.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-java.util.function.Supplier-com.hubspot.smtp.messages.MessageContentEncoding-int-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream,
   <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding,
-  int&nbsp;size)</code>&nbsp;</td>
+  int&nbsp;size)</code>
+<div class="block">Creates a <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> from a <code>InputStream</code> and specifies its <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages"><code>MessageContentEncoding</code></a> and size.</div>
+</td>
 </tr>
 </tbody>
 </table>

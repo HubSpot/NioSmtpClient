@@ -106,6 +106,40 @@ var activeTableTab = "activeTableTab";
 <hr>
 <br>
 <pre>public interface <span class="typeNameLabel">SendInterceptor</span></pre>
+<div class="block">An extension point that supports intercepting commands and data before they are sent.
+
+ <p>There are three methods to implement, each of which executes "around" the sending of
+ a request, data or pipelined sequence of requests. The @{code aroundRequest} and
+ <code>aroundPipelinedSequence</code> methods each receive an argument describing what is being
+ sent. All methods receive a <code>Supplier&lt;CompletableFuture&lt;List&lt;SmtpResponse&gt;&gt;&gt;</code> called
+ <code>next</code> that returns a future that will complete when the send has finished.
+
+ <p>As an example, consider an interceptor used for timing commands. It can record the time
+ before the command/data is sent, then log the difference when the <code>next</code> future completes.
+
+ <pre><code>
+  class TimingInterceptor implements SendInterceptor {
+    private static final Logger LOG = LoggerFactory.getLogger(TimingInterceptor.class);
+
+    public CompletableFuture&lt;List&lt;SmtpResponse&gt;&gt; aroundRequest(SmtpRequest request, Supplier&lt;CompletableFuture&lt;List&lt;SmtpResponse&gt;&gt;&gt; next) {
+      long startedAt = System.currentTimeMillis();
+      return next.get().whenComplete((response, throwable) -&gt; LOG.debug("{}: {}ms", request, System.currentTimeMillis() - startedAt);
+    }
+
+    public CompletableFuture&lt;List&lt;SmtpResponse&gt;&gt; aroundData(Supplier&lt;CompletableFuture&lt;List&lt;SmtpResponse&gt;&gt;&gt; next) {
+      long startedAt = System.currentTimeMillis();
+      return next.get().whenComplete((response, throwable) -&gt; LOG.debug("data: {}ms", System.currentTimeMillis() - startedAt);
+    }
+
+    public CompletableFuture&lt;List&lt;SmtpResponse&gt;&gt; aroundPipelinedSequence(List&lt;SmtpRequest&gt; requests, Supplier&lt;CompletableFuture&lt;List&lt;SmtpResponse&gt;&gt;&gt; next) {
+      long startedAt = System.currentTimeMillis();
+      return next.get().whenComplete((response, throwable) -&gt; LOG.debug("{}: {}ms", requests, System.currentTimeMillis() - startedAt);
+    }
+  }</code></pre></div>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../com/hubspot/smtp/client/CompositeSendInterceptor.html" title="class in com.hubspot.smtp.client"><code>CompositeSendInterceptor</code></a></dd>
+</dl>
 </li>
 </ul>
 </div>
@@ -126,17 +160,23 @@ var activeTableTab = "activeTableTab";
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SendInterceptor.html#aroundData-java.util.function.Supplier-">aroundData</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;&gt;&nbsp;next)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SendInterceptor.html#aroundData-java.util.function.Supplier-">aroundData</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;&gt;&nbsp;next)</code>
+<div class="block">Called before data is sent.</div>
+</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SendInterceptor.html#aroundPipelinedSequence-java.util.List-java.util.function.Supplier-">aroundPipelinedSequence</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpRequest&gt;&nbsp;requests,
-                       <a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;&gt;&nbsp;next)</code>&nbsp;</td>
+                       <a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;&gt;&nbsp;next)</code>
+<div class="block">Called before a pipelined series of requests is sent.</div>
+</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SendInterceptor.html#aroundRequest-io.netty.handler.codec.smtp.SmtpRequest-java.util.function.Supplier-">aroundRequest</a></span>(io.netty.handler.codec.smtp.SmtpRequest&nbsp;request,
-             <a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;&gt;&nbsp;next)</code>&nbsp;</td>
+             <a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;&gt;&nbsp;next)</code>
+<div class="block">Called before a request is sent.</div>
+</td>
 </tr>
 </table>
 </li>
@@ -161,6 +201,15 @@ var activeTableTab = "activeTableTab";
 <h4>aroundRequest</h4>
 <pre><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;&nbsp;aroundRequest(io.netty.handler.codec.smtp.SmtpRequest&nbsp;request,
                                                                                 <a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;&gt;&nbsp;next)</pre>
+<div class="block">Called before a request is sent.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>request</code> - the request that will be sent</dd>
+<dd><code>next</code> - supplies a future that will complete when the request has been sent and a response received</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>next.get()</code>, a <code>CompletableFuture</code> derived from it, or an exceptional future if the send should
+         be aborted</dd>
+</dl>
 </li>
 </ul>
 <a name="aroundData-java.util.function.Supplier-">
@@ -170,6 +219,14 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <h4>aroundData</h4>
 <pre><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;&nbsp;aroundData(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;&gt;&nbsp;next)</pre>
+<div class="block">Called before data is sent.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>next</code> - supplies a future that will complete when the data has been sent and a response received</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>next.get()</code>, a <code>CompletableFuture</code> derived from it, or an exceptional future if the send should
+         be aborted</dd>
+</dl>
 </li>
 </ul>
 <a name="aroundPipelinedSequence-java.util.List-java.util.function.Supplier-">
@@ -180,6 +237,15 @@ var activeTableTab = "activeTableTab";
 <h4>aroundPipelinedSequence</h4>
 <pre><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;&nbsp;aroundPipelinedSequence(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpRequest&gt;&nbsp;requests,
                                                                                           <a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&gt;&gt;&nbsp;next)</pre>
+<div class="block">Called before a pipelined series of requests is sent.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>requests</code> - the requests that will be sent</dd>
+<dd><code>next</code> - supplies a future that will complete when the requests have been sent and responses received</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>next.get()</code>, a <code>CompletableFuture</code> derived from it, or an exceptional future if the send should
+         be aborted</dd>
+</dl>
 </li>
 </ul>
 </li>

@@ -84,7 +84,9 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><a href="#com.hubspot.smtp.messages">com.hubspot.smtp.messages</a></td>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">This package contains classes that represent the content of an email.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -112,7 +114,10 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a></code></td>
-<td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#getEncoding--">getEncoding</a></span>()</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#getEncoding--">getEncoding</a></span>()</code>
+<div class="block">Gets the <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages"><code>MessageContentEncoding</code></a> of the content, indicating whether it
+ contains eight-bit characters.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a></code></td>
@@ -139,23 +144,31 @@ the order they are declared.</div>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-io.netty.buffer.ByteBuf-com.hubspot.smtp.messages.MessageContentEncoding-">of</a></span>(io.netty.buffer.ByteBuf&nbsp;messageBuffer,
-  <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>&nbsp;</td>
+  <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>
+<div class="block">Creates a <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> from a <code>ByteBuf</code> and specifies its <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages"><code>MessageContentEncoding</code></a>.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-com.google.common.io.ByteSource-com.hubspot.smtp.messages.MessageContentEncoding-">of</a></span>(com.google.common.io.ByteSource&nbsp;byteSource,
-  <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>&nbsp;</td>
+  <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>
+<div class="block">Creates a <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> from a <code>ByteSource</code> and specifies its <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages"><code>MessageContentEncoding</code></a>.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-java.util.function.Supplier-com.hubspot.smtp.messages.MessageContentEncoding-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream,
-  <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>&nbsp;</td>
+  <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding)</code>
+<div class="block">Creates a <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> from a <code>InputStream</code> and specifies its <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages"><code>MessageContentEncoding</code></a>.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages">MessageContent</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MessageContent.</span><code><span class="memberNameLink"><a href="../../../../../com/hubspot/smtp/messages/MessageContent.html#of-java.util.function.Supplier-com.hubspot.smtp.messages.MessageContentEncoding-int-">of</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html?is-external=true" title="class or interface in java.util.function">Supplier</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&gt;&nbsp;messageStream,
   <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages">MessageContentEncoding</a>&nbsp;encoding,
-  int&nbsp;size)</code>&nbsp;</td>
+  int&nbsp;size)</code>
+<div class="block">Creates a <a href="../../../../../com/hubspot/smtp/messages/MessageContent.html" title="class in com.hubspot.smtp.messages"><code>MessageContent</code></a> from a <code>InputStream</code> and specifies its <a href="../../../../../com/hubspot/smtp/messages/MessageContentEncoding.html" title="enum in com.hubspot.smtp.messages"><code>MessageContentEncoding</code></a> and size.</div>
+</td>
 </tr>
 </tbody>
 </table>

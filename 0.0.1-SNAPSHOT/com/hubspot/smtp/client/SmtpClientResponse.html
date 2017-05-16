@@ -111,6 +111,9 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public class <span class="typeNameLabel">SmtpClientResponse</span>
 extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></pre>
+<div class="block">Wraps the session and the responses to one or more SMTP commands.
+
+ <p>This class is thread-safe.</div>
 </li>
 </ul>
 </div>
@@ -157,15 +160,21 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#containsError--">containsError</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#containsError--">containsError</a></span>()</code>
+<div class="block">Gets whether any of the contained <code>SmtpResponse</code>s have a <code>code &gt;= 400</code>.</div>
+</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#getResponses--">getResponses</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#getResponses--">getResponses</a></span>()</code>
+<div class="block">Gets the <code>SmtpResponse</code>s.</div>
+</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#getSession--">getSession</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpClientResponse.html#getSession--">getSession</a></span>()</code>
+<div class="block">Gets the <a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client"><code>SmtpSession</code></a> that received these responses.</div>
+</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
@@ -238,6 +247,7 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <li class="blockList">
 <h4>getSession</h4>
 <pre>public&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client">SmtpSession</a>&nbsp;getSession()</pre>
+<div class="block">Gets the <a href="../../../../com/hubspot/smtp/client/SmtpSession.html" title="class in com.hubspot.smtp.client"><code>SmtpSession</code></a> that received these responses.</div>
 </li>
 </ul>
 <a name="containsError--">
@@ -247,6 +257,7 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <li class="blockList">
 <h4>containsError</h4>
 <pre>public&nbsp;boolean&nbsp;containsError()</pre>
+<div class="block">Gets whether any of the contained <code>SmtpResponse</code>s have a <code>code &gt;= 400</code>.</div>
 </li>
 </ul>
 <a name="getResponses--">
@@ -256,6 +267,7 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <li class="blockList">
 <h4>getResponses</h4>
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;io.netty.handler.codec.smtp.SmtpResponse&gt;&nbsp;getResponses()</pre>
+<div class="block">Gets the <code>SmtpResponse</code>s.</div>
 </li>
 </ul>
 <a name="toString--">
