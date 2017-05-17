@@ -68,7 +68,6 @@ public class SmtpSessionFactory implements Closeable  {
         SmtpSession session = new SmtpSession(channel, responseHandler, config, factoryConfig.getExecutor(), factoryConfig.getSslEngineSupplier());
         applyOnExecutor(config, initialResponseFuture, r -> connectFuture.complete(new SmtpClientResponse(session, r.get(0))));
       } else {
-        LOG.error("Could not connect to {}", config.getRemoteAddress(), f.cause());
         factoryConfig.getExecutor().execute(() -> connectFuture.completeExceptionally(f.cause()));
       }
     });
