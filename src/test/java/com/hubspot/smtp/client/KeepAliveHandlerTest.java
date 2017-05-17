@@ -73,7 +73,7 @@ public class KeepAliveHandlerTest {
   public void itThrowsAnExceptionIfTheNoopResponseIsAnError() throws Exception {
     handler.triggerIdle();
     assertThatThrownBy(() -> handler.channelRead(context, ERROR_RESPONSE))
-      .isInstanceOf(ErrorResponseException.class)
+      .isInstanceOf(NoopErrorResponseException.class)
       .hasMessageEndingWith("Received error in response to NOOP (400 that didn't work)");
 
     verify(context, never()).fireChannelRead(any());

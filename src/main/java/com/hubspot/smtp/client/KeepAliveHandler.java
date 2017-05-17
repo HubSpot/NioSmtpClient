@@ -61,12 +61,12 @@ class KeepAliveHandler extends IdleStateHandler {
     super.channelRead(ctx, msg);
   }
 
-  private void swallowNoopResponse(SmtpResponse response) throws ErrorResponseException {
+  private void swallowNoopResponse(SmtpResponse response) throws NoopErrorResponseException {
     expectingNoopResponse = false;
 
     if (SmtpResponses.isError(response)) {
       LOG.warn("[{}] Received error {} in response to NOOP", connectionId, SmtpResponses.toString(response));
-      throw new ErrorResponseException(connectionId, response, "Received error in response to NOOP");
+      throw new NoopErrorResponseException(connectionId, response, "Received error in response to NOOP");
     }
   }
 
