@@ -102,7 +102,7 @@ public class CompositeSendInterceptor implements SendInterceptor {
 
     @Override
     public CompletableFuture<List<SmtpResponse>> aroundPipelinedSequence(List<SmtpRequest> requests, Supplier<CompletableFuture<List<SmtpResponse>>> next) {
-      return thisInterceptor.aroundData(() -> nextInterceptor.aroundPipelinedSequence(requests, next));
+      return thisInterceptor.aroundPipelinedSequence(requests, () -> nextInterceptor.aroundPipelinedSequence(requests, next));
     }
   }
 }
