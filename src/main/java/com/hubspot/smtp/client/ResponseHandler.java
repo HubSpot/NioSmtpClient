@@ -103,12 +103,14 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
     ResponseCollector collector = responseCollector.getAndSet(null);
     if (collector != null) {
       collector.completeExceptionally(cause);
-    }
-
-    if (exceptionHandler.isPresent()) {
-      exceptionHandler.get().accept(cause);
     } else {
-      super.exceptionCaught(ctx, cause);
+      // this exception can't get back to the client via a future,
+      // use the connection exception handler if possible
+      if (exceptionHandler.isPresent()) {
+        exceptionHandler.get().accept(cause);
+      } else {
+        super.exceptionCaught(ctx, cause);
+      }
     }
   }
 
