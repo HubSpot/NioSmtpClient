@@ -45,8 +45,6 @@ public class ResponseHandlerTest {
 
     assertThat(f.isCompletedExceptionally()).isTrue();
     assertThatThrownBy(f::get).isInstanceOf(ExecutionException.class).hasCause(testException);
-
-    verify(context).fireExceptionCaught(testException);
   }
 
   @Test
@@ -196,6 +194,19 @@ public class ResponseHandlerTest {
     responseHandler.exceptionCaught(null, testException);
 
     verify(exceptionHandler).accept(testException);
+  }
+
+  @Test
+  public void itDoesNotPasExceptionsToTheProvidedHandlerIfThereIsAPendingFuture() throws Exception {
+    Consumer<Throwable> exceptionHandler = (Consumer<Throwable>) mock(Consumer.class);
+    ResponseHandler responseHandler = new ResponseHandler(CONNECTION_ID, Optional.empty(), Optional.of(exceptionHandler));
+
+    responseHandler.createResponseFuture(1, DEBUG_STRING);
+
+    Exception testException = new Exception("oh no");
+    responseHandler.exceptionCaught(null, testException);
+
+    verify(exceptionHandler, never()).accept(testException);
   }
 
   @Test
