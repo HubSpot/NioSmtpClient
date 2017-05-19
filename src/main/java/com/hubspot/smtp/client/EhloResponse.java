@@ -150,7 +150,7 @@ public class EhloResponse {
   }
 
   /**
-   * Gets all the parsed {@link Extension} supported by the server.
+   * Gets the raw extensions returned by the server.
    */
   public Set<String> getSupportedExtensions() {
     return supportedExtensions;
