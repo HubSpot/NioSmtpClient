@@ -688,9 +688,9 @@ public class SmtpSessionTest {
     CompletableFuture<SmtpClientResponse> future = session.send(ALICE, BOB, unknownContent);
 
     InOrder order = inOrder(channel);
-    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">"));
+    order.verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">", "BODY=8BITMIME"));
     order.verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + BOB + ">"));
-    order.verify(channel).write(req(SmtpCommand.DATA, "BODY=8BITMIME"));
+    order.verify(channel).write(req(SmtpCommand.DATA));
 
     responseFuture.complete(Lists.newArrayList(OK_RESPONSE, OK_RESPONSE, OK_RESPONSE));
 

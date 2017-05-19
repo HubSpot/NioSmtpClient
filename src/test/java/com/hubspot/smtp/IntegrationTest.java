@@ -24,8 +24,6 @@ import java.util.concurrent.Executors;
 import javax.net.ssl.SSLEngine;
 
 import org.apache.james.protocols.api.Encryption;
-import org.apache.james.protocols.api.Response;
-import org.apache.james.protocols.api.handler.ProtocolHandler;
 import org.apache.james.protocols.api.logger.Logger;
 import org.apache.james.protocols.netty.NettyServer;
 import org.apache.james.protocols.smtp.MailEnvelope;
@@ -33,7 +31,6 @@ import org.apache.james.protocols.smtp.SMTPConfigurationImpl;
 import org.apache.james.protocols.smtp.SMTPProtocol;
 import org.apache.james.protocols.smtp.SMTPProtocolHandlerChain;
 import org.apache.james.protocols.smtp.SMTPSession;
-import org.apache.james.protocols.smtp.core.DataCmdHandler;
 import org.apache.james.protocols.smtp.hook.AuthHook;
 import org.apache.james.protocols.smtp.hook.HookResult;
 import org.apache.james.protocols.smtp.hook.MailParametersHook;
@@ -110,30 +107,7 @@ public class IntegrationTest {
       }
     };
 
-    SMTPProtocolHandlerChain chain = new SMTPProtocolHandlerChain(new CollectEmailsHook(), new ChunkingExtension()) {
-      @Override
-      protected List<ProtocolHandler> initDefaultHandlers() {
-        List<ProtocolHandler> protocolHandlers = super.initDefaultHandlers();
-
-        // James says it supports 8bitmime but fails if you pass BODY=8BITMIME with the DATA
-        // command which is required by the spec https://tools.ietf.org/html/rfc6152#section-4
-        for (int i = 0; i < protocolHandlers.size(); i++) {
-          if (protocolHandlers.get(i) instanceof DataCmdHandler) {
-            protocolHandlers.set(i, new DataCmdHandler() {
-              @Override
-              protected Response doDATAFilter(SMTPSession session, String argument) {
-                argument = "BODY=8BITMIME".equals(argument) ? null : argument;
-                return super.doDATAFilter(session, argument);
-              }
-            });
-            break;
-          }
-        }
-
-        return protocolHandlers;
-      }
-    };
-
+    SMTPProtocolHandlerChain chain = new SMTPProtocolHandlerChain(new CollectEmailsHook(), new ChunkingExtension());
     SMTPProtocol protocol = new SMTPProtocol(chain, config, log);
     Encryption encryption = Encryption.createStartTls(FakeTlsContext.createContext());
 

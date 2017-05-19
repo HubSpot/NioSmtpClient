@@ -378,7 +378,7 @@ public class SmtpSession {
   }
 
   private CompletableFuture<SmtpClientResponse> sendAs8BitMime(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
-    return sendPipelinedIfPossible(SmtpRequests.mail(from), recipients, new DefaultSmtpRequest(SmtpCommand.DATA, "BODY=8BITMIME"), sequenceInterceptor)
+    return sendPipelinedIfPossible(SmtpRequests.mail(from, "BODY=8BITMIME"), recipients, SmtpRequests.data(), sequenceInterceptor)
         .thenSend(content.getDotStuffedContent(), EMPTY_LAST_CONTENT)
         .toResponses();
   }
