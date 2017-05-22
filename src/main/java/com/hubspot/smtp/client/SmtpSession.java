@@ -46,6 +46,7 @@ import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpContent;
 import io.netty.handler.codec.smtp.SmtpRequest;
+import io.netty.handler.codec.smtp.SmtpRequestEncoder;
 import io.netty.handler.codec.smtp.SmtpRequests;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.handler.ssl.SslHandler;
@@ -292,6 +293,16 @@ public class SmtpSession {
   }
 
   private CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
+    return sendInternal(from, recipients, content, sequenceInterceptor)
+        .whenComplete((response, throwable) -> {
+          if (response != null && response.containsError()) {
+            // to work around a bug until https://github.com/netty/netty/pull/6759 is released
+            channel.pipeline().replace(SmtpRequestEncoder.class, "SmtpRequestEncoder", new SmtpRequestEncoder());
+          }
+        });
+  }
+
+  private CompletableFuture<SmtpClientResponse> sendInternal(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
     Preconditions.checkNotNull(from);
     Preconditions.checkNotNull(recipients);
     Preconditions.checkArgument(!recipients.isEmpty(), "recipients must be > 0");
