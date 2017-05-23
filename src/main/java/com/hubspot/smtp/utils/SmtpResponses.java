@@ -12,14 +12,18 @@ import io.netty.handler.codec.smtp.SmtpResponse;
  *
  */
 public final class SmtpResponses {
-  private static final Joiner SPACE_JOINER = Joiner.on(" ");
+  private static final Joiner SPACE_JOINER = Joiner.on(" ").skipNulls();
 
   private SmtpResponses() {
     throw new AssertionError("Cannot create static utility class");
   }
 
   public static String toString(SmtpResponse response) {
-    return response.code() + " " + SPACE_JOINER.join(response.details());
+    if (response.details().size() == 0) {
+      return Integer.toString(response.code());
+    } else {
+      return response.code() + " " + SPACE_JOINER.join(response.details());
+    }
   }
 
   public static List<String> getLines(SmtpResponse response) {
