@@ -33,7 +33,7 @@ class CrlfTerminatingChunkedStream extends ChunkedStream {
       return chunk;
     }
 
-    if (isTerminatedWithCrLf(chunk)) {
+    if (chunk == null || isTerminatedWithCrLf(chunk)) {
       return chunk;
     }
 

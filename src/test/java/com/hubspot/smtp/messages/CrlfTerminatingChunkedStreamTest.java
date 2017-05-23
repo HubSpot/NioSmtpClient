@@ -34,6 +34,11 @@ public class CrlfTerminatingChunkedStreamTest {
     assertThat(terminate("0123456789", 3)).isEqualTo("0123456789" + CRLF);
   }
 
+  @Test
+  public void itDoesNotThrowNullPointerExceptionAtTheEndOfTheStream() throws Exception {
+    new CrlfTerminatingChunkedStream(new ByteArrayInputStream(new byte[0]), 8192).readChunk(ALLOCATOR);
+  }
+
   private String terminate(String testString) throws Exception {
     return terminate(testString, 8192);
   }
