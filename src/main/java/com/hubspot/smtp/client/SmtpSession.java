@@ -297,7 +297,7 @@ public class SmtpSession {
         .whenComplete((response, throwable) -> {
           if (response != null && response.containsError()) {
             // to work around a bug until https://github.com/netty/netty/pull/6759 is released
-            channel.pipeline().replace(SmtpRequestEncoder.class, "SmtpRequestEncoder", new SmtpRequestEncoder());
+            channel.eventLoop().execute(() -> channel.pipeline().replace(SmtpRequestEncoder.class, "SmtpRequestEncoder", new SmtpRequestEncoder()));
           }
         });
   }
