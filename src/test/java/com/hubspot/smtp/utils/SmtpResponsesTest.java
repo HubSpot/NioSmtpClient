@@ -11,6 +11,7 @@ import io.netty.handler.codec.smtp.SmtpResponse;
 
 public class SmtpResponsesTest {
   private static final SmtpResponse OK_RESPONSE = new DefaultSmtpResponse(250, "ARG1", "ARG2");
+  private static final SmtpResponse OK_NO_DETAILS_RESPONSE = new DefaultSmtpResponse(250);
   private static final SmtpResponse NO_DETAILS_RESPONSE = new DefaultSmtpResponse(250);
   private static final SmtpResponse EHLO_RESPONSE = new DefaultSmtpResponse(250, "PIPELINING", "CHUNKING");
   private static final SmtpResponse TRANSIENT_ERROR_RESPONSE = new DefaultSmtpResponse(400);
@@ -19,6 +20,12 @@ public class SmtpResponsesTest {
   @Test
   public void itFormatsResponsesAsAString() {
     assertThat(SmtpResponses.toString(OK_RESPONSE)).isEqualTo("250 ARG1 ARG2");
+    assertThat(SmtpResponses.toString(OK_NO_DETAILS_RESPONSE)).isEqualTo("250");
+  }
+
+  @Test
+  public void itIgnoresNullDetails() {
+    assertThat(SmtpResponses.toString(new DefaultSmtpResponse(250, null, "ARG2"))).isEqualTo("250 ARG2");
   }
 
   @Test
