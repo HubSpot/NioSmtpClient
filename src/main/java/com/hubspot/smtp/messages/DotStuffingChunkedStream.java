@@ -15,7 +15,7 @@ import io.netty.handler.stream.ChunkedStream;
 class DotStuffingChunkedStream extends ChunkedStream {
   private static final byte CR = '\r';
   private static final byte LF = '\n';
-  private static final int DEFAULT_CHUNK_SIZE = 8192;
+  private static final int DEFAULT_CHUNK_SIZE = 64 * 1024;
 
   private final byte[] trailingBytes = { CR, LF };
 

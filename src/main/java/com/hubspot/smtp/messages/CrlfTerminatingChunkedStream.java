@@ -14,7 +14,7 @@ import io.netty.handler.stream.ChunkedStream;
 class CrlfTerminatingChunkedStream extends ChunkedStream {
   private static final byte CR = '\r';
   private static final byte LF = '\n';
-  private static final int DEFAULT_CHUNK_SIZE = 8192;
+  private static final int DEFAULT_CHUNK_SIZE = 64 * 1024;
   private static final byte[] TRAILING_BYTES = { CR, LF };
 
   CrlfTerminatingChunkedStream(InputStream in) {
