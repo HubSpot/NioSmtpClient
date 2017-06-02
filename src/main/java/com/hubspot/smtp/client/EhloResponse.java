@@ -90,7 +90,11 @@ public class EhloResponse {
 
   private void parseSize(List<String> parts) {
     if (parts.size() > 1) {
-      maxMessageSize = Optional.ofNullable(Longs.tryParse(parts.get(1)));
+      Optional<Long> maybeSize = Optional.ofNullable(Longs.tryParse(parts.get(1)));
+
+      if (maybeSize.isPresent() && maybeSize.get() > 0) {
+        maxMessageSize = maybeSize;
+      }
     }
   }
 

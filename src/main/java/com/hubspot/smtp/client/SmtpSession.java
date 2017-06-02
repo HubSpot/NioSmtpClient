@@ -89,7 +89,6 @@ public class SmtpSession {
   private static final String AUTH_LOGIN_MECHANISM = "LOGIN";
   private static final String AUTH_XOAUTH2_MECHANISM = "XOAUTH2";
   private static final String CRLF = "\r\n";
-  private static final long VALID_MAX_MESSAGE_SIZE_THRESHOLD = 1_024L;
 
   private final Channel channel;
   private final ResponseHandler responseHandler;
@@ -693,7 +692,7 @@ public class SmtpSession {
     }
 
     long maximumSize = ehloResponse.getMaxMessageSize().get();
-    if (maximumSize >= VALID_MAX_MESSAGE_SIZE_THRESHOLD && maximumSize < size.getAsInt()) {
+    if (maximumSize < size.getAsInt()) {
       throw new MessageTooLargeException(config.getConnectionId(), maximumSize);
     }
   }
