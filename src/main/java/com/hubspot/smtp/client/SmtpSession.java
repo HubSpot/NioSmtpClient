@@ -339,6 +339,11 @@ public class SmtpSession {
       Iterator<ByteBuf> chunkIterator = content.getContentChunkIterator(channel.alloc());
 
       ByteBuf firstChunk = chunkIterator.next();
+      if (firstChunk == null) {
+        throw new IllegalArgumentException("The MessageContent was empty; size is " +
+            (content.size().isPresent() ? Integer.toString(content.size().getAsInt()) : "not present"));
+      }
+
       objects.add(getBdatRequestWithData(firstChunk, !chunkIterator.hasNext()));
 
       return beginSequence(sequenceInterceptor, objects.size(), objects.toArray())
