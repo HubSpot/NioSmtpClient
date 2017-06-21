@@ -178,15 +178,6 @@ public class SmtpSessionTest {
   }
 
   @Test
-  public void itIgnoresMaxMessageSizeIfItIsLowerThan1k() {
-    session.parseEhloResponse(EHLO_DOMAIN, Lists.newArrayList("SIZE 1023"));
-
-    MessageContent largeMessage = MessageContent.of(ByteSource.wrap(new byte[1024]));
-
-    session.send(largeMessage);
-  }
-
-  @Test
   public void itWrapsTheResponse() throws ExecutionException, InterruptedException {
     CompletableFuture<SmtpClientResponse> future = session.send(SMTP_REQUEST);
 

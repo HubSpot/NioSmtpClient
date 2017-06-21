@@ -110,6 +110,13 @@ public class EhloResponseTest {
     assertThat(response.getMaxMessageSize()).isEmpty();
   }
 
+  @Test
+  public void itIgnoresASizeOfZero() {
+    EhloResponse response = parse("smtp.example.com Hello client.example.com", "SIZE 0");
+    assertThat(response.isSupported(Extension.SIZE)).isTrue();
+    assertThat(response.getMaxMessageSize()).isEmpty();
+  }
+
   private EhloResponse parse(CharSequence... lines) {
     return EhloResponse.parse("", Lists.newArrayList(lines));
   }
