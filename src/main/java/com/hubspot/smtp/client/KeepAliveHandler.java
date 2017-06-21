@@ -2,6 +2,7 @@ package com.hubspot.smtp.client;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,8 +41,12 @@ class KeepAliveHandler extends IdleStateHandler {
 
     if (expectingNoopResponse) {
       LOG.warn("[{}] Did not receive a response to our last NOOP, will not send another", connectionId);
-    } else if (responseHandler.isResponsePending()) {
-      LOG.warn("[{}] Waiting for a response, will not send a NOOP to keep the connection alive", connectionId);
+      return;
+    }
+
+    Optional<String> debugString = responseHandler.getPendingResponseDebugString();
+    if (debugString.isPresent()) {
+      LOG.warn("[{}] Waiting for a response to [{}], will not send a NOOP to keep the connection alive", connectionId, debugString.get());
     } else {
       LOG.debug("[{}] Sending NOOP", connectionId);
       ctx.channel().writeAndFlush(new DefaultSmtpRequest(SmtpCommand.NOOP));

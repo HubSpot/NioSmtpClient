@@ -155,11 +155,11 @@ public class ResponseHandlerTest {
 
   @Test
   public void itCanTellWhenAResponseIsPending() {
-    assertThat(responseHandler.isResponsePending()).isFalse();
+    assertThat(responseHandler.getPendingResponseDebugString()).isEmpty();
 
     responseHandler.createResponseFuture(1, DEBUG_STRING);
 
-    assertThat(responseHandler.isResponsePending()).isTrue();
+    assertThat(responseHandler.getPendingResponseDebugString()).contains(DEBUG_STRING.get());
   }
 
   @Test

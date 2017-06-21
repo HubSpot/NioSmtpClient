@@ -4,6 +4,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +36,7 @@ public class KeepAliveHandlerTest {
     handler = new TestHandler(responseHandler, CONNECTION_ID, Duration.ofSeconds(30));
 
     when(context.channel()).thenReturn(channel);
+    when(responseHandler.getPendingResponseDebugString()).thenReturn(Optional.empty());
   }
 
   @Test
@@ -54,7 +56,7 @@ public class KeepAliveHandlerTest {
 
   @Test
   public void itDoesNotSendANoopIfACommandResponseIsPending() {
-    when(responseHandler.isResponsePending()).thenReturn(true);
+    when(responseHandler.getPendingResponseDebugString()).thenReturn(Optional.of("test"));
 
     handler.triggerIdle();
 

@@ -72,8 +72,8 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
     });
   }
 
-  boolean isResponsePending() {
-    return responseCollector.get() != null;
+  Optional<String> getPendingResponseDebugString() {
+    return Optional.ofNullable(this.responseCollector.get()).map(ResponseCollector::getDebugString);
   }
 
   @Override
