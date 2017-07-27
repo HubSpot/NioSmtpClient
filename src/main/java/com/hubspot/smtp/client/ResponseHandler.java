@@ -32,16 +32,20 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
 
   private final AtomicReference<ResponseCollector> responseCollector = new AtomicReference<>();
   private final String connectionId;
-  private final Optional<Duration> responseTimeout;
+  private final Optional<Duration> defaultResponseTimeout;
   private final Optional<Consumer<Throwable>> exceptionHandler;
 
-  ResponseHandler(String connectionId, Optional<Duration> responseTimeout, Optional<Consumer<Throwable>> exceptionHandler) {
+  ResponseHandler(String connectionId, Optional<Duration> defaultResponseTimeout, Optional<Consumer<Throwable>> exceptionHandler) {
     this.connectionId = connectionId;
-    this.responseTimeout = responseTimeout;
+    this.defaultResponseTimeout = defaultResponseTimeout;
     this.exceptionHandler = exceptionHandler;
   }
 
   CompletableFuture<List<SmtpResponse>> createResponseFuture(int expectedResponses, Supplier<String> debugStringSupplier) {
+    return createResponseFuture(expectedResponses, defaultResponseTimeout, debugStringSupplier);
+  }
+
+  CompletableFuture<List<SmtpResponse>> createResponseFuture(int expectedResponses, Optional<Duration> responseTimeout, Supplier<String> debugStringSupplier) {
     ResponseCollector collector = new ResponseCollector(expectedResponses, debugStringSupplier);
 
     boolean success = responseCollector.compareAndSet(null, collector);
@@ -60,14 +64,22 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
     // ensures the write will be visible
     CompletableFuture<List<SmtpResponse>> responseFuture = collector.getFuture();
 
-    applyResponseTimeout(responseFuture);
+    applyResponseTimeout(responseFuture, responseTimeout, debugStringSupplier);
 
     return responseFuture;
   }
 
-  private void applyResponseTimeout(CompletableFuture<List<SmtpResponse>> responseFuture) {
+  private void applyResponseTimeout(CompletableFuture<List<SmtpResponse>> responseFuture, Optional<Duration> responseTimeout, Supplier<String> debugStringSupplier) {
+    responseTimeout = responseTimeout.isPresent() ? responseTimeout : defaultResponseTimeout;
+
     responseTimeout.ifPresent(timeout -> {
-      Timeout hwtTimeout = TIMER.newTimeout(ignored -> responseFuture.completeExceptionally(new TimeoutException()), timeout.toMillis(), TimeUnit.MILLISECONDS);
+      Timeout hwtTimeout = TIMER.newTimeout(ignored -> {
+        String message = String.format("[%s] Timed out waiting for a response to [%s]",
+            connectionId, debugStringSupplier.get());
+
+        responseFuture.completeExceptionally(new TimeoutException(message));
+      }, timeout.toMillis(), TimeUnit.MILLISECONDS);
+
       responseFuture.whenComplete((ignored1, ignored2) -> hwtTimeout.cancel());
     });
   }

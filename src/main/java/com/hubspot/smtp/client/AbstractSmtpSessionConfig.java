@@ -42,6 +42,11 @@ abstract class AbstractSmtpSessionConfig {
   public abstract Optional<Duration> getReadTimeout();
 
   /**
+   * The time to wait for the initial response from the server.
+   */
+  public abstract Optional<Duration> getInitialResponseReadTimeout();
+
+  /**
    * A {@link SendInterceptor} that can intercept commands and data before
    * they are sent to the server.
    *
