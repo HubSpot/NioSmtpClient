@@ -175,10 +175,21 @@ public class ResponseHandlerTest {
   }
 
   @Test
-  public void itCompletesExceptionallyIfTheResponseTimeoutIsExceeded() throws Exception {
+  public void itCompletesExceptionallyIfTheDefaultResponseTimeoutIsExceeded() throws Exception {
     ResponseHandler impatientHandler = new ResponseHandler(CONNECTION_ID, Optional.of(Duration.ofMillis(200)), Optional.empty());
 
     CompletableFuture<List<SmtpResponse>> responseFuture = impatientHandler.createResponseFuture(1, DEBUG_STRING);
+    assertThat(responseFuture.isCompletedExceptionally()).isFalse();
+
+    Thread.sleep(400);
+    assertThat(responseFuture.isCompletedExceptionally()).isTrue();
+  }
+
+  @Test
+  public void itCompletesExceptionallyIfTheResponseTimeoutIsExceeded() throws Exception {
+    ResponseHandler impatientHandler = new ResponseHandler(CONNECTION_ID, Optional.of(Duration.ofDays(365)), Optional.empty());
+
+    CompletableFuture<List<SmtpResponse>> responseFuture = impatientHandler.createResponseFuture(1, Optional.of(Duration.ofMillis(200)), DEBUG_STRING);
     assertThat(responseFuture.isCompletedExceptionally()).isFalse();
 
     Thread.sleep(400);

@@ -4,7 +4,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +46,7 @@ public class SmtpSessionFactory implements Closeable  {
    */
   public CompletableFuture<SmtpClientResponse> connect(SmtpSessionConfig config) {
     ResponseHandler responseHandler = new ResponseHandler(config.getConnectionId(), config.getReadTimeout(), config.getExceptionHandler());
-    CompletableFuture<List<SmtpResponse>> initialResponseFuture = responseHandler.createResponseFuture(1, () -> "initial response");
+    CompletableFuture<List<SmtpResponse>> initialResponseFuture = responseHandler.createResponseFuture(1, config.getInitialResponseReadTimeout(), () -> "initial response");
 
     Bootstrap bootstrap = new Bootstrap()
         .group(factoryConfig.getEventLoopGroup())
@@ -66,24 +65,24 @@ public class SmtpSessionFactory implements Closeable  {
         allChannels.add(channel);
 
         SmtpSession session = new SmtpSession(channel, responseHandler, config, factoryConfig.getExecutor(), factoryConfig.getSslEngineSupplier());
-        applyOnExecutor(config, initialResponseFuture, r -> connectFuture.complete(new SmtpClientResponse(session, r.get(0))));
+
+        initialResponseFuture.handleAsync((rs, e) -> {
+          if (e != null) {
+            session.close();
+            connectFuture.completeExceptionally(e);
+          } else {
+            connectFuture.complete(new SmtpClientResponse(session, rs.get(0)));
+          }
+
+          return null;
+        }, factoryConfig.getExecutor());
+
       } else {
         factoryConfig.getExecutor().execute(() -> connectFuture.completeExceptionally(f.cause()));
       }
     });
 
     return connectFuture;
-  }
-
-  private <R, T> void applyOnExecutor(SmtpSessionConfig config, CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
-    // use handleAsync to ensure exceptions and other callbacks are completed on the ExecutorService thread
-    eventLoopFuture.handleAsync((rs, e) -> {
-      if (e != null) {
-        throw new RuntimeException(e);
-      }
-
-      return mapper.apply(rs);
-    }, factoryConfig.getExecutor());
   }
 
   @Override
