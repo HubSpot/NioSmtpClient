@@ -1,0 +1,30 @@
+-bootclasspath
+'/usr/java/jdk1.8.0_121/jre/lib/rt.jar:/usr/java/jdk1.8.0_121/jre/lib/jce.jar:/usr/java/jdk1.8.0_121/../classes/classes.jar'
+-classpath
+'/usr/share/hubspot/build/.m2/repository/io/netty/netty-codec/4.1.8.Final/netty-codec-4.1.8.Final.jar:/usr/share/hubspot/build/.m2/repository/io/netty/netty-common/4.1.8.Final/netty-common-4.1.8.Final.jar:/usr/share/hubspot/build/.m2/repository/io/netty/netty-buffer/4.1.8.Final/netty-buffer-4.1.8.Final.jar:/usr/share/hubspot/build/.m2/repository/io/netty/netty-transport/4.1.8.Final/netty-transport-4.1.8.Final.jar:/usr/share/hubspot/build/.m2/repository/io/netty/netty-resolver/4.1.8.Final/netty-resolver-4.1.8.Final.jar:/usr/share/hubspot/build/.m2/repository/org/immutables/value/2.2.10/value-2.2.10.jar:/usr/share/hubspot/build/.m2/repository/io/netty/netty-codec-smtp/4.1.8.Final/netty-codec-smtp-4.1.8.Final.jar:/usr/share/hubspot/build/.m2/repository/io/netty/netty-handler/4.1.8.Final/netty-handler-4.1.8.Final.jar:/usr/share/hubspot/build/.m2/repository/org/slf4j/slf4j-api/1.7.21/slf4j-api-1.7.21.jar:/usr/share/hubspot/build/.m2/repository/com/google/guava/guava/19.0/guava-19.0.jar:/usr/share/hubspot/build/.m2/repository/com/google/code/findbugs/annotations/3.0.1/annotations-3.0.1.jar'
+-encoding
+'UTF-8'
+-protected
+-source
+'1.8'
+-sourcepath
+'/usr/share/hubspot/build/workspace/NioSmtpClient/src/main/java:/usr/share/hubspot/build/workspace/NioSmtpClient/target/generated-sources/annotations:/usr/share/hubspot/build/workspace/NioSmtpClient/src/main/javadoc'
+-Xdoclint:none
+-author
+-bottom
+'Copyright &#169; 2017. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/usr/share/hubspot/build/workspace/NioSmtpClient/target/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'NioSmtpClient 0.0.1-SNAPSHOT API'
+-linkoffline
+'http://docs.oracle.com/javase/8/docs/api' '/usr/share/hubspot/build/workspace/NioSmtpClient/target/javadoc-bundle-options'
+-notimestamp
+-use
+-version
+-windowtitle
+'NioSmtpClient 0.0.1-SNAPSHOT API'
