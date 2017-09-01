@@ -6,8 +6,6 @@ import java.util.List;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.smtp.SmtpRequestEncoder;
-import io.netty.handler.codec.smtp.SmtpResponseDecoder;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
 class Initializer extends ChannelInitializer<SocketChannel> {
@@ -29,8 +27,8 @@ class Initializer extends ChannelInitializer<SocketChannel> {
   private ChannelHandler[] getChannelHandlers() {
     List<ChannelHandler> handlers = new ArrayList<>();
 
-    handlers.add(new SmtpRequestEncoder());
-    handlers.add(new SmtpResponseDecoder(MAX_LINE_LENGTH));
+    handlers.add(new Utf8SmtpRequestEncoder());
+    handlers.add(new Utf8SmtpResponseDecoder(MAX_LINE_LENGTH));
     handlers.add(new ChunkedWriteHandler());
 
     config.getKeepAliveTimeout().ifPresent(timeout -> handlers.add(new KeepAliveHandler(responseHandler, config.getConnectionId(), timeout)));

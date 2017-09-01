@@ -19,7 +19,8 @@ public enum Extension {
   SIZE("size"),
   STARTTLS("starttls"),
   XCLIENT("xclient"),
-  XFORWARD("xforward");
+  XFORWARD("xforward"),
+  SMTPUTF8("smtputf8");
 
   private final String lowerCaseName;
 

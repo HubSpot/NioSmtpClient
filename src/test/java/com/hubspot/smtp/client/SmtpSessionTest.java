@@ -1,6 +1,5 @@
 package com.hubspot.smtp.client;
 
-import static io.netty.handler.codec.smtp.LastSmtpContent.EMPTY_LAST_CONTENT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
@@ -49,7 +48,6 @@ import io.netty.channel.DefaultChannelPromise;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.DefaultSmtpResponse;
 import io.netty.handler.codec.smtp.SmtpCommand;
-import io.netty.handler.codec.smtp.SmtpContent;
 import io.netty.handler.codec.smtp.SmtpRequest;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.handler.ssl.SslHandler;
@@ -160,7 +158,7 @@ public class SmtpSessionTest {
     session.send(smtpContent);
 
     verify(channel).write(smtpContent.getDotStuffedContent());
-    verify(channel).write(EMPTY_LAST_CONTENT);
+    verify(channel).write(DotCrlfBuffer.get());
     verify(channel).flush();
 
     assertThat(log.getLog()).isEqualTo("<contents>");
@@ -268,7 +266,7 @@ public class SmtpSessionTest {
 
     InOrder order = inOrder(channel);
     order.verify(channel).write(smtpContent.getDotStuffedContent());
-    order.verify(channel).write(EMPTY_LAST_CONTENT);
+    verify(channel).write(DotCrlfBuffer.get());
     order.verify(channel).write(MAIL_REQUEST);
     order.verify(channel).write(RCPT_REQUEST);
     order.verify(channel).write(DATA_REQUEST);
@@ -514,7 +512,7 @@ public class SmtpSessionTest {
     order.verify(channel).flush();
     order.verify(channel).write(req(SmtpCommand.DATA));
     order.verify(channel).flush();
-    order.verify(channel, times(2)).write(any(SmtpContent.class));
+    order.verify(channel).write(DotCrlfBuffer.get());
     order.verify(channel).flush();
 
     order.verify(channel).write(req(SmtpCommand.RSET));
@@ -525,7 +523,7 @@ public class SmtpSessionTest {
     order.verify(channel).flush();
     order.verify(channel).write(req(SmtpCommand.DATA));
     order.verify(channel).flush();
-    order.verify(channel, times(2)).write(any(SmtpContent.class));
+    order.verify(channel).write(DotCrlfBuffer.get());
     order.verify(channel).flush();
 
     assertThat(log.getLog()).isEqualTo(
@@ -646,7 +644,7 @@ public class SmtpSessionTest {
     order.verify(channel).write(req(SmtpCommand.DATA));
 
     order.verify(channel).write(sevenBitContent.getDotStuffedContent());
-    order.verify(channel).write(EMPTY_LAST_CONTENT);
+    verify(channel).write(DotCrlfBuffer.get());
     order.verify(channel).flush();
 
     secondResponseFuture.complete(Lists.newArrayList(OK_RESPONSE));
@@ -672,7 +670,7 @@ public class SmtpSessionTest {
     responseFuture.complete(Lists.newArrayList(OK_RESPONSE, OK_RESPONSE, OK_RESPONSE, OK_RESPONSE));
 
     order.verify(channel).write(sevenBitContent.getDotStuffedContent());
-    order.verify(channel).write(EMPTY_LAST_CONTENT);
+    verify(channel).write(DotCrlfBuffer.get());
     order.verify(channel).flush();
 
     secondResponseFuture.complete(Lists.newArrayList(OK_RESPONSE));
@@ -695,13 +693,35 @@ public class SmtpSessionTest {
     responseFuture.complete(Lists.newArrayList(OK_RESPONSE, OK_RESPONSE, OK_RESPONSE));
 
     order.verify(channel).write(smtpContent.getDotStuffedContent());
-    order.verify(channel).write(EMPTY_LAST_CONTENT);
+    verify(channel).write(DotCrlfBuffer.get());
     order.verify(channel).flush();
 
     secondResponseFuture.complete(Lists.newArrayList(OK_RESPONSE));
 
     assertThat(future.isDone()).isTrue();
     assertThat(future.get().getResponses().size()).isEqualTo(4);
+  }
+
+  @Test
+  public void itSendsEmailsUsingSmtpUtf8IfSupportedAndRequired() throws Exception {
+    String uberBob = "über" + BOB;
+    setExtensions(Extension.SMTPUTF8, Extension.PIPELINING);
+
+    session.send(ALICE, uberBob, unknownContent);
+
+    verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">", "SMTPUTF8"));
+    verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + uberBob + ">"));
+  }
+
+  @Test
+  public void itSendsEmailsUsing8BitMimeAndSmtpUtf8IfSupportedAndRequired() throws Exception {
+    String uberBob = "über" + BOB;
+    setExtensions(Extension.SMTPUTF8, Extension.EIGHT_BIT_MIME, Extension.PIPELINING);
+
+    session.send(ALICE, uberBob, unknownContent);
+
+    verify(channel).write(req(SmtpCommand.MAIL, "FROM:<" + ALICE + ">", "BODY=8BITMIME", "SMTPUTF8"));
+    verify(channel).write(req(SmtpCommand.RCPT, "TO:<" + uberBob + ">"));
   }
 
   @Test
@@ -721,7 +741,7 @@ public class SmtpSessionTest {
     responseFuture.complete(Lists.newArrayList(OK_RESPONSE, OK_RESPONSE, OK_RESPONSE));
 
     order.verify(channel).write(content.getDotStuffedContent());
-    order.verify(channel).write(EMPTY_LAST_CONTENT);
+    verify(channel).write(DotCrlfBuffer.get());
     order.verify(channel).flush();
 
     secondResponseFuture.complete(Lists.newArrayList(OK_RESPONSE));

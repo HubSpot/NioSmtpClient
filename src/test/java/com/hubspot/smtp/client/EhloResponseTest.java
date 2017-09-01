@@ -23,11 +23,13 @@ public class EhloResponseTest {
         "AUTH PLAIN LOGIN",
         "8BITMIME",
         "STARTTLS",
-        "SIZE");
+        "SIZE",
+        "SMTPUTF8");
 
     assertThat(response.isSupported(Extension.EIGHT_BIT_MIME)).isTrue();
     assertThat(response.isSupported(Extension.STARTTLS)).isTrue();
     assertThat(response.isSupported(Extension.SIZE)).isTrue();
+    assertThat(response.isSupported(Extension.SMTPUTF8)).isTrue();
 
     assertThat(response.isSupported(Extension.PIPELINING)).isFalse();
 

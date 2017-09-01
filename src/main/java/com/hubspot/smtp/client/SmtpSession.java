@@ -1,7 +1,5 @@
 package com.hubspot.smtp.client;
 
-import static io.netty.handler.codec.smtp.LastSmtpContent.EMPTY_LAST_CONTENT;
-
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +23,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -46,7 +45,6 @@ import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpContent;
 import io.netty.handler.codec.smtp.SmtpRequest;
-import io.netty.handler.codec.smtp.SmtpRequestEncoder;
 import io.netty.handler.codec.smtp.SmtpRequests;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.handler.ssl.SslHandler;
@@ -293,13 +291,7 @@ public class SmtpSession {
   }
 
   private CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
-    return sendInternal(from, recipients, content, sequenceInterceptor)
-        .whenComplete((response, throwable) -> {
-          if (response != null && response.containsError()) {
-            // to work around a bug until https://github.com/netty/netty/pull/6759 is released
-            channel.eventLoop().execute(() -> channel.pipeline().replace(SmtpRequestEncoder.class, "SmtpRequestEncoder", new SmtpRequestEncoder()));
-          }
-        });
+    return sendInternal(from, recipients, content, sequenceInterceptor);
   }
 
   private CompletableFuture<SmtpClientResponse> sendInternal(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
@@ -333,7 +325,7 @@ public class SmtpSession {
   private CompletableFuture<SmtpClientResponse> sendAsChunked(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
     if (ehloResponse.isSupported(Extension.PIPELINING)) {
       List<Object> objects = Lists.newArrayListWithExpectedSize(3 + recipients.size());
-      objects.add(SmtpRequests.mail(from));
+      objects.add(mailCommand(from, recipients));
       objects.addAll(rpctCommands(recipients));
 
       Iterator<ByteBuf> chunkIterator = content.getContentChunkIterator(channel.alloc());
@@ -351,7 +343,7 @@ public class SmtpSession {
           .toResponses();
 
     } else {
-      SendSequence sequence = beginSequence(sequenceInterceptor, 1, SmtpRequests.mail(from));
+      SendSequence sequence = beginSequence(sequenceInterceptor, 1, mailCommand(from, recipients));
 
       for (String recipient : recipients) {
         sequence.thenSend(SmtpRequests.rcpt(recipient));
@@ -388,14 +380,14 @@ public class SmtpSession {
   }
 
   private CompletableFuture<SmtpClientResponse> sendAs7Bit(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
-    return sendPipelinedIfPossible(SmtpRequests.mail(from), recipients, SmtpRequests.data(), sequenceInterceptor)
-        .thenSend(content.getDotStuffedContent(), EMPTY_LAST_CONTENT)
+    return sendPipelinedIfPossible(mailCommand(from, recipients), recipients, SmtpRequests.data(), sequenceInterceptor)
+        .thenSend(content.getDotStuffedContent(), DotCrlfBuffer.get())
         .toResponses();
   }
 
   private CompletableFuture<SmtpClientResponse> sendAs8BitMime(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
-    return sendPipelinedIfPossible(SmtpRequests.mail(from, "BODY=8BITMIME"), recipients, SmtpRequests.data(), sequenceInterceptor)
-        .thenSend(content.getDotStuffedContent(), EMPTY_LAST_CONTENT)
+    return sendPipelinedIfPossible(mailCommandWith8BitMime(from, recipients), recipients, SmtpRequests.data(), sequenceInterceptor)
+        .thenSend(content.getDotStuffedContent(), DotCrlfBuffer.get())
         .toResponses();
   }
 
@@ -420,6 +412,30 @@ public class SmtpSession {
 
   private Collection<SmtpRequest> rpctCommands(Collection<String> recipients) {
     return recipients.stream().map(SmtpRequests::rcpt).collect(Collectors.toList());
+  }
+
+  private SmtpRequest mailCommand(String from, Collection<String> recipients) {
+    if (!ehloResponse.isSupported(Extension.SMTPUTF8) || (isAllAscii(from) && isAllAscii(recipients))) {
+      return SmtpRequests.mail(from);
+    } else {
+      return SmtpRequests.mail(from, "SMTPUTF8");
+    }
+  }
+
+  private SmtpRequest mailCommandWith8BitMime(String from, Collection<String> recipients) {
+    if (!ehloResponse.isSupported(Extension.SMTPUTF8) || (isAllAscii(from) && isAllAscii(recipients))) {
+      return SmtpRequests.mail(from, "BODY=8BITMIME");
+    } else {
+      return SmtpRequests.mail(from, "BODY=8BITMIME", "SMTPUTF8");
+    }
+  }
+
+  private static boolean isAllAscii(String s) {
+    return CharMatcher.ascii().matchesAllOf(s);
+  }
+
+  private static boolean isAllAscii(Collection<String> strings) {
+    return strings.stream().allMatch(SmtpSession::isAllAscii);
   }
 
   private SendSequence beginSequence(Optional<SendInterceptor> sequenceInterceptor, int expectedResponses, Object... objects) {
@@ -703,10 +719,7 @@ public class SmtpSession {
 
   private void writeContent(MessageContent content) {
     write(content.getDotStuffedContent());
-
-    // SmtpRequestEncoder requires that we send an SmtpContent instance after the DATA command
-    // to unset its contentExpected state.
-    write(EMPTY_LAST_CONTENT);
+    write(DotCrlfBuffer.get());
   }
 
   private void write(Object obj) {
