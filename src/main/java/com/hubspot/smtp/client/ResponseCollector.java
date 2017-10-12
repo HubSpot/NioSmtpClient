@@ -51,6 +51,6 @@ class ResponseCollector {
   }
 
   void completeExceptionally(Throwable cause) {
-    future.completeExceptionally(cause);
+    future.completeExceptionally(new ResponseException(cause, getDebugString(), responses));
   }
 }

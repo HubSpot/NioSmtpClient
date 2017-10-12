@@ -2,13 +2,13 @@ package com.hubspot.smtp.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.*;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -44,7 +44,11 @@ public class ResponseHandlerTest {
     responseHandler.exceptionCaught(context, testException);
 
     assertThat(f.isCompletedExceptionally()).isTrue();
-    assertThatThrownBy(f::get).isInstanceOf(ExecutionException.class).hasCause(testException);
+
+    assertThat(catchThrowable(f::get).getCause())
+        .isInstanceOf(ResponseException.class)
+        .hasMessage("Received an exception while waiting for a response to [debug]; responses so far: <none>")
+        .hasCause(testException);
   }
 
   @Test
@@ -125,7 +129,11 @@ public class ResponseHandlerTest {
     responseHandler.exceptionCaught(context, testException);
 
     assertThat(f.isCompletedExceptionally()).isTrue();
-    assertThatThrownBy(f::get).isInstanceOf(ExecutionException.class).hasCause(testException);
+
+    assertThat(catchThrowable(f::get).getCause())
+        .isInstanceOf(ResponseException.class)
+        .hasMessage("Received an exception while waiting for a response to [debug]; responses so far: <none>")
+        .hasCause(testException);
   }
 
   @Test
@@ -169,9 +177,11 @@ public class ResponseHandlerTest {
     responseHandler.channelInactive(context);
 
     assertThat(f.isCompletedExceptionally()).isTrue();
-    assertThatThrownBy(f::get)
-        .hasCauseInstanceOf(ChannelClosedException.class)
-        .hasMessageEndingWith(CONNECTION_ID_PREFIX + "Handled channelInactive while waiting for a response to [" + DEBUG_STRING.get() + "]");
+
+    assertThat(catchThrowable(f::get).getCause())
+        .isInstanceOf(ResponseException.class)
+        .hasMessage("Received an exception while waiting for a response to [debug]; responses so far: <none>")
+        .hasCauseInstanceOf(ChannelClosedException.class);
   }
 
   @Test
