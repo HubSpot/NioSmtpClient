@@ -188,7 +188,7 @@
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#connectionTimeout-java.time.Duration-">connectionTimeout(Duration)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></dt>
 <dd>
-<div class="block">Initializes the value for the <code>connectionTimeout</code> attribute.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpClientResponse.html#containsError--">containsError()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpClientResponse.html" title="class in com.hubspot.smtp.client">SmtpClientResponse</a></dt>
 <dd>
@@ -298,7 +298,9 @@
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#getConnectionTimeout--">getConnectionTimeout()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
-<div class="block">The time to wait while connecting to a remote server.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>
+<div class="block"><span class="deprecationComment">use initialResponseTimeout instead, which applies to the combined time of connecting and receiving the initial response</span></div>
+</div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/messages/ByteBufMessageContent.html#getContent--">getContent()</a></span> - Method in class com.hubspot.smtp.messages.<a href="com/hubspot/smtp/messages/ByteBufMessageContent.html" title="class in com.hubspot.smtp.messages">ByteBufMessageContent</a></dt>
 <dd>&nbsp;</dd>
@@ -372,6 +374,12 @@
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#getInitialResponseReadTimeout--">getInitialResponseReadTimeout()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>
+<div class="block"><span class="deprecationComment">use getInitialResponseTimeout instead, which applies to the combined time of connecting and receiving the initial response</span></div>
+</div>
+</dd>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#getInitialResponseTimeout--">getInitialResponseTimeout()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
+<dd>
 <div class="block">The time to wait for the initial response from the server.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#getKeepAliveTimeout--">getKeepAliveTimeout()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
@@ -435,7 +443,7 @@
 <dl>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#hashCode--">hashCode()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
-<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>readTimeout</code>, <code>initialResponseReadTimeout</code>, <code>sendInterceptor</code>, <code>exceptionHandler</code>, <code>connectionTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>.</div>
+<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>readTimeout</code>, <code>initialResponseReadTimeout</code>, <code>initialResponseTimeout</code>, <code>sendInterceptor</code>, <code>exceptionHandler</code>, <code>connectionTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionFactoryConfig.html#hashCode--">hashCode()</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionFactoryConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionFactoryConfig</a></dt>
 <dd>
@@ -449,11 +457,15 @@
 <dl>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#initialResponseReadTimeout-java.time.Duration-">initialResponseReadTimeout(Duration)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></dt>
 <dd>
-<div class="block">Initializes the optional value <code>initialResponseReadTimeout</code> to initialResponseReadTimeout.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#initialResponseReadTimeout-java.util.Optional-">initialResponseReadTimeout(Optional&lt;Duration&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></dt>
 <dd>
-<div class="block">Initializes the optional value <code>initialResponseReadTimeout</code> to initialResponseReadTimeout.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+</dd>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html#initialResponseTimeout-java.time.Duration-">initialResponseTimeout(Duration)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.Builder.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig.Builder</a></dt>
+<dd>
+<div class="block">Initializes the value for the <code>initialResponseTimeout</code> attribute.</div>
 </dd>
 <dt><a href="com/hubspot/smtp/messages/InputStreamMessageContent.html" title="class in com.hubspot.smtp.messages"><span class="typeNameLink">InputStreamMessageContent</span></a> - Class in <a href="com/hubspot/smtp/messages/package-summary.html">com.hubspot.smtp.messages</a></dt>
 <dd>
@@ -838,7 +850,7 @@ the order they are declared.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withConnectionTimeout-java.time.Duration-">withConnectionTimeout(Duration)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
-<div class="block">Copy the current immutable object by setting a value for the <code>connectionTimeout</code> attribute.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withDisabledExtensions-java.util.EnumSet-">withDisabledExtensions(EnumSet&lt;Extension&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
@@ -862,11 +874,15 @@ the order they are declared.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withInitialResponseReadTimeout-java.time.Duration-">withInitialResponseReadTimeout(Duration)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
-<div class="block">Copy the current immutable object by setting a <i>present</i> value for the optional <code>initialResponseReadTimeout</code> attribute.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withInitialResponseReadTimeout-java.util.Optional-">withInitialResponseReadTimeout(Optional&lt;Duration&gt;)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>
-<div class="block">Copy the current immutable object by setting an optional value for the <code>initialResponseReadTimeout</code> attribute.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
+</dd>
+<dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withInitialResponseTimeout-java.time.Duration-">withInitialResponseTimeout(Duration)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
+<dd>
+<div class="block">Copy the current immutable object by setting a value for the <code>initialResponseTimeout</code> attribute.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="com/hubspot/smtp/client/SmtpSessionConfig.html#withKeepAliveTimeout-java.time.Duration-">withKeepAliveTimeout(Duration)</a></span> - Method in class com.hubspot.smtp.client.<a href="com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></dt>
 <dd>

@@ -18,8 +18,8 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":10,"i2":10,"i3":9,"i4":9,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10};
-var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
+var methods = {"i0":9,"i1":10,"i2":10,"i3":9,"i4":9,"i5":10,"i6":42,"i7":10,"i8":10,"i9":42,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":42,"i20":10,"i21":10,"i22":10,"i23":42,"i24":42,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10};
+var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"],32:["t6","Deprecated Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -152,7 +152,7 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Method Summary table, listing methods, and an explanation">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t1" class="tableTab"><span><a href="javascript:show(1);">Static Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t4" class="tableTab"><span><a href="javascript:show(8);">Concrete Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t6" class="tableTab"><span><a href="javascript:show(32);">Deprecated Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colLast" scope="col">Method and Description</th>
@@ -195,7 +195,9 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getConnectionTimeout--">getConnectionTimeout</a></span>()</code>
-<div class="block">The time to wait while connecting to a remote server.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
+<div class="block"><span class="deprecationComment">use initialResponseTimeout instead, which applies to the combined time of connecting and receiving the initial response</span></div>
+</div>
 </td>
 </tr>
 <tr id="i7" class="rowColor">
@@ -213,144 +215,158 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getInitialResponseReadTimeout--">getInitialResponseReadTimeout</a></span>()</code>
-<div class="block">The time to wait for the initial response from the server.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
+<div class="block"><span class="deprecationComment">use getInitialResponseTimeout instead, which applies to the combined time of connecting and receiving the initial response</span></div>
+</div>
 </td>
 </tr>
 <tr id="i10" class="altColor">
+<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getInitialResponseTimeout--">getInitialResponseTimeout</a></span>()</code>
+<div class="block">The time to wait for the initial response from the server.</div>
+</td>
+</tr>
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getKeepAliveTimeout--">getKeepAliveTimeout</a></span>()</code>
 <div class="block">The time to wait before sending a NOOP command to keep an
  otherwise idle connection alive.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getLocalAddress--">getLocalAddress</a></span>()</code>
 <div class="block">The local address and port to use when connecting to the remote server.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getReadTimeout--">getReadTimeout</a></span>()</code>
 <div class="block">The time to wait for a response from the server.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getRemoteAddress--">getRemoteAddress</a></span>()</code>
 <div class="block">The host and port of the remote server.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#getSendInterceptor--">getSendInterceptor</a></span>()</code>
 <div class="block">A <a href="../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client"><code>SendInterceptor</code></a> that can intercept commands and data before
  they are sent to the server.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#hashCode--">hashCode</a></span>()</code>
-<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>readTimeout</code>, <code>initialResponseReadTimeout</code>, <code>sendInterceptor</code>, <code>exceptionHandler</code>, <code>connectionTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>.</div>
+<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>readTimeout</code>, <code>initialResponseReadTimeout</code>, <code>initialResponseTimeout</code>, <code>sendInterceptor</code>, <code>exceptionHandler</code>, <code>connectionTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#toString--">toString</a></span>()</code>
 <div class="block">Prints the immutable value <code>SmtpSessionConfig</code> with attribute values.</div>
 </td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withConnectionId-java.lang.String-">withConnectionId</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;connectionId)</code>
 <div class="block">Copy the current immutable object by setting a value for the <code>connectionId</code> attribute.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withConnectionTimeout-java.time.Duration-">withConnectionTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;connectionTimeout)</code>
-<div class="block">Copy the current immutable object by setting a value for the <code>connectionTimeout</code> attribute.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withDisabledExtensions-java.util.EnumSet-">withDisabledExtensions</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../com/hubspot/smtp/client/Extension.html" title="enum in com.hubspot.smtp.client">Extension</a>&gt;&nbsp;disabledExtensions)</code>
 <div class="block">Copy the current immutable object by setting a value for the <code>disabledExtensions</code> attribute.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withExceptionHandler-java.util.function.Consumer-">withExceptionHandler</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Consumer.html?is-external=true" title="class or interface in java.util.function">Consumer</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang">Throwable</a>&gt;&nbsp;value)</code>
 <div class="block">Copy the current immutable object by setting a <i>present</i> value for the optional <code>exceptionHandler</code> attribute.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withExceptionHandler-java.util.Optional-">withExceptionHandler</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Consumer.html?is-external=true" title="class or interface in java.util.function">Consumer</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang">Throwable</a>&gt;&gt;&nbsp;optional)</code>
 <div class="block">Copy the current immutable object by setting an optional value for the <code>exceptionHandler</code> attribute.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
-<td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withInitialResponseReadTimeout-java.time.Duration-">withInitialResponseReadTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;value)</code>
-<div class="block">Copy the current immutable object by setting a <i>present</i> value for the optional <code>initialResponseReadTimeout</code> attribute.</div>
-</td>
-</tr>
 <tr id="i23" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withInitialResponseReadTimeout-java.util.Optional-">withInitialResponseReadTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;optional)</code>
-<div class="block">Copy the current immutable object by setting an optional value for the <code>initialResponseReadTimeout</code> attribute.</div>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withInitialResponseReadTimeout-java.time.Duration-">withInitialResponseReadTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;value)</code>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
 </td>
 </tr>
 <tr id="i24" class="altColor">
+<td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withInitialResponseReadTimeout-java.util.Optional-">withInitialResponseReadTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;optional)</code>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
+</td>
+</tr>
+<tr id="i25" class="rowColor">
+<td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withInitialResponseTimeout-java.time.Duration-">withInitialResponseTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;initialResponseTimeout)</code>
+<div class="block">Copy the current immutable object by setting a value for the <code>initialResponseTimeout</code> attribute.</div>
+</td>
+</tr>
+<tr id="i26" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withKeepAliveTimeout-java.time.Duration-">withKeepAliveTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;value)</code>
 <div class="block">Copy the current immutable object by setting a <i>present</i> value for the optional <code>keepAliveTimeout</code> attribute.</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withKeepAliveTimeout-java.util.Optional-">withKeepAliveTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;optional)</code>
 <div class="block">Copy the current immutable object by setting an optional value for the <code>keepAliveTimeout</code> attribute.</div>
 </td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withLocalAddress-java.net.InetSocketAddress-">withLocalAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&nbsp;value)</code>
 <div class="block">Copy the current immutable object by setting a <i>present</i> value for the optional <code>localAddress</code> attribute.</div>
 </td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withLocalAddress-java.util.Optional-">withLocalAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&gt;&nbsp;optional)</code>
 <div class="block">Copy the current immutable object by setting an optional value for the <code>localAddress</code> attribute.</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withReadTimeout-java.time.Duration-">withReadTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;value)</code>
 <div class="block">Copy the current immutable object by setting a <i>present</i> value for the optional <code>readTimeout</code> attribute.</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withReadTimeout-java.util.Optional-">withReadTimeout</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;optional)</code>
 <div class="block">Copy the current immutable object by setting an optional value for the <code>readTimeout</code> attribute.</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withRemoteAddress-java.net.InetSocketAddress-">withRemoteAddress</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/net/InetSocketAddress.html?is-external=true" title="class or interface in java.net">InetSocketAddress</a>&nbsp;remoteAddress)</code>
 <div class="block">Copy the current immutable object by setting a value for the <code>remoteAddress</code> attribute.</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withSendInterceptor-java.util.Optional-">withSendInterceptor</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&gt;&nbsp;optional)</code>
 <div class="block">Copy the current immutable object by setting an optional value for the <code>sendInterceptor</code> attribute.</div>
 </td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html#withSendInterceptor-com.hubspot.smtp.client.SendInterceptor-">withSendInterceptor</a></span>(<a href="../../../../com/hubspot/smtp/client/SendInterceptor.html" title="interface in com.hubspot.smtp.client">SendInterceptor</a>&nbsp;value)</code>
 <div class="block">Copy the current immutable object by setting a <i>present</i> value for the optional <code>sendInterceptor</code> attribute.</div>
@@ -425,8 +441,20 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <ul class="blockList">
 <li class="blockList">
 <h4>getInitialResponseReadTimeout</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;getInitialResponseReadTimeout()</pre>
+<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html?is-external=true" title="class or interface in java.lang">@Deprecated</a>
+public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;getInitialResponseReadTimeout()</pre>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;<span class="deprecationComment">use getInitialResponseTimeout instead, which applies to the combined time of connecting and receiving the initial response</span></div>
 <div class="block">The time to wait for the initial response from the server.</div>
+</li>
+</ul>
+<a name="getInitialResponseTimeout--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getInitialResponseTimeout</h4>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;getInitialResponseTimeout()</pre>
+<div class="block">The time to wait for the initial response from the server. This includes the connect time.</div>
 </li>
 </ul>
 <a name="getSendInterceptor--">
@@ -460,7 +488,9 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <ul class="blockList">
 <li class="blockList">
 <h4>getConnectionTimeout</h4>
-<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;getConnectionTimeout()</pre>
+<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html?is-external=true" title="class or interface in java.lang">@Deprecated</a>
+public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;getConnectionTimeout()</pre>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;<span class="deprecationComment">use initialResponseTimeout instead, which applies to the combined time of connecting and receiving the initial response</span></div>
 <div class="block">The time to wait while connecting to a remote server.</div>
 </li>
 </ul>
@@ -608,7 +638,9 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <ul class="blockList">
 <li class="blockList">
 <h4>withInitialResponseReadTimeout</h4>
-<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;withInitialResponseReadTimeout(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;value)</pre>
+<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html?is-external=true" title="class or interface in java.lang">@Deprecated</a>
+public final&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;withInitialResponseReadTimeout(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;value)</pre>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
 <div class="block">Copy the current immutable object by setting a <i>present</i> value for the optional <code>initialResponseReadTimeout</code> attribute.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -624,7 +656,9 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <ul class="blockList">
 <li class="blockList">
 <h4>withInitialResponseReadTimeout</h4>
-<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;withInitialResponseReadTimeout(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;optional)</pre>
+<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html?is-external=true" title="class or interface in java.lang">@Deprecated</a>
+public final&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;withInitialResponseReadTimeout(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&gt;&nbsp;optional)</pre>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
 <div class="block">Copy the current immutable object by setting an optional value for the <code>initialResponseReadTimeout</code> attribute.
  A shallow reference equality check is used on unboxed optional value to prevent copying of the same value by returning <code>this</code>.</div>
 <dl>
@@ -632,6 +666,23 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <dd><code>optional</code> - A value for initialResponseReadTimeout</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A modified copy of <code>this</code> object</dd>
+</dl>
+</li>
+</ul>
+<a name="withInitialResponseTimeout-java.time.Duration-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>withInitialResponseTimeout</h4>
+<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;withInitialResponseTimeout(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;initialResponseTimeout)</pre>
+<div class="block">Copy the current immutable object by setting a value for the <code>initialResponseTimeout</code> attribute.
+ A shallow reference equality check is used to prevent copying of the same value by returning <code>this</code>.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>initialResponseTimeout</code> - A new value for initialResponseTimeout</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A modified copy of the <code>this</code> object</dd>
 </dl>
 </li>
 </ul>
@@ -707,7 +758,9 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <ul class="blockList">
 <li class="blockList">
 <h4>withConnectionTimeout</h4>
-<pre>public final&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;withConnectionTimeout(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;connectionTimeout)</pre>
+<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html?is-external=true" title="class or interface in java.lang">@Deprecated</a>
+public final&nbsp;<a href="../../../../com/hubspot/smtp/client/SmtpSessionConfig.html" title="class in com.hubspot.smtp.client">SmtpSessionConfig</a>&nbsp;withConnectionTimeout(<a href="http://docs.oracle.com/javase/8/docs/api/java/time/Duration.html?is-external=true" title="class or interface in java.time">Duration</a>&nbsp;connectionTimeout)</pre>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
 <div class="block">Copy the current immutable object by setting a value for the <code>connectionTimeout</code> attribute.
  A shallow reference equality check is used to prevent copying of the same value by returning <code>this</code>.</div>
 <dl>
@@ -776,7 +829,7 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <li class="blockList">
 <h4>hashCode</h4>
 <pre>public&nbsp;int&nbsp;hashCode()</pre>
-<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>readTimeout</code>, <code>initialResponseReadTimeout</code>, <code>sendInterceptor</code>, <code>exceptionHandler</code>, <code>connectionTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>.</div>
+<div class="block">Computes a hash code from attributes: <code>remoteAddress</code>, <code>localAddress</code>, <code>keepAliveTimeout</code>, <code>readTimeout</code>, <code>initialResponseReadTimeout</code>, <code>initialResponseTimeout</code>, <code>sendInterceptor</code>, <code>exceptionHandler</code>, <code>connectionTimeout</code>, <code>disabledExtensions</code>, <code>connectionId</code>.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a></code>&nbsp;in class&nbsp;<code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></dd>
