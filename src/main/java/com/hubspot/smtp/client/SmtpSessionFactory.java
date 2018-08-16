@@ -3,6 +3,7 @@ package com.hubspot.smtp.client;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
@@ -46,13 +47,13 @@ public class SmtpSessionFactory implements Closeable  {
    */
   public CompletableFuture<SmtpClientResponse> connect(SmtpSessionConfig config) {
     ResponseHandler responseHandler = new ResponseHandler(config.getConnectionId(), config.getReadTimeout(), config.getExceptionHandler());
-    CompletableFuture<List<SmtpResponse>> initialResponseFuture = responseHandler.createResponseFuture(1, config.getInitialResponseReadTimeout(), () -> "initial response");
+    CompletableFuture<List<SmtpResponse>> initialResponseFuture = responseHandler.createResponseFuture(1, Optional.of(config.getInitialResponseTimeout()), () -> "initial response");
 
     Bootstrap bootstrap = new Bootstrap()
         .group(factoryConfig.getEventLoopGroup())
         .channel(factoryConfig.getChannelClass())
         .option(ChannelOption.ALLOCATOR, factoryConfig.getAllocator())
-        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) config.getConnectionTimeout().toMillis())
+        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) config.getInitialResponseTimeout().toMillis())
         .remoteAddress(config.getRemoteAddress())
         .localAddress(config.getLocalAddress().orElse(null))
         .handler(new Initializer(responseHandler, config));

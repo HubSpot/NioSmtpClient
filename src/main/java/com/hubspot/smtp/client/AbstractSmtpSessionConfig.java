@@ -43,8 +43,19 @@ abstract class AbstractSmtpSessionConfig {
 
   /**
    * The time to wait for the initial response from the server.
+   *
+   * @deprecated use getInitialResponseTimeout instead, which applies to the combined time of connecting and receiving the initial response
    */
+  @Deprecated
   public abstract Optional<Duration> getInitialResponseReadTimeout();
+
+  /**
+   * The time to wait for the initial response from the server. This includes the connect time.
+   */
+  @Default
+  public Duration getInitialResponseTimeout() {
+    return getInitialResponseReadTimeout().orElse(Duration.ofMinutes(1));
+  }
 
   /**
    * A {@link SendInterceptor} that can intercept commands and data before
@@ -64,8 +75,11 @@ abstract class AbstractSmtpSessionConfig {
 
   /**
    * The time to wait while connecting to a remote server.
+   *
+   * @deprecated use initialResponseTimeout instead, which applies to the combined time of connecting and receiving the initial response
    */
   @Default
+  @Deprecated
   public Duration getConnectionTimeout() {
     return Duration.ofMinutes(2);
   }
