@@ -114,11 +114,11 @@ public class SmtpSessionTest {
     when(channel.pipeline()).thenReturn(pipeline);
     when(channel.alloc()).thenReturn(new PooledByteBufAllocator(false));
     when(channel.write(any())).thenAnswer(answer -> {
-      objectsToRelease.add(answer.getArgumentAt(0, Object.class));
+      objectsToRelease.add(answer.getArgument(0));
       return writeFuture;
     });
     when(channel.writeAndFlush(any())).thenAnswer(answer -> {
-      objectsToRelease.add(answer.getArgumentAt(0, Object.class));
+      objectsToRelease.add(answer.getArgument(0));
       return writeFuture;
     });
 

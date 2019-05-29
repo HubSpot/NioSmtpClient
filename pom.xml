@@ -1,42 +1,19 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>com.hubspot</groupId>
     <artifactId>basepom</artifactId>
-    <version>15.8</version>
+    <version>25.3</version>
   </parent>
 
   <artifactId>NioSmtpClient</artifactId>
   <version>1.1.0-SNAPSHOT</version>
 
-  <scm>
-    <connection>scm:git:git@github.com:HubSpot/NioSmtpClient.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/HubSpot/NioSmtpClient.git</developerConnection>
-    <url>git@github.com:HubSpot/NioSmtpClient.git</url>
-    <tag>HEAD</tag>
-  </scm>
-
-  <developers>
-    <developer>
-      <name>Michael O'Brien</name>
-      <email>mobrien@hubspot.com</email>
-    </developer>
-  </developers>
-
-  <licenses>
-    <license>
-      <name>Apache License, Version 2.0</name>
-      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-
   <properties>
-    <project.build.targetJdk>1.8</project.build.targetJdk>
-    <hubspot.immutables.version>2.2.10</hubspot.immutables.version>
-    <netty41.version>4.1.8.Final</netty41.version>
+    <dep.mockito.version>2.23.4</dep.mockito.version>
+    <dep.objenesis.version>2.6</dep.objenesis.version>
     <james.protocols.version>1.6.3</james.protocols.version>
     <james.netty.version>3.3.1.Final</james.netty.version>
   </properties>
@@ -45,38 +22,8 @@
     <dependencies>
       <dependency>
         <groupId>io.netty</groupId>
-        <artifactId>netty-buffer</artifactId>
-        <version>${netty41.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-transport</artifactId>
-        <version>${netty41.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-common</artifactId>
-        <version>${netty41.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
         <artifactId>netty-codec-smtp</artifactId>
-        <version>${netty41.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-codec</artifactId>
-        <version>${netty41.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-handler</artifactId>
-        <version>${netty41.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.immutables</groupId>
-        <artifactId>value</artifactId>
-        <version>${hubspot.immutables.version}</version>
+        <version>${dep.netty.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.james.protocols</groupId>
@@ -97,6 +44,11 @@
         <groupId>io.netty</groupId>
         <artifactId>netty</artifactId>
         <version>${james.netty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_annotations</artifactId>
+        <version>2.0.18</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -141,6 +93,10 @@
       <groupId>org.immutables</groupId>
       <artifactId>value</artifactId>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.errorprone</groupId>
+      <artifactId>error_prone_annotations</artifactId>
     </dependency>
 
     <!-- test dependencies -->
@@ -199,24 +155,17 @@
     <pluginManagement>
       <plugins>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <dependencies>
-            <dependency>
-              <groupId>org.slf4j</groupId>
-              <artifactId>slf4j-jdk14</artifactId>
-              <version>1.7.5</version>
-            </dependency>
-            <dependency>
-              <groupId>org.slf4j</groupId>
-              <artifactId>jcl-over-slf4j</artifactId>
-              <version>1.7.5</version>
-            </dependency>
-          </dependencies>
+          <groupId>org.basepom.maven</groupId>
+          <artifactId>duplicate-finder-maven-plugin</artifactId>
+          <configuration>
+            <ignoredClassPatterns>
+              <!-- Can remove once https://github.com/basepom/duplicate-finder-maven-plugin/issues/33 is fixed -->
+              <ignoredClassPattern>^META-INF.versions.9.module-info$</ignoredClassPattern>
+            </ignoredClassPatterns>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
-    
     <plugins>
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -226,10 +175,10 @@
         <executions>
           <execution>
             <id>attach-docs</id>
-            <phase>compile</phase>
             <goals>
               <goal>jar</goal>
             </goals>
+            <phase>compile</phase>
           </execution>
         </executions>
       </plugin>
@@ -249,6 +198,28 @@
     </plugins>
   </reporting>
 
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Michael O'Brien</name>
+      <email>mobrien@hubspot.com</email>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git@github.com:HubSpot/NioSmtpClient.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/HubSpot/NioSmtpClient.git</developerConnection>
+    <url>git@github.com:HubSpot/NioSmtpClient.git</url>
+    <tag>HEAD</tag>
+  </scm>
+
   <profiles>
     <profile>
       <id>publish-docs</id>
@@ -260,15 +231,14 @@
       </activation>
       <build>
         <pluginManagement>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>1.5.0</version>
-          </plugin>
-        </plugins>
+          <plugins>
+            <plugin>
+              <groupId>org.codehaus.mojo</groupId>
+              <artifactId>exec-maven-plugin</artifactId>
+              <version>1.5.0</version>
+            </plugin>
+          </plugins>
         </pluginManagement>
-
         <plugins>
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
