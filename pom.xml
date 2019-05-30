@@ -5,15 +5,13 @@
   <parent>
     <groupId>com.hubspot</groupId>
     <artifactId>basepom</artifactId>
-    <version>25.3</version>
+    <version>25.4</version>
   </parent>
 
   <artifactId>NioSmtpClient</artifactId>
   <version>1.1.0-SNAPSHOT</version>
 
   <properties>
-    <dep.mockito.version>2.23.4</dep.mockito.version>
-    <dep.objenesis.version>2.6</dep.objenesis.version>
     <james.protocols.version>1.6.3</james.protocols.version>
     <james.netty.version>3.3.1.Final</james.netty.version>
   </properties>
@@ -152,20 +150,6 @@
   </dependencies>
 
   <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.basepom.maven</groupId>
-          <artifactId>duplicate-finder-maven-plugin</artifactId>
-          <configuration>
-            <ignoredClassPatterns>
-              <!-- Can remove once https://github.com/basepom/duplicate-finder-maven-plugin/issues/33 is fixed -->
-              <ignoredClassPattern>^META-INF.versions.9.module-info$</ignoredClassPattern>
-            </ignoredClassPatterns>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
     <plugins>
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
