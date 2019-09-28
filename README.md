@@ -3,6 +3,16 @@ NioSmtpClient [![Build Status](https://travis-ci.org/HubSpot/NioSmtpClient.svg?b
 
 High performance SMTP client in Java based on [Netty](https://netty.io/). This client is well tested and heavily used at HubSpot.
 
+### Maven Dependency
+
+```xml
+<dependency>
+  <groupId>com.hubspot</groupId>
+  <artifactId>NioSmtpClient</artifactId>
+  <version>1.1.0</version>
+</dependency>
+```
+
 ### Features
 
 - High performance, designed to handle many concurrent connections
