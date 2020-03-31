@@ -149,39 +149,6 @@
     </dependency>
   </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <configuration>
-          <notimestamp>true</notimestamp>
-        </configuration>
-        <executions>
-          <execution>
-            <id>attach-docs</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <phase>compile</phase>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <configuration>
-          <stylesheetfile>${basedir}/src/main/javadoc/stylesheet.css</stylesheetfile>
-          <show>public</show>
-        </configuration>
-      </plugin>
-    </plugins>
-  </reporting>
-
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>
@@ -203,48 +170,5 @@
     <url>git@github.com:HubSpot/NioSmtpClient.git</url>
     <tag>HEAD</tag>
   </scm>
-
-  <profiles>
-    <profile>
-      <id>publish-docs</id>
-      <activation>
-        <property>
-          <name>env.BLAZAR_COORDINATES</name>
-          <value>github.com-HubSpot-NioSmtpClient-master-NioSmtpClient</value>
-        </property>
-      </activation>
-      <build>
-        <pluginManagement>
-          <plugins>
-            <plugin>
-              <groupId>org.codehaus.mojo</groupId>
-              <artifactId>exec-maven-plugin</artifactId>
-              <version>1.5.0</version>
-            </plugin>
-          </plugins>
-        </pluginManagement>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <configuration>
-              <executable>${env.WORKSPACE}/deploy-docs.sh</executable>
-              <environmentVariables>
-                <PROJECT_VERSION>${project.version}</PROJECT_VERSION>
-              </environmentVariables>
-            </configuration>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <phase>deploy</phase>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
 </project>
