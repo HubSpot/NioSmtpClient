@@ -20,7 +20,7 @@ import com.google.common.primitives.Longs;
 public class EhloResponse {
   static final EhloResponse EMPTY = EhloResponse.parse("", Collections.emptyList());
 
-  private static final Splitter WHITESPACE_SPLITTER = Splitter.on(CharMatcher.WHITESPACE);
+  private static final Splitter WHITESPACE_SPLITTER = Splitter.on(CharMatcher.whitespace());
 
   private final String ehloDomain;
   private final ImmutableSet<String> supportedExtensions;
