@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.hubspot</groupId>
     <artifactId>basepom</artifactId>
-    <version>25.4</version>
+    <version>25.7</version>
   </parent>
 
   <artifactId>NioSmtpClient</artifactId>
