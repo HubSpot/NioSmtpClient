@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>NioSmtpClient</artifactId>
-  <version>1.1.1-SNAPSHOT</version>
+  <version>1.1.1</version>
 
   <properties>
     <james.protocols.version>1.6.3</james.protocols.version>
@@ -183,7 +183,7 @@
     <connection>scm:git:git@github.com:HubSpot/NioSmtpClient.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/HubSpot/NioSmtpClient.git</developerConnection>
     <url>git@github.com:HubSpot/NioSmtpClient.git</url>
-    <tag>HEAD</tag>
+    <tag>NioSmtpClient-1.1.1</tag>
   </scm>
 
 </project>
