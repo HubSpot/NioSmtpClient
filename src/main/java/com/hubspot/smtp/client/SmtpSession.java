@@ -99,6 +99,8 @@ public class SmtpSession {
   private volatile boolean requiresRset = false;
   private volatile EhloResponse ehloResponse = EhloResponse.EMPTY;
 
+  private List<String> localExtensionsList;
+
   SmtpSession(Channel channel, ResponseHandler responseHandler, SmtpSessionConfig config, Executor executor, Supplier<SSLEngine> sslEngineSupplier) {
     this.channel = channel;
     this.responseHandler = responseHandler;
@@ -241,6 +243,18 @@ public class SmtpSession {
   /**
    * Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.
    *
+   * This method behaves as {@link SmtpSession#send(String, Collection, MessageContent, SendInterceptor)} but
+   * does not use a {@link SendInterceptor} and has the capability to accept local mail extensions that can be sent along
+   * with mail from command according to RFC 5321. All these local extensions must start with X.
+   */
+  public CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content, List<String> localExtensionsList) {
+    this.localExtensionsList = localExtensionsList;
+    return send(from, recipients, content, Optional.empty());
+  }
+
+  /**
+   * Sends an email as efficiently as possible, using the extended SMTP features supported by the remote server.
+   *
    * <p>This method sends multiple commands to the remote server, and may use pipelining and other features
    * if supported. If any command receives an error response (i.e. with {@code code >= 400}),
    * the sequence of commands is aborted.
@@ -306,20 +320,11 @@ public class SmtpSession {
       return sendAsChunked(from, recipients, content, sequenceInterceptor);
     }
 
-    if (content.getEncoding() == MessageContentEncoding.SEVEN_BIT) {
-      return sendAs7Bit(from, recipients, content, sequenceInterceptor);
+    if (content.getEncoding() != MessageContentEncoding.SEVEN_BIT && !ehloResponse.isSupported(Extension.EIGHT_BIT_MIME)) {
+      content = encodeContentAs7Bit(content);
     }
 
-    if (ehloResponse.isSupported(Extension.EIGHT_BIT_MIME)) {
-      return sendAs8BitMime(from, recipients, content, sequenceInterceptor);
-    }
-
-    if (content.get8bitCharacterProportion() == 0) {
-      return sendAs7Bit(from, recipients, content, sequenceInterceptor);
-    }
-
-    // this message is not 7 bit, but the server only supports 7 bit :(
-    return sendAs7Bit(from, recipients, encodeContentAs7Bit(content), sequenceInterceptor);
+    return sendMessage(from, recipients, content, sequenceInterceptor);
   }
 
   private CompletableFuture<SmtpClientResponse> sendAsChunked(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
@@ -379,16 +384,10 @@ public class SmtpSession {
     };
   }
 
-  private CompletableFuture<SmtpClientResponse> sendAs7Bit(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
+  private CompletableFuture<SmtpClientResponse> sendMessage(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
     return sendPipelinedIfPossible(mailCommand(from, recipients), recipients, SmtpRequests.data(), sequenceInterceptor)
-        .thenSend(content.getDotStuffedContent(), DotCrlfBuffer.get())
-        .toResponses();
-  }
-
-  private CompletableFuture<SmtpClientResponse> sendAs8BitMime(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
-    return sendPipelinedIfPossible(mailCommandWith8BitMime(from, recipients), recipients, SmtpRequests.data(), sequenceInterceptor)
-        .thenSend(content.getDotStuffedContent(), DotCrlfBuffer.get())
-        .toResponses();
+            .thenSend(content.getDotStuffedContent(), DotCrlfBuffer.get())
+            .toResponses();
   }
 
   private SendSequence sendPipelinedIfPossible(SmtpRequest mailRequest, Collection<String> recipients, SmtpRequest dataRequest, Optional<SendInterceptor> sequenceInterceptor) {
@@ -414,20 +413,18 @@ public class SmtpSession {
     return recipients.stream().map(SmtpRequests::rcpt).collect(Collectors.toList());
   }
 
-  private SmtpRequest mailCommand(String from, Collection<String> recipients) {
-    if (!ehloResponse.isSupported(Extension.SMTPUTF8) || (isAllAscii(from) && isAllAscii(recipients))) {
-      return SmtpRequests.mail(from);
-    } else {
-      return SmtpRequests.mail(from, "SMTPUTF8");
+  private SmtpRequest mailCommand(String from, Collection<String> recipients){
+    if(localExtensionsList == null){
+      localExtensionsList = new ArrayList<>();
     }
-  }
+    if (ehloResponse.isSupported(Extension.EIGHT_BIT_MIME)) {
+      localExtensionsList.add("BODY=8BITMIME");
+    }
+    if (ehloResponse.isSupported(Extension.SMTPUTF8) && !(isAllAscii(from) && isAllAscii(recipients))) {
+      localExtensionsList.add("SMTPUTF8");
+    }
 
-  private SmtpRequest mailCommandWith8BitMime(String from, Collection<String> recipients) {
-    if (!ehloResponse.isSupported(Extension.SMTPUTF8) || (isAllAscii(from) && isAllAscii(recipients))) {
-      return SmtpRequests.mail(from, "BODY=8BITMIME");
-    } else {
-      return SmtpRequests.mail(from, "BODY=8BITMIME", "SMTPUTF8");
-    }
+    return SmtpRequests.mail(from, localExtensionsList.toArray(new String[0]));
   }
 
   private static boolean isAllAscii(String s) {

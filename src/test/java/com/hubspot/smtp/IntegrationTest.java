@@ -15,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -362,6 +363,41 @@ public class IntegrationTest {
     CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
 
     assertThat(receivedMails.size()).isEqualTo(200);
+  }
+
+  @Test
+  public void itCanSendAnEmailWithLocalExtensions() throws Exception {
+
+    List<String> localExtensionsList = new ArrayList<>();
+    localExtensionsList.add("XCustomExtension1=SomeValue1");
+    localExtensionsList.add("XCustomExtension2=SomeValue2");
+
+    List<CompletableFuture<Void>> futures = Lists.newArrayList();
+
+    Executor executor = Executors.newFixedThreadPool(50);
+    SmtpSessionFactory factory = new SmtpSessionFactory(SmtpSessionFactoryConfig.nonProductionConfig().withExecutor(executor));
+
+    // Avoiding chunking because it hangs with chunking
+    SmtpSessionConfig pipeliningConfig = getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.CHUNKING));
+
+    factory.connect(pipeliningConfig)
+            .thenCompose(r -> assertSuccess(r).send(req(EHLO, "hubspot.com")))
+            .thenCompose(r -> assertSuccess(r).send(
+                    RETURN_PATH,
+                    Lists.newArrayList("a@example.com", "b@example.com"),
+                    createMessageContent(),
+                    localExtensionsList))
+            .thenCompose(r -> assertSuccess(r).send(req(QUIT)))
+            .thenCompose(r -> assertSuccess(r).close())
+            .get();
+
+    assertThat(receivedMails.size()).isEqualTo(1);
+    MailEnvelope mail = receivedMails.get(0);
+
+    assertThat(mail.getSender().toString()).isEqualTo(RETURN_PATH);
+    assertThat(mail.getRecipients().get(0).toString()).isEqualTo("a@example.com");
+    assertThat(mail.getRecipients().get(1).toString()).isEqualTo("b@example.com");
+    assertThat(readContents(mail)).contains(MESSAGE_DATA);
   }
 
   @Test
