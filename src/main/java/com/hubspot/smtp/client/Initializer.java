@@ -22,6 +22,7 @@ class Initializer extends ChannelInitializer<SocketChannel> {
   @Override
   protected void initChannel(SocketChannel socketChannel) throws Exception {
     socketChannel.pipeline().addLast(getChannelHandlers());
+    socketChannel.pipeline().addLast(config.getCustomHandlers());
   }
 
   private ChannelHandler[] getChannelHandlers() {
