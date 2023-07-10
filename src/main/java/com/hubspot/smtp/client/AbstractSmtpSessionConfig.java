@@ -14,6 +14,8 @@ import org.immutables.value.Value.Style.ImplementationVisibility;
 
 import com.google.common.base.Preconditions;
 
+import io.netty.channel.ChannelHandler;
+
 /**
  * Configures a connection to a remote SMTP server.
  */
@@ -101,6 +103,11 @@ abstract class AbstractSmtpSessionConfig {
   @Default
   public String getConnectionId() {
     return "unidentified-connection";
+  }
+
+  @Default
+  public ChannelHandler[] getCustomHandlers() {
+    return new ChannelHandler[]{};
   }
 
   @Check
