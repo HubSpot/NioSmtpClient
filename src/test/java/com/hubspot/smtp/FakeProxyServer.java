@@ -7,7 +7,11 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class FakeProxyServer {
+  private static final Logger LOG = LoggerFactory.getLogger(FakeProxyServer.class);
 
   private final ServerSocket proxySocket;
   private final  String proxyHost;
@@ -20,7 +24,7 @@ public class FakeProxyServer {
     this.proxySocket = new ServerSocket(port);
     this.proxyHost = proxyHost;
     this.remotePort = remotePort;
-    new Thread(() -> run()).start();
+    new Thread(this::run).start();
   }
 
   public void close() {
@@ -54,23 +58,23 @@ public class FakeProxyServer {
         outputStreamClient.write("\u0000Z�\u001D  ".getBytes());
         outputStreamClient.flush();
 
-        Thread workerThread = new Thread() {
-          public void run() {
-            int bytesRead;
-            try {
-              while ((bytesRead = inputStreamClient.read(request)) != -1) {
-                outputStreamServer.write(request, 0, bytesRead);
-                outputStreamServer.flush();
-              }
-            } catch (IOException e) {
+        Thread workerThread = new Thread(() -> {
+          int bytesRead;
+          try {
+            while ((bytesRead = inputStreamClient.read(request)) != -1) {
+              outputStreamServer.write(request, 0, bytesRead);
+              outputStreamServer.flush();
             }
-
-            try {
-              outputStreamServer.close();
-            } catch (IOException e) {
-            }
+          } catch (IOException e) {
+            LOG.warn("Error reading from client socket", e);
           }
-        };
+
+          try {
+            outputStreamServer.close();
+          } catch (IOException e) {
+            LOG.warn("Error closing server socket", e);
+          }
+        });
 
         workerThread.start();
 
@@ -81,18 +85,22 @@ public class FakeProxyServer {
             outputStreamClient.flush();
           }
         } catch (IOException e) {
+          LOG.warn("Error reading from server socket", e);
         }
         
         outputStreamClient.close();
       } catch (IOException e) {
-        System.err.println(e);
+        LOG.warn("Error accepting client socket", e);
       } finally {
         try {
-          if (serverSocket != null)
+          if (serverSocket != null) {
             serverSocket.close();
-          if (clientSocket != null)
+          }
+          if (clientSocket != null) {
             clientSocket.close();
+          }
         } catch (IOException e) {
+          LOG.warn("Error closing sockets", e);
         }
       }
     }
