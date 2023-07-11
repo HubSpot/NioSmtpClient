@@ -59,6 +59,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpRequest;
+import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
@@ -74,7 +75,6 @@ public class IntegrationTest {
       "Hello!\r\n";
 
   private static final NioEventLoopGroup EVENT_LOOP_GROUP = new NioEventLoopGroup();
-
   private InetSocketAddress serverAddress;
   private NettyServer smtpServer;
   private SmtpSessionFactory sessionFactory;
@@ -224,6 +224,21 @@ public class IntegrationTest {
   public void itCanSendAnEmailUsingTheFacadeUsing7Bit() throws Exception {
     assertCanSendWithFacade(getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.CHUNKING, Extension.EIGHT_BIT_MIME)));
     assertCanSendWithFacade(getDefaultConfig().withDisabledExtensions(EnumSet.of(Extension.CHUNKING, Extension.EIGHT_BIT_MIME, Extension.PIPELINING)));
+  }
+
+  @Test
+  public void itCanConnectUsingSocksProxy() throws Exception {
+    int proxyPort = getFreePort();
+    FakeProxyServer fakeProxyServer = new FakeProxyServer(proxyPort, serverAddress.getHostName(), serverAddress.getPort());
+
+    connect(getDefaultConfig()
+        .withAddFirstCustomHandlers(
+            new Socks4ProxyHandler(
+                new InetSocketAddress(proxyPort))))
+        .thenCompose(r -> assertSuccess(r).close())
+        .get();
+
+    fakeProxyServer.close();
   }
 
   private void assertCanSendWithFacade(SmtpSessionConfig config) throws Exception {

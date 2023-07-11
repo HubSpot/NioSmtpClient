@@ -24,6 +24,11 @@
         <version>${dep.netty.version}</version>
       </dependency>
       <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-handler-proxy</artifactId>
+        <version>${dep.netty.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.apache.james.protocols</groupId>
         <artifactId>protocols-api</artifactId>
         <version>${james.protocols.version}</version>
@@ -140,6 +145,11 @@
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-handler-proxy</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
