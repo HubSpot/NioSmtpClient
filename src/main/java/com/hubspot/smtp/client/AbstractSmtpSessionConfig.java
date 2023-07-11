@@ -106,7 +106,7 @@ abstract class AbstractSmtpSessionConfig {
   }
 
   @Default
-  public ChannelHandler[] getCustomHandlers() {
+  public ChannelHandler[] getAddFirstCustomHandlers() {
     return new ChannelHandler[]{};
   }
 
