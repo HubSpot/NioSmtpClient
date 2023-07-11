@@ -59,7 +59,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpRequest;
-import io.netty.handler.proxy.Socks5ProxyHandler;
+import io.netty.handler.proxy.Socks4ProxyHandler;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
@@ -233,7 +233,7 @@ public class IntegrationTest {
 
     connect(getDefaultConfig()
         .withAddFirstCustomHandlers(
-            new Socks5ProxyHandler(
+            new Socks4ProxyHandler(
                 new InetSocketAddress(proxyPort))))
         .thenCompose(r -> assertSuccess(r).close())
         .get();
