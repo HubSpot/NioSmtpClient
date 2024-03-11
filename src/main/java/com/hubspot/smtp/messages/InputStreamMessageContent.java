@@ -2,6 +2,7 @@ package com.hubspot.smtp.messages;
 
 import com.google.common.io.ByteSource;
 import com.google.common.io.CharStreams;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import java.io.IOException;
@@ -14,7 +15,6 @@ import java.util.function.Supplier;
 
 /**
  * A {@link MessageContent} implementation backed by an {@code InputStream}.
- *
  */
 public class InputStreamMessageContent extends MessageContent {
 
@@ -39,6 +39,7 @@ public class InputStreamMessageContent extends MessageContent {
     this.encoding = encoding;
   }
 
+  @SuppressFBWarnings("CT_CONSTRUCTOR_THROW")
   public InputStreamMessageContent(
     ByteSource byteSource,
     OptionalInt size,
