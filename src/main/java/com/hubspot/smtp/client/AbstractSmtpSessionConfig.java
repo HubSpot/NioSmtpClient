@@ -1,20 +1,17 @@
 package com.hubspot.smtp.client;
 
+import com.google.common.base.Preconditions;
+import io.netty.channel.ChannelHandler;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.function.Consumer;
-
 import org.immutables.value.Value.Check;
 import org.immutables.value.Value.Default;
 import org.immutables.value.Value.Immutable;
 import org.immutables.value.Value.Style;
 import org.immutables.value.Value.Style.ImplementationVisibility;
-
-import com.google.common.base.Preconditions;
-
-import io.netty.channel.ChannelHandler;
 
 /**
  * Configures a connection to a remote SMTP server.
@@ -22,6 +19,7 @@ import io.netty.channel.ChannelHandler;
 @Immutable
 @Style(typeImmutable = "*", visibility = ImplementationVisibility.PUBLIC)
 abstract class AbstractSmtpSessionConfig {
+
   /**
    * The host and port of the remote server.
    */
@@ -107,13 +105,15 @@ abstract class AbstractSmtpSessionConfig {
 
   @Default
   public ChannelHandler[] getAddFirstCustomHandlers() {
-    return new ChannelHandler[]{};
+    return new ChannelHandler[] {};
   }
 
   @Check
   protected void check() {
-    Preconditions.checkState(!getKeepAliveTimeout().orElse(Duration.ofSeconds(1)).isZero(),
-        "keepAliveTimeout must not be zero; use Optional.empty() to disable keepalive");
+    Preconditions.checkState(
+      !getKeepAliveTimeout().orElse(Duration.ofSeconds(1)).isZero(),
+      "keepAliveTimeout must not be zero; use Optional.empty() to disable keepalive"
+    );
   }
 
   /**

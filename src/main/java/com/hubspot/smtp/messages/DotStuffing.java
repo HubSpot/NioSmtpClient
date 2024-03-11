@@ -7,14 +7,19 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.ByteProcessor;
 
 final class DotStuffing {
+
   private static final byte CR = '\r';
   private static final byte LF = '\n';
   private static final byte DOT = '.';
-  private static final byte[] DOT_DOT = {DOT, DOT};
-  private static final byte[] NOT_CR_LF = {'x', 'x'};
-  private static final byte[] CR_LF = {CR, LF};
-  private static final ByteBuf DOT_DOT_BUFFER = Unpooled.unreleasableBuffer(Unpooled.wrappedBuffer(DOT_DOT));
-  private static final ByteBuf CR_LF_BUFFER = Unpooled.unreleasableBuffer(Unpooled.wrappedBuffer(CR_LF));
+  private static final byte[] DOT_DOT = { DOT, DOT };
+  private static final byte[] NOT_CR_LF = { 'x', 'x' };
+  private static final byte[] CR_LF = { CR, LF };
+  private static final ByteBuf DOT_DOT_BUFFER = Unpooled.unreleasableBuffer(
+    Unpooled.wrappedBuffer(DOT_DOT)
+  );
+  private static final ByteBuf CR_LF_BUFFER = Unpooled.unreleasableBuffer(
+    Unpooled.wrappedBuffer(CR_LF)
+  );
 
   private DotStuffing() {
     throw new AssertionError("Cannot create static utility class");
@@ -38,13 +43,24 @@ final class DotStuffing {
    * @param previousBytes the previous two bytes of the message, or null
    * @param termination whether to append CRLF to the end of the returned buffer
    */
-  public static ByteBuf createDotStuffedBuffer(ByteBufAllocator allocator, ByteBuf sourceBuffer, byte[] previousBytes, MessageTermination termination) {
-    int dotIndex = findDotAtBeginningOfLine(sourceBuffer, 0, normalisePreviousBytes(previousBytes));
+  public static ByteBuf createDotStuffedBuffer(
+    ByteBufAllocator allocator,
+    ByteBuf sourceBuffer,
+    byte[] previousBytes,
+    MessageTermination termination
+  ) {
+    int dotIndex = findDotAtBeginningOfLine(
+      sourceBuffer,
+      0,
+      normalisePreviousBytes(previousBytes)
+    );
 
     try {
       if (dotIndex == -1) {
         if (termination == MessageTermination.ADD_CRLF) {
-          return allocator.compositeBuffer(2).addComponents(true, sourceBuffer.retainedSlice(), CR_LF_BUFFER.slice());
+          return allocator
+            .compositeBuffer(2)
+            .addComponents(true, sourceBuffer.retainedSlice(), CR_LF_BUFFER.slice());
         } else {
           return sourceBuffer.retainedSlice();
         }
@@ -52,15 +68,34 @@ final class DotStuffing {
 
       // Build a CompositeByteBuf to avoid copying
       CompositeByteBuf compositeByteBuf = allocator.compositeBuffer();
-      compositeByteBuf.addComponents(true, sourceBuffer.retainedSlice(0, dotIndex), DOT_DOT_BUFFER.slice());
+      compositeByteBuf.addComponents(
+        true,
+        sourceBuffer.retainedSlice(0, dotIndex),
+        DOT_DOT_BUFFER.slice()
+      );
 
       int nextDotIndex;
-      while ((nextDotIndex = findDotAtBeginningOfLine(sourceBuffer, dotIndex + 1, NOT_CR_LF)) != -1) {
-        compositeByteBuf.addComponents(true, sourceBuffer.retainedSlice(dotIndex + 1, nextDotIndex - dotIndex - 1), DOT_DOT_BUFFER.slice());
+      while (
+        (
+          nextDotIndex = findDotAtBeginningOfLine(sourceBuffer, dotIndex + 1, NOT_CR_LF)
+        ) !=
+        -1
+      ) {
+        compositeByteBuf.addComponents(
+          true,
+          sourceBuffer.retainedSlice(dotIndex + 1, nextDotIndex - dotIndex - 1),
+          DOT_DOT_BUFFER.slice()
+        );
         dotIndex = nextDotIndex;
       }
 
-      compositeByteBuf.addComponent(true, sourceBuffer.retainedSlice(dotIndex + 1, sourceBuffer.readableBytes() - dotIndex - 1));
+      compositeByteBuf.addComponent(
+        true,
+        sourceBuffer.retainedSlice(
+          dotIndex + 1,
+          sourceBuffer.readableBytes() - dotIndex - 1
+        )
+      );
 
       if (termination == MessageTermination.ADD_CRLF) {
         compositeByteBuf.addComponent(true, CR_LF_BUFFER.slice());
@@ -80,19 +115,33 @@ final class DotStuffing {
       return new byte[] { 'x', previousBytes[0] };
     }
     if (previousBytes.length > 2) {
-      return new byte[] { previousBytes[previousBytes.length - 2], previousBytes[previousBytes.length - 1] };
+      return new byte[] {
+        previousBytes[previousBytes.length - 2],
+        previousBytes[previousBytes.length - 1],
+      };
     }
     return previousBytes;
   }
 
-  private static int findDotAtBeginningOfLine(ByteBuf buffer, int startAt, byte[] previousBytes) {
+  private static int findDotAtBeginningOfLine(
+    ByteBuf buffer,
+    int startAt,
+    byte[] previousBytes
+  ) {
     int length = buffer.readableBytes();
 
-    if (previousBytes[0] == CR && previousBytes[1] == LF && buffer.getByte(startAt) == DOT) {
+    if (
+      previousBytes[0] == CR && previousBytes[1] == LF && buffer.getByte(startAt) == DOT
+    ) {
       return startAt;
     }
 
-    if (previousBytes[1] == CR && length >= 2 && buffer.getByte(startAt) == LF && buffer.getByte(startAt + 1) == DOT) {
+    if (
+      previousBytes[1] == CR &&
+      length >= 2 &&
+      buffer.getByte(startAt) == LF &&
+      buffer.getByte(startAt + 1) == DOT
+    ) {
       return startAt + 1;
     }
 

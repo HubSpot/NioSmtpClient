@@ -1,16 +1,15 @@
 package com.hubspot.smtp.client;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.primitives.Longs;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * The parsed response to the EHLO command.
@@ -18,9 +17,12 @@ import com.google.common.primitives.Longs;
  * <p>This class is thread-safe.
  */
 public class EhloResponse {
+
   static final EhloResponse EMPTY = EhloResponse.parse("", Collections.emptyList());
 
-  private static final Splitter WHITESPACE_SPLITTER = Splitter.on(CharMatcher.whitespace());
+  private static final Splitter WHITESPACE_SPLITTER = Splitter.on(
+    CharMatcher.whitespace()
+  );
 
   private final String ehloDomain;
   private final ImmutableSet<String> supportedExtensions;
@@ -53,11 +55,19 @@ public class EhloResponse {
    *                    even if the server says it supports them
    * @return an {@link EhloResponse} object representing the response
    */
-  public static EhloResponse parse(String ehloDomain, Iterable<CharSequence> lines, EnumSet<Extension> disabledExtensions) {
+  public static EhloResponse parse(
+    String ehloDomain,
+    Iterable<CharSequence> lines,
+    EnumSet<Extension> disabledExtensions
+  ) {
     return new EhloResponse(ehloDomain, lines, disabledExtensions);
   }
 
-  private EhloResponse(String ehloDomain, Iterable<CharSequence> lines, EnumSet<Extension> disabledExtensions) {
+  private EhloResponse(
+    String ehloDomain,
+    Iterable<CharSequence> lines,
+    EnumSet<Extension> disabledExtensions
+  ) {
     this.ehloDomain = ehloDomain;
     this.extensions = EnumSet.noneOf(Extension.class);
 
@@ -85,7 +95,8 @@ public class EhloResponse {
       }
     }
 
-    supportedExtensions = ImmutableSet.copyOf(Iterables.transform(lines, CharSequence::toString));
+    supportedExtensions =
+      ImmutableSet.copyOf(Iterables.transform(lines, CharSequence::toString));
   }
 
   private void parseSize(List<String> parts) {

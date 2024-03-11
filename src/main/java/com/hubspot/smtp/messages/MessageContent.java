@@ -1,20 +1,19 @@
 package com.hubspot.smtp.messages;
 
+import com.google.common.io.ByteSource;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
-
-import com.google.common.io.ByteSource;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 
 /**
  * The contents of a message, including its headers.
  *
  */
 public abstract class MessageContent {
+
   /**
    * Creates a {@link MessageContent} from a {@code ByteBuf} that might contain eight-bit characters.
    */
@@ -25,7 +24,10 @@ public abstract class MessageContent {
   /**
    * Creates a {@link MessageContent} from a {@code ByteBuf} and specifies its {@link MessageContentEncoding}.
    */
-  public static MessageContent of(ByteBuf messageBuffer, MessageContentEncoding encoding) {
+  public static MessageContent of(
+    ByteBuf messageBuffer,
+    MessageContentEncoding encoding
+  ) {
     return new ByteBufMessageContent(messageBuffer, encoding);
   }
 
@@ -39,14 +41,21 @@ public abstract class MessageContent {
   /**
    * Creates a {@link MessageContent} from a {@code InputStream} and specifies its {@link MessageContentEncoding}.
    */
-  public static MessageContent of(Supplier<InputStream> messageStream, MessageContentEncoding encoding) {
+  public static MessageContent of(
+    Supplier<InputStream> messageStream,
+    MessageContentEncoding encoding
+  ) {
     return new InputStreamMessageContent(messageStream, OptionalInt.empty(), encoding);
   }
 
   /**
    * Creates a {@link MessageContent} from a {@code InputStream} and specifies its {@link MessageContentEncoding} and size.
    */
-  public static MessageContent of(Supplier<InputStream> messageStream, MessageContentEncoding encoding, int size) {
+  public static MessageContent of(
+    Supplier<InputStream> messageStream,
+    MessageContentEncoding encoding,
+    int size
+  ) {
     return new InputStreamMessageContent(messageStream, OptionalInt.of(size), encoding);
   }
 
@@ -60,8 +69,14 @@ public abstract class MessageContent {
   /**
    * Creates a {@link MessageContent} from a {@code ByteSource} and specifies its {@link MessageContentEncoding}.
    */
-  public static MessageContent of(ByteSource byteSource, MessageContentEncoding encoding) {
-    OptionalInt size = byteSource.sizeIfKnown().transform(s -> OptionalInt.of(Math.toIntExact(s))).or(OptionalInt.empty());
+  public static MessageContent of(
+    ByteSource byteSource,
+    MessageContentEncoding encoding
+  ) {
+    OptionalInt size = byteSource
+      .sizeIfKnown()
+      .transform(s -> OptionalInt.of(Math.toIntExact(s)))
+      .or(OptionalInt.empty());
     return new InputStreamMessageContent(byteSource, size, encoding);
   }
 

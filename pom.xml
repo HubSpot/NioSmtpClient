@@ -5,13 +5,15 @@
   <parent>
     <groupId>com.hubspot</groupId>
     <artifactId>basepom</artifactId>
-    <version>25.7</version>
+    <version>59.2</version>
   </parent>
 
   <artifactId>NioSmtpClient</artifactId>
   <version>1.1.2-SNAPSHOT</version>
 
   <properties>
+    <basepom.test.arguments>--add-opens=java.base/java.nio=ALL-UNNAMED</basepom.test.arguments>
+
     <james.protocols.version>1.6.3</james.protocols.version>
     <james.netty.version>3.3.1.Final</james.netty.version>
   </properties>
@@ -172,6 +174,23 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <configuration>
+          <excludeFilterFile>${project.basedir}/spotbugs-exclude-filter.xml</excludeFilterFile>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>package</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 
   <licenses>

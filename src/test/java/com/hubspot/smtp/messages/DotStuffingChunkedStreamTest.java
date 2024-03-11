@@ -2,19 +2,20 @@ package com.hubspot.smtp.messages;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-
-import org.junit.Test;
-
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import org.junit.Test;
 
 public class DotStuffingChunkedStreamTest {
+
   private static final String CRLF = "\r\n";
-  private static final UnpooledByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(true);
+  private static final UnpooledByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(
+    true
+  );
   private static final int SANE_CHUNK_SIZE = 8192;
 
   @Test
@@ -23,7 +24,8 @@ public class DotStuffingChunkedStreamTest {
   }
 
   @Test
-  public void itDotStuffsAndAppendsCRLFWhenNecessaryWithASmallBlockSize() throws Exception {
+  public void itDotStuffsAndAppendsCRLFWhenNecessaryWithASmallBlockSize()
+    throws Exception {
     // while these are terrible chunk sizes, they effectively test
     // how we handle new lines at chunk boundaries
     for (int chunkSize = 1; chunkSize < 10; chunkSize++) {
@@ -34,7 +36,10 @@ public class DotStuffingChunkedStreamTest {
   @Test
   public void itReturnsNullIfThereAreNoMoreBytesInTheStream() throws Exception {
     ByteArrayInputStream stream = new ByteArrayInputStream(new byte[0]);
-    DotStuffingChunkedStream chunkedStream = new DotStuffingChunkedStream(stream, SANE_CHUNK_SIZE);
+    DotStuffingChunkedStream chunkedStream = new DotStuffingChunkedStream(
+      stream,
+      SANE_CHUNK_SIZE
+    );
 
     assertThat(chunkedStream.readChunk(ALLOCATOR)).isNull();
   }
@@ -46,7 +51,8 @@ public class DotStuffingChunkedStreamTest {
     assertThat(dotStuff("\r\n.def", chunkSize)).isEqualTo("\r\n..def" + CRLF);
     assertThat(dotStuff("abc\r\n.def", chunkSize)).isEqualTo("abc\r\n..def" + CRLF);
     assertThat(dotStuff("abc\r\n.", chunkSize)).isEqualTo("abc\r\n.." + CRLF);
-    assertThat(dotStuff("abc\r\n.def\r\n.ghi\r\n.", chunkSize)).isEqualTo("abc\r\n..def\r\n..ghi\r\n.." + CRLF);
+    assertThat(dotStuff("abc\r\n.def\r\n.ghi\r\n.", chunkSize))
+      .isEqualTo("abc\r\n..def\r\n..ghi\r\n.." + CRLF);
 
     // does not add
     assertThat(dotStuff("abc\r\ndef.", chunkSize)).isEqualTo("abc\r\ndef." + CRLF);
@@ -56,8 +62,13 @@ public class DotStuffingChunkedStreamTest {
   }
 
   private String dotStuff(String testString, int chunkSize) throws Exception {
-    ByteArrayInputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
-    DotStuffingChunkedStream chunkedStream = new DotStuffingChunkedStream(stream, chunkSize);
+    ByteArrayInputStream stream = new ByteArrayInputStream(
+      testString.getBytes(StandardCharsets.UTF_8)
+    );
+    DotStuffingChunkedStream chunkedStream = new DotStuffingChunkedStream(
+      stream,
+      chunkSize
+    );
 
     CompositeByteBuf destBuffer = ALLOCATOR.compositeBuffer();
 

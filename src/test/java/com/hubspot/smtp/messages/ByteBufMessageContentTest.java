@@ -2,15 +2,14 @@ package com.hubspot.smtp.messages;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.nio.charset.StandardCharsets;
-
-import org.junit.Test;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
+import java.nio.charset.StandardCharsets;
+import org.junit.Test;
 
 public class ByteBufMessageContentTest extends MessageContentTest {
+
   @Test
   public void itPerformsDotStuffingIfRequired() {
     ByteBufMessageContent content = createContent(".abc");
@@ -36,13 +35,18 @@ public class ByteBufMessageContentTest extends MessageContentTest {
   }
 
   private ByteBufMessageContent createContent(String testString) {
-    ByteBuf sourceBuffer = Unpooled.wrappedBuffer(testString.getBytes(StandardCharsets.UTF_8));
+    ByteBuf sourceBuffer = Unpooled.wrappedBuffer(
+      testString.getBytes(StandardCharsets.UTF_8)
+    );
     return new ByteBufMessageContent(sourceBuffer, MessageContentEncoding.UNKNOWN);
   }
 
   @Override
   protected ByteBufMessageContent createContent(byte[] bytes) {
-    return new ByteBufMessageContent(Unpooled.wrappedBuffer(bytes), MessageContentEncoding.UNKNOWN);
+    return new ByteBufMessageContent(
+      Unpooled.wrappedBuffer(bytes),
+      MessageContentEncoding.UNKNOWN
+    );
   }
 
   private String extract(Object o) {

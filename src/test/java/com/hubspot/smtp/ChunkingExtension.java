@@ -2,6 +2,7 @@ package com.hubspot.smtp;
 
 import static com.hubspot.smtp.ExtensibleNettyServer.NETTY_CHANNEL;
 
+import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
@@ -9,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.james.protocols.api.ProtocolSession;
 import org.apache.james.protocols.api.ProtocolSession.State;
 import org.apache.james.protocols.api.Request;
@@ -36,15 +36,21 @@ import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 
-import com.google.common.collect.Lists;
+public class ChunkingExtension
+  implements EhloExtension, CommandHandler<SMTPSession>, ExtensibleHandler, Hook {
 
-public class ChunkingExtension implements EhloExtension, CommandHandler<SMTPSession>, ExtensibleHandler, Hook {
   private static final String MAIL_ENVELOPE = "mail envelope";
   private static final String BDAT_HANDLER_NAME = "BDAT handler";
-  private static final Pattern BDAT_COMMAND_PATTERN = Pattern.compile("(?<size>[0-9]+)(?<last> LAST)?");
+  private static final Pattern BDAT_COMMAND_PATTERN = Pattern.compile(
+    "(?<size>[0-9]+)(?<last> LAST)?"
+  );
 
-  private static final Response DELIVERY_SYNTAX = new SMTPResponse(SMTPRetCode.SYNTAX_ERROR_ARGUMENTS,
-      DSNStatus.getStatus(DSNStatus.PERMANENT, DSNStatus.DELIVERY_SYNTAX) + " Invalid syntax").immutable();
+  private static final Response DELIVERY_SYNTAX = new SMTPResponse(
+    SMTPRetCode.SYNTAX_ERROR_ARGUMENTS,
+    DSNStatus.getStatus(DSNStatus.PERMANENT, DSNStatus.DELIVERY_SYNTAX) +
+    " Invalid syntax"
+  )
+    .immutable();
 
   private List<MessageHook> messageHandlers;
 
@@ -57,11 +63,16 @@ public class ChunkingExtension implements EhloExtension, CommandHandler<SMTPSess
 
     Channel channel = (Channel) session.getAttachment(NETTY_CHANNEL, State.Connection);
     if (channel == null) {
-      throw new RuntimeException("ExtensibleNettyServer must be used to support chunking");
+      throw new RuntimeException(
+        "ExtensibleNettyServer must be used to support chunking"
+      );
     }
 
     BdatHandler bdatHandler = new BdatHandler(channel.getPipeline(), session);
-    bdatHandler.startCapturingData(Integer.parseInt(matcher.group("size")), !matcher.group("last").isEmpty());
+    bdatHandler.startCapturingData(
+      Integer.parseInt(matcher.group("size")),
+      !matcher.group("last").isEmpty()
+    );
     return bdatHandler.bdatResponseFuture;
   }
 
@@ -81,7 +92,8 @@ public class ChunkingExtension implements EhloExtension, CommandHandler<SMTPSess
   }
 
   @Override
-  public void wireExtensions(Class<?> interfaceName, List<?> extension) throws WiringException {
+  public void wireExtensions(Class<?> interfaceName, List<?> extension)
+    throws WiringException {
     // Save MessageHooks so we can tell them about mails we receive
     if (MessageHook.class.equals(interfaceName)) {
       messageHandlers = Lists.newArrayList();
@@ -94,6 +106,7 @@ public class ChunkingExtension implements EhloExtension, CommandHandler<SMTPSess
   }
 
   private class BdatHandler extends SimpleChannelUpstreamHandler {
+
     private final ChannelPipeline pipeline;
     private final SMTPSession session;
     private final FutureResponseImpl bdatResponseFuture;
@@ -109,7 +122,8 @@ public class ChunkingExtension implements EhloExtension, CommandHandler<SMTPSess
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
+      throws Exception {
       if (e.getMessage() instanceof ChannelBuffer) {
         ChannelBuffer buffer = (ChannelBuffer) e.getMessage();
 
@@ -135,15 +149,32 @@ public class ChunkingExtension implements EhloExtension, CommandHandler<SMTPSess
       pipeline.addBefore(HandlerConstants.FRAMER, BDAT_HANDLER_NAME, this);
 
       MailEnvelopeImpl env = new MailEnvelopeImpl();
-      env.setRecipients(Lists.newArrayList((Collection<MailAddress>) session.getAttachment(SMTPSession.RCPT_LIST, State.Transaction)));
-      env.setSender((MailAddress) session.getAttachment(SMTPSession.SENDER,ProtocolSession.State.Transaction));
+      env.setRecipients(
+        Lists.newArrayList(
+          (Collection<MailAddress>) session.getAttachment(
+            SMTPSession.RCPT_LIST,
+            State.Transaction
+          )
+        )
+      );
+      env.setSender(
+        (MailAddress) session.getAttachment(
+          SMTPSession.SENDER,
+          ProtocolSession.State.Transaction
+        )
+      );
 
-      session.setAttachment(MAIL_ENVELOPE, env,ProtocolSession.State.Transaction);
+      session.setAttachment(MAIL_ENVELOPE, env, ProtocolSession.State.Transaction);
     }
 
     private void stopCapturingData() {
       pipeline.remove(this);
-      bdatResponseFuture.setResponse(new SMTPResponse("250", String.format("Message OK, %d octets received", currentChunkSize)));
+      bdatResponseFuture.setResponse(
+        new SMTPResponse(
+          "250",
+          String.format("Message OK, %d octets received", currentChunkSize)
+        )
+      );
 
       if (isLastChunk) {
         callMessageHooks();
@@ -158,7 +189,6 @@ public class ChunkingExtension implements EhloExtension, CommandHandler<SMTPSess
 
         messageOutputStream.flush();
         messageOutputStream.close();
-
       } catch (IOException e) {
         throw new RuntimeException(e);
       }

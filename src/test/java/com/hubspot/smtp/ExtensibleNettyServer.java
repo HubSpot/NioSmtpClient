@@ -10,6 +10,7 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelUpstreamHandler;
 
 public class ExtensibleNettyServer extends NettyServer {
+
   static final String NETTY_CHANNEL = "netty channel";
 
   public ExtensibleNettyServer(Protocol protocol, Encryption secure) {
@@ -23,7 +24,8 @@ public class ExtensibleNettyServer extends NettyServer {
     // into a series of lines.
     return new BasicChannelUpstreamHandler(protocol, secure) {
       @Override
-      protected ProtocolSession createSession(ChannelHandlerContext ctx) throws Exception {
+      protected ProtocolSession createSession(ChannelHandlerContext ctx)
+        throws Exception {
         ProtocolSession session = super.createSession(ctx);
         session.setAttachment(NETTY_CHANNEL, ctx.getChannel(), State.Connection);
         return session;

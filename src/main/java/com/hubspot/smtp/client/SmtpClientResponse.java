@@ -1,19 +1,18 @@
 package com.hubspot.smtp.client;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.google.common.collect.ImmutableList;
 import com.hubspot.smtp.utils.SmtpResponses;
-
 import io.netty.handler.codec.smtp.SmtpResponse;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Wraps the session and the responses to one or more SMTP commands.
  *
  * <p>This class is thread-safe.
  */
-public class SmtpClientResponse  {
+public class SmtpClientResponse {
+
   private final SmtpSession session;
   private final List<SmtpResponse> responses;
 
@@ -55,6 +54,9 @@ public class SmtpClientResponse  {
 
   @Override
   public String toString() {
-    return responses.stream().map(SmtpResponses::toString).collect(Collectors.joining("; "));
+    return responses
+      .stream()
+      .map(SmtpResponses::toString)
+      .collect(Collectors.joining("; "));
   }
 }

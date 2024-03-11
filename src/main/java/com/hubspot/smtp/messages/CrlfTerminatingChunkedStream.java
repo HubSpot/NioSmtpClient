@@ -1,10 +1,9 @@
 package com.hubspot.smtp.messages;
 
-import java.io.InputStream;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.stream.ChunkedStream;
+import java.io.InputStream;
 
 /**
  * A {@code ChunkedStream} implementation that wraps an {@code InputStream}, appending
@@ -12,6 +11,7 @@ import io.netty.handler.stream.ChunkedStream;
  *
  */
 class CrlfTerminatingChunkedStream extends ChunkedStream {
+
   private static final byte CR = '\r';
   private static final byte LF = '\n';
   private static final int DEFAULT_CHUNK_SIZE = 64 * 1024;
@@ -37,14 +37,16 @@ class CrlfTerminatingChunkedStream extends ChunkedStream {
       return chunk;
     }
 
-    return allocator.compositeBuffer(2).addComponents(true, chunk, allocator.buffer(2).writeBytes(TRAILING_BYTES));
+    return allocator
+      .compositeBuffer(2)
+      .addComponents(true, chunk, allocator.buffer(2).writeBytes(TRAILING_BYTES));
   }
 
   private boolean isTerminatedWithCrLf(ByteBuf chunk) {
     int length = chunk.readableBytes();
 
-    return length >= 2 &&
-        chunk.getByte(length - 2) == CR &&
-        chunk.getByte(length - 1) == LF;
+    return (
+      length >= 2 && chunk.getByte(length - 2) == CR && chunk.getByte(length - 1) == LF
+    );
   }
 }
