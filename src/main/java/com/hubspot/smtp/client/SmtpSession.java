@@ -1,5 +1,31 @@
 package com.hubspot.smtp.client;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.ObjectArrays;
+import com.google.common.collect.Sets;
+import com.hubspot.smtp.messages.MessageContent;
+import com.hubspot.smtp.messages.MessageContentEncoding;
+import com.hubspot.smtp.utils.SmtpResponses;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.handler.codec.smtp.DefaultSmtpRequest;
+import io.netty.handler.codec.smtp.SmtpCommand;
+import io.netty.handler.codec.smtp.SmtpContent;
+import io.netty.handler.codec.smtp.SmtpRequest;
+import io.netty.handler.codec.smtp.SmtpRequests;
+import io.netty.handler.codec.smtp.SmtpResponse;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.stream.ChunkedInput;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,37 +44,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Throwables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.ObjectArrays;
-import com.google.common.collect.Sets;
-import com.hubspot.smtp.messages.MessageContent;
-import com.hubspot.smtp.messages.MessageContentEncoding;
-import com.hubspot.smtp.utils.SmtpResponses;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.smtp.DefaultSmtpRequest;
-import io.netty.handler.codec.smtp.SmtpCommand;
-import io.netty.handler.codec.smtp.SmtpContent;
-import io.netty.handler.codec.smtp.SmtpRequest;
-import io.netty.handler.codec.smtp.SmtpRequests;
-import io.netty.handler.codec.smtp.SmtpResponse;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.stream.ChunkedInput;
 
 /**
  * An open connection to an SMTP server which can be used to send messages and other commands.
@@ -58,26 +55,28 @@ import io.netty.handler.stream.ChunkedInput;
  * <p>This class is thread-safe.
  */
 public class SmtpSession {
+
   // https://tools.ietf.org/html/rfc2920#section-3.1
   // In particular, the commands RSET, MAIL FROM, SEND FROM, SOML FROM, SAML FROM,
   // and RCPT TO can all appear anywhere in a pipelined command group.
-  private static final Set<SmtpCommand> VALID_ANYWHERE_PIPELINED_COMMANDS = Sets.newHashSet(
-      SmtpCommand.RSET, SmtpCommand.MAIL, SmtpCommand.RCPT);
+  private static final Set<SmtpCommand> VALID_ANYWHERE_PIPELINED_COMMANDS =
+    Sets.newHashSet(SmtpCommand.RSET, SmtpCommand.MAIL, SmtpCommand.RCPT);
 
   // https://tools.ietf.org/html/rfc2920#section-3.1
   // The EHLO, DATA, VRFY, EXPN, TURN, QUIT, and NOOP commands can only appear
   // as the last command in a group since their success or failure produces
   // a change of state which the client SMTP must accommodate.
   private static final Set<SmtpCommand> VALID_AT_END_PIPELINED_COMMANDS = Sets.newHashSet(
-      SmtpCommand.RSET,
-      SmtpCommand.MAIL,
-      SmtpCommand.RCPT,
-      SmtpCommand.EHLO,
-      SmtpCommand.DATA,
-      SmtpCommand.VRFY,
-      SmtpCommand.EXPN,
-      SmtpCommand.QUIT,
-      SmtpCommand.NOOP);
+    SmtpCommand.RSET,
+    SmtpCommand.MAIL,
+    SmtpCommand.RCPT,
+    SmtpCommand.EHLO,
+    SmtpCommand.DATA,
+    SmtpCommand.VRFY,
+    SmtpCommand.EXPN,
+    SmtpCommand.QUIT,
+    SmtpCommand.NOOP
+  );
 
   private static final Joiner COMMA_JOINER = Joiner.on(", ");
   private static final SmtpCommand STARTTLS_COMMAND = SmtpCommand.valueOf("STARTTLS");
@@ -99,7 +98,13 @@ public class SmtpSession {
   private volatile boolean requiresRset = false;
   private volatile EhloResponse ehloResponse = EhloResponse.EMPTY;
 
-  SmtpSession(Channel channel, ResponseHandler responseHandler, SmtpSessionConfig config, Executor executor, Supplier<SSLEngine> sslEngineSupplier) {
+  SmtpSession(
+    Channel channel,
+    ResponseHandler responseHandler,
+    SmtpSessionConfig config,
+    Executor executor,
+    Supplier<SSLEngine> sslEngineSupplier
+  ) {
     this.channel = channel;
     this.responseHandler = responseHandler;
     this.config = config;
@@ -164,15 +169,16 @@ public class SmtpSession {
   public CompletableFuture<SmtpClientResponse> startTls() {
     Preconditions.checkState(!isEncrypted(), "This connection is already using TLS");
 
-    return send(new DefaultSmtpRequest(STARTTLS_COMMAND)).thenCompose(startTlsResponse -> {
-      if (startTlsResponse.containsError()) {
-        return CompletableFuture.completedFuture(startTlsResponse);
-      } else {
-        return performTlsHandshake(startTlsResponse)
+    return send(new DefaultSmtpRequest(STARTTLS_COMMAND))
+      .thenCompose(startTlsResponse -> {
+        if (startTlsResponse.containsError()) {
+          return CompletableFuture.completedFuture(startTlsResponse);
+        } else {
+          return performTlsHandshake(startTlsResponse)
             .thenCompose(ignored -> send(SmtpRequests.ehlo(ehloResponse.getEhloDomain())))
             .thenApply(ignored -> startTlsResponse);
-      }
-    });
+        }
+      });
   }
 
   private CompletionStage<SmtpClientResponse> performTlsHandshake(SmtpClientResponse r) {
@@ -181,14 +187,16 @@ public class SmtpSession {
     SslHandler sslHandler = new SslHandler(sslEngineSupplier.get());
     channel.pipeline().addFirst(sslHandler);
 
-    sslHandler.handshakeFuture().addListener(nettyFuture -> {
-      if (nettyFuture.isSuccess()) {
-        ourFuture.complete(r);
-      } else {
-        ourFuture.completeExceptionally(nettyFuture.cause());
-        close();
-      }
-    });
+    sslHandler
+      .handshakeFuture()
+      .addListener(nettyFuture -> {
+        if (nettyFuture.isSuccess()) {
+          ourFuture.complete(r);
+        } else {
+          ourFuture.completeExceptionally(nettyFuture.cause());
+          close();
+        }
+      });
 
     return ourFuture;
   }
@@ -205,7 +213,9 @@ public class SmtpSession {
    * is not using TLS.
    */
   public Optional<SSLSession> getSSLSession() {
-    return Optional.ofNullable(channel.pipeline().get(SslHandler.class)).map(handler -> handler.engine().getSession());
+    return Optional
+      .ofNullable(channel.pipeline().get(SslHandler.class))
+      .map(handler -> handler.engine().getSession());
   }
 
   /**
@@ -214,7 +224,11 @@ public class SmtpSession {
    * This method behaves as {@link SmtpSession#send(String, Collection, MessageContent, SendInterceptor)} but
    * only specifies one recipient and does not use a {@link SendInterceptor}.
    */
-  public CompletableFuture<SmtpClientResponse> send(String from, String to, MessageContent content) {
+  public CompletableFuture<SmtpClientResponse> send(
+    String from,
+    String to,
+    MessageContent content
+  ) {
     return send(from, Collections.singleton(to), content, Optional.empty());
   }
 
@@ -224,7 +238,12 @@ public class SmtpSession {
    * This method behaves as {@link SmtpSession#send(String, Collection, MessageContent, SendInterceptor)} but
    * only specifies one recipient.
    */
-  public CompletableFuture<SmtpClientResponse> send(String from, String to, MessageContent content, SendInterceptor sendInterceptor) {
+  public CompletableFuture<SmtpClientResponse> send(
+    String from,
+    String to,
+    MessageContent content,
+    SendInterceptor sendInterceptor
+  ) {
     return send(from, Collections.singleton(to), content, Optional.of(sendInterceptor));
   }
 
@@ -234,7 +253,11 @@ public class SmtpSession {
    * This method behaves as {@link SmtpSession#send(String, Collection, MessageContent, SendInterceptor)} but
    * does not use a {@link SendInterceptor}.
    */
-  public CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content) {
+  public CompletableFuture<SmtpClientResponse> send(
+    String from,
+    Collection<String> recipients,
+    MessageContent content
+  ) {
     return send(from, recipients, content, Optional.empty());
   }
 
@@ -286,15 +309,30 @@ public class SmtpSession {
    *         exceeded by {@code content}. Note if {@link MessageContent#size()} is not specified this check
    *         is not performed.
    */
-  public CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content, SendInterceptor sendInterceptor) {
+  public CompletableFuture<SmtpClientResponse> send(
+    String from,
+    Collection<String> recipients,
+    MessageContent content,
+    SendInterceptor sendInterceptor
+  ) {
     return send(from, recipients, content, Optional.of(sendInterceptor));
   }
 
-  private CompletableFuture<SmtpClientResponse> send(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
+  private CompletableFuture<SmtpClientResponse> send(
+    String from,
+    Collection<String> recipients,
+    MessageContent content,
+    Optional<SendInterceptor> sequenceInterceptor
+  ) {
     return sendInternal(from, recipients, content, sequenceInterceptor);
   }
 
-  private CompletableFuture<SmtpClientResponse> sendInternal(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
+  private CompletableFuture<SmtpClientResponse> sendInternal(
+    String from,
+    Collection<String> recipients,
+    MessageContent content,
+    Optional<SendInterceptor> sequenceInterceptor
+  ) {
     Preconditions.checkNotNull(from);
     Preconditions.checkNotNull(recipients);
     Preconditions.checkArgument(!recipients.isEmpty(), "recipients must be > 0");
@@ -319,10 +357,20 @@ public class SmtpSession {
     }
 
     // this message is not 7 bit, but the server only supports 7 bit :(
-    return sendAs7Bit(from, recipients, encodeContentAs7Bit(content), sequenceInterceptor);
+    return sendAs7Bit(
+      from,
+      recipients,
+      encodeContentAs7Bit(content),
+      sequenceInterceptor
+    );
   }
 
-  private CompletableFuture<SmtpClientResponse> sendAsChunked(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
+  private CompletableFuture<SmtpClientResponse> sendAsChunked(
+    String from,
+    Collection<String> recipients,
+    MessageContent content,
+    Optional<SendInterceptor> sequenceInterceptor
+  ) {
     if (ehloResponse.isSupported(Extension.PIPELINING)) {
       List<Object> objects = Lists.newArrayListWithExpectedSize(3 + recipients.size());
       objects.add(mailCommand(from, recipients));
@@ -332,32 +380,45 @@ public class SmtpSession {
 
       ByteBuf firstChunk = chunkIterator.next();
       if (firstChunk == null) {
-        throw new IllegalArgumentException("The MessageContent was empty; size is " +
-            (content.size().isPresent() ? Integer.toString(content.size().getAsInt()) : "not present"));
+        throw new IllegalArgumentException(
+          "The MessageContent was empty; size is " +
+          (
+            content.size().isPresent()
+              ? Integer.toString(content.size().getAsInt())
+              : "not present"
+          )
+        );
       }
 
       objects.add(getBdatRequestWithData(firstChunk, !chunkIterator.hasNext()));
 
       return beginSequence(sequenceInterceptor, objects.size(), objects.toArray())
-          .thenSendInTurn(getBdatIterator(chunkIterator))
-          .toResponses();
-
+        .thenSendInTurn(getBdatIterator(chunkIterator))
+        .toResponses();
     } else {
-      SendSequence sequence = beginSequence(sequenceInterceptor, 1, mailCommand(from, recipients));
+      SendSequence sequence = beginSequence(
+        sequenceInterceptor,
+        1,
+        mailCommand(from, recipients)
+      );
 
       for (String recipient : recipients) {
         sequence.thenSend(SmtpRequests.rcpt(recipient));
       }
 
       return sequence
-          .thenSendInTurn(getBdatIterator(content.getContentChunkIterator(channel.alloc())))
-          .toResponses();
+        .thenSendInTurn(getBdatIterator(content.getContentChunkIterator(channel.alloc())))
+        .toResponses();
     }
   }
 
   @SuppressFBWarnings("VA_FORMAT_STRING_USES_NEWLINE") // we shouldn't use platform-specific newlines for SMTP
   private ByteBuf getBdatRequestWithData(ByteBuf data, boolean isLast) {
-    String request = String.format("BDAT %d%s\r\n", data.readableBytes(), isLast ? " LAST" : "");
+    String request = String.format(
+      "BDAT %d%s\r\n",
+      data.readableBytes(),
+      isLast ? " LAST" : ""
+    );
     ByteBuf requestBuf = channel.alloc().buffer(request.length());
     ByteBufUtil.writeAscii(requestBuf, request);
 
@@ -379,20 +440,47 @@ public class SmtpSession {
     };
   }
 
-  private CompletableFuture<SmtpClientResponse> sendAs7Bit(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
-    return sendPipelinedIfPossible(mailCommand(from, recipients), recipients, SmtpRequests.data(), sequenceInterceptor)
-        .thenSend(content.getDotStuffedContent(), DotCrlfBuffer.get())
-        .toResponses();
+  private CompletableFuture<SmtpClientResponse> sendAs7Bit(
+    String from,
+    Collection<String> recipients,
+    MessageContent content,
+    Optional<SendInterceptor> sequenceInterceptor
+  ) {
+    return sendPipelinedIfPossible(
+      mailCommand(from, recipients),
+      recipients,
+      SmtpRequests.data(),
+      sequenceInterceptor
+    )
+      .thenSend(content.getDotStuffedContent(), DotCrlfBuffer.get())
+      .toResponses();
   }
 
-  private CompletableFuture<SmtpClientResponse> sendAs8BitMime(String from, Collection<String> recipients, MessageContent content, Optional<SendInterceptor> sequenceInterceptor) {
-    return sendPipelinedIfPossible(mailCommandWith8BitMime(from, recipients), recipients, SmtpRequests.data(), sequenceInterceptor)
-        .thenSend(content.getDotStuffedContent(), DotCrlfBuffer.get())
-        .toResponses();
+  private CompletableFuture<SmtpClientResponse> sendAs8BitMime(
+    String from,
+    Collection<String> recipients,
+    MessageContent content,
+    Optional<SendInterceptor> sequenceInterceptor
+  ) {
+    return sendPipelinedIfPossible(
+      mailCommandWith8BitMime(from, recipients),
+      recipients,
+      SmtpRequests.data(),
+      sequenceInterceptor
+    )
+      .thenSend(content.getDotStuffedContent(), DotCrlfBuffer.get())
+      .toResponses();
   }
 
-  private SendSequence sendPipelinedIfPossible(SmtpRequest mailRequest, Collection<String> recipients, SmtpRequest dataRequest, Optional<SendInterceptor> sequenceInterceptor) {
-    List<SmtpRequest> requests = Lists.newArrayListWithExpectedSize(2 + recipients.size());
+  private SendSequence sendPipelinedIfPossible(
+    SmtpRequest mailRequest,
+    Collection<String> recipients,
+    SmtpRequest dataRequest,
+    Optional<SendInterceptor> sequenceInterceptor
+  ) {
+    List<SmtpRequest> requests = Lists.newArrayListWithExpectedSize(
+      2 + recipients.size()
+    );
     requests.add(mailRequest);
     requests.addAll(rpctCommands(recipients));
     requests.add(dataRequest);
@@ -415,15 +503,24 @@ public class SmtpSession {
   }
 
   private SmtpRequest mailCommand(String from, Collection<String> recipients) {
-    if (!ehloResponse.isSupported(Extension.SMTPUTF8) || (isAllAscii(from) && isAllAscii(recipients))) {
+    if (
+      !ehloResponse.isSupported(Extension.SMTPUTF8) ||
+      (isAllAscii(from) && isAllAscii(recipients))
+    ) {
       return SmtpRequests.mail(from);
     } else {
       return SmtpRequests.mail(from, "SMTPUTF8");
     }
   }
 
-  private SmtpRequest mailCommandWith8BitMime(String from, Collection<String> recipients) {
-    if (!ehloResponse.isSupported(Extension.SMTPUTF8) || (isAllAscii(from) && isAllAscii(recipients))) {
+  private SmtpRequest mailCommandWith8BitMime(
+    String from,
+    Collection<String> recipients
+  ) {
+    if (
+      !ehloResponse.isSupported(Extension.SMTPUTF8) ||
+      (isAllAscii(from) && isAllAscii(recipients))
+    ) {
       return SmtpRequests.mail(from, "BODY=8BITMIME");
     } else {
       return SmtpRequests.mail(from, "BODY=8BITMIME", "SMTPUTF8");
@@ -438,12 +535,21 @@ public class SmtpSession {
     return strings.stream().allMatch(SmtpSession::isAllAscii);
   }
 
-  private SendSequence beginSequence(Optional<SendInterceptor> sequenceInterceptor, int expectedResponses, Object... objects) {
+  private SendSequence beginSequence(
+    Optional<SendInterceptor> sequenceInterceptor,
+    int expectedResponses,
+    Object... objects
+  ) {
     if (requiresRset) {
       if (ehloResponse.isSupported(Extension.PIPELINING)) {
-        return new SendSequence(sequenceInterceptor, expectedResponses + 1, ObjectArrays.concat(SmtpRequests.rset(), objects));
+        return new SendSequence(
+          sequenceInterceptor,
+          expectedResponses + 1,
+          ObjectArrays.concat(SmtpRequests.rset(), objects)
+        );
       } else {
-        return new SendSequence(sequenceInterceptor, 1,  SmtpRequests.rset()).thenSend(objects);
+        return new SendSequence(sequenceInterceptor, 1, SmtpRequests.rset())
+          .thenSend(objects);
       }
     } else {
       requiresRset = true;
@@ -470,21 +576,32 @@ public class SmtpSession {
   public CompletableFuture<SmtpClientResponse> send(SmtpRequest request) {
     Preconditions.checkNotNull(request);
 
-    return applyOnExecutor(executeRequestInterceptor(config.getSendInterceptor(), request, () -> {
-      CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> createDebugString(request));
-      writeAndFlush(request);
+    return applyOnExecutor(
+      executeRequestInterceptor(
+        config.getSendInterceptor(),
+        request,
+        () -> {
+          CompletableFuture<List<SmtpResponse>> responseFuture =
+            responseHandler.createResponseFuture(1, () -> createDebugString(request));
+          writeAndFlush(request);
 
-      if (request.command().equals(SmtpCommand.EHLO)) {
-        responseFuture = responseFuture.whenComplete((responses, ignored) -> {
-          if (responses != null) {
-            String ehloDomain = request.parameters().isEmpty() ? "" : request.parameters().get(0).toString();
-            parseEhloResponse(ehloDomain, responses.get(0).details());
+          if (request.command().equals(SmtpCommand.EHLO)) {
+            responseFuture =
+              responseFuture.whenComplete((responses, ignored) -> {
+                if (responses != null) {
+                  String ehloDomain = request.parameters().isEmpty()
+                    ? ""
+                    : request.parameters().get(0).toString();
+                  parseEhloResponse(ehloDomain, responses.get(0).details());
+                }
+              });
           }
-        });
-      }
 
-      return responseFuture;
-    }), this::wrapFirstResponse);
+          return responseFuture;
+        }
+      ),
+      this::wrapFirstResponse
+    );
   }
 
   /**
@@ -505,14 +622,21 @@ public class SmtpSession {
     Preconditions.checkNotNull(content);
     checkMessageSize(content.size());
 
-    return applyOnExecutor(executeDataInterceptor(config.getSendInterceptor(), () -> {
-      CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> "message contents");
+    return applyOnExecutor(
+      executeDataInterceptor(
+        config.getSendInterceptor(),
+        () -> {
+          CompletableFuture<List<SmtpResponse>> responseFuture =
+            responseHandler.createResponseFuture(1, () -> "message contents");
 
-      writeContent(content);
-      channel.flush();
+          writeContent(content);
+          channel.flush();
 
-      return responseFuture;
-    }), this::wrapFirstResponse);
+          return responseFuture;
+        }
+      ),
+      this::wrapFirstResponse
+    );
   }
 
   /**
@@ -534,7 +658,10 @@ public class SmtpSession {
    *         is not performed.
    */
   public CompletableFuture<SmtpClientResponse> sendChunk(ByteBuf data, boolean isLast) {
-    Preconditions.checkState(ehloResponse.isSupported(Extension.CHUNKING), "Chunking is not supported on this server");
+    Preconditions.checkState(
+      ehloResponse.isSupported(Extension.CHUNKING),
+      "Chunking is not supported on this server"
+    );
     Preconditions.checkNotNull(data);
     checkMessageSize(OptionalInt.of(chunkedBytesSent.addAndGet(data.readableBytes())));
 
@@ -543,21 +670,28 @@ public class SmtpSession {
       chunkedBytesSent.set(0);
     }
 
-    return applyOnExecutor(executeDataInterceptor(config.getSendInterceptor(), () -> {
-      CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> "BDAT message chunk");
+    return applyOnExecutor(
+      executeDataInterceptor(
+        config.getSendInterceptor(),
+        () -> {
+          CompletableFuture<List<SmtpResponse>> responseFuture =
+            responseHandler.createResponseFuture(1, () -> "BDAT message chunk");
 
-      String size = Integer.toString(data.readableBytes());
-      if (isLast) {
-        write(new DefaultSmtpRequest(BDAT_COMMAND, size, "LAST"));
-      } else {
-        write(new DefaultSmtpRequest(BDAT_COMMAND, size));
-      }
+          String size = Integer.toString(data.readableBytes());
+          if (isLast) {
+            write(new DefaultSmtpRequest(BDAT_COMMAND, size, "LAST"));
+          } else {
+            write(new DefaultSmtpRequest(BDAT_COMMAND, size));
+          }
 
-      write(data);
-      channel.flush();
+          write(data);
+          channel.flush();
 
-      return responseFuture;
-    }), this::wrapFirstResponse);
+          return responseFuture;
+        }
+      ),
+      this::wrapFirstResponse
+    );
   }
 
   /**
@@ -596,27 +730,44 @@ public class SmtpSession {
    *         exceeded by {@code content}. Note if {@link MessageContent#size()} is not specified this check
    *         is not performed
    */
-  public CompletableFuture<SmtpClientResponse> sendPipelined(MessageContent content, SmtpRequest... requests) {
-    Preconditions.checkState(ehloResponse.isSupported(Extension.PIPELINING), "Pipelining is not supported on this server");
+  public CompletableFuture<SmtpClientResponse> sendPipelined(
+    MessageContent content,
+    SmtpRequest... requests
+  ) {
+    Preconditions.checkState(
+      ehloResponse.isSupported(Extension.PIPELINING),
+      "Pipelining is not supported on this server"
+    );
     Preconditions.checkNotNull(requests);
     checkValidPipelinedRequest(requests);
     checkMessageSize(content == null ? OptionalInt.empty() : content.size());
 
-    return applyOnExecutor(executePipelineInterceptor(config.getSendInterceptor(), Lists.newArrayList(requests), () -> {
-      int expectedResponses = requests.length + (content == null ? 0 : 1);
-      CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(expectedResponses, () -> createDebugString((Object[]) requests));
+    return applyOnExecutor(
+      executePipelineInterceptor(
+        config.getSendInterceptor(),
+        Lists.newArrayList(requests),
+        () -> {
+          int expectedResponses = requests.length + (content == null ? 0 : 1);
+          CompletableFuture<List<SmtpResponse>> responseFuture =
+            responseHandler.createResponseFuture(
+              expectedResponses,
+              () -> createDebugString((Object[]) requests)
+            );
 
-      if (content != null) {
-        writeContent(content);
-      }
-      for (SmtpRequest r : requests) {
-        write(r);
-      }
+          if (content != null) {
+            writeContent(content);
+          }
+          for (SmtpRequest r : requests) {
+            write(r);
+          }
 
-      channel.flush();
+          channel.flush();
 
-      return responseFuture;
-    }), this::wrapResponses);
+          return responseFuture;
+        }
+      ),
+      this::wrapResponses
+    );
   }
 
   private SmtpClientResponse wrapResponses(List<SmtpResponse> responses) {
@@ -637,13 +788,20 @@ public class SmtpSession {
    * @return a {@code CompletableFuture<SmtpClientResponse>} that will contain the response received
    *         from the remote server, or an exception if the send failed unexpectedly
    */
-  public CompletableFuture<SmtpClientResponse> authPlain(String username, String password) {
-    Preconditions.checkState(ehloResponse.isAuthPlainSupported(), "Auth plain is not supported on this server");
+  public CompletableFuture<SmtpClientResponse> authPlain(
+    String username,
+    String password
+  ) {
+    Preconditions.checkState(
+      ehloResponse.isAuthPlainSupported(),
+      "Auth plain is not supported on this server"
+    );
 
     String s = String.format("%s\0%s\0%s", username, username, password);
-    return send(new DefaultSmtpRequest(AUTH_COMMAND, AUTH_PLAIN_MECHANISM, encodeBase64(s)));
+    return send(
+      new DefaultSmtpRequest(AUTH_COMMAND, AUTH_PLAIN_MECHANISM, encodeBase64(s))
+    );
   }
-
 
   /**
    * Authenticates with the remote server using the XOAUTH2 mechanism.
@@ -655,11 +813,19 @@ public class SmtpSession {
    * @return a {@code CompletableFuture<SmtpClientResponse>} that will contain the response received
    *         from the remote server, or an exception if the send failed unexpectedly
    */
-  public CompletableFuture<SmtpClientResponse> authXoauth2(String username, String accessToken) {
-    Preconditions.checkState(ehloResponse.isAuthXoauth2Supported(), "Auth xoauth2 is not supported on this server");
+  public CompletableFuture<SmtpClientResponse> authXoauth2(
+    String username,
+    String accessToken
+  ) {
+    Preconditions.checkState(
+      ehloResponse.isAuthXoauth2Supported(),
+      "Auth xoauth2 is not supported on this server"
+    );
 
     String s = String.format("user=%s\001auth=Bearer %s\001\001", username, accessToken);
-    return send(new DefaultSmtpRequest(AUTH_COMMAND, AUTH_XOAUTH2_MECHANISM, encodeBase64(s)));
+    return send(
+      new DefaultSmtpRequest(AUTH_COMMAND, AUTH_XOAUTH2_MECHANISM, encodeBase64(s))
+    );
   }
 
   /**
@@ -678,28 +844,48 @@ public class SmtpSession {
    * @return a {@code CompletableFuture<SmtpClientResponse>} that will contain the response received
    *         from the remote server, or an exception if the send failed unexpectedly
    */
-  public CompletableFuture<SmtpClientResponse> authLogin(String username, String password) {
-    Preconditions.checkState(ehloResponse.isAuthLoginSupported(), "Auth login is not supported on this server");
+  public CompletableFuture<SmtpClientResponse> authLogin(
+    String username,
+    String password
+  ) {
+    Preconditions.checkState(
+      ehloResponse.isAuthLoginSupported(),
+      "Auth login is not supported on this server"
+    );
 
-    return send(new DefaultSmtpRequest(AUTH_COMMAND, AUTH_LOGIN_MECHANISM, encodeBase64(username))).thenCompose(r -> {
-      if (r.containsError()) {
-        return CompletableFuture.completedFuture(r);
-      } else {
-        return sendAuthLoginPassword(password);
-      }
-    });
+    return send(
+      new DefaultSmtpRequest(AUTH_COMMAND, AUTH_LOGIN_MECHANISM, encodeBase64(username))
+    )
+      .thenCompose(r -> {
+        if (r.containsError()) {
+          return CompletableFuture.completedFuture(r);
+        } else {
+          return sendAuthLoginPassword(password);
+        }
+      });
   }
 
   private CompletionStage<SmtpClientResponse> sendAuthLoginPassword(String password) {
-    return applyOnExecutor(executeRequestInterceptor(config.getSendInterceptor(), new DefaultSmtpRequest(AUTH_COMMAND), () -> {
-      CompletableFuture<List<SmtpResponse>> responseFuture = responseHandler.createResponseFuture(1, () -> "auth login password");
+    return applyOnExecutor(
+      executeRequestInterceptor(
+        config.getSendInterceptor(),
+        new DefaultSmtpRequest(AUTH_COMMAND),
+        () -> {
+          CompletableFuture<List<SmtpResponse>> responseFuture =
+            responseHandler.createResponseFuture(1, () -> "auth login password");
 
-      String passwordResponse = encodeBase64(password) + CRLF;
-      ByteBuf passwordBuffer = channel.alloc().buffer().writeBytes(passwordResponse.getBytes(StandardCharsets.UTF_8));
-      writeAndFlush(passwordBuffer);
+          String passwordResponse = encodeBase64(password) + CRLF;
+          ByteBuf passwordBuffer = channel
+            .alloc()
+            .buffer()
+            .writeBytes(passwordResponse.getBytes(StandardCharsets.UTF_8));
+          writeAndFlush(passwordBuffer);
 
-      return responseFuture;
-    }), this::wrapFirstResponse);
+          return responseFuture;
+        }
+      ),
+      this::wrapFirstResponse
+    );
   }
 
   private void checkMessageSize(OptionalInt size) {
@@ -731,17 +917,22 @@ public class SmtpSession {
   private void writeAndFlush(Object obj) {
     // adding ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE ensures we'll find out
     // about errors that occur when writing
-    channel.writeAndFlush(obj).addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+    channel
+      .writeAndFlush(obj)
+      .addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
   }
 
   @VisibleForTesting
   void parseEhloResponse(String ehloDomain, Iterable<CharSequence> response) {
-    ehloResponse = EhloResponse.parse(ehloDomain, response, config.getDisabledExtensions());
+    ehloResponse =
+      EhloResponse.parse(ehloDomain, response, config.getDisabledExtensions());
   }
 
   @VisibleForTesting
   static String createDebugString(Object... objects) {
-    return COMMA_JOINER.join(Arrays.stream(objects).map(SmtpSession::objectToString).collect(Collectors.toList()));
+    return COMMA_JOINER.join(
+      Arrays.stream(objects).map(SmtpSession::objectToString).collect(Collectors.toList())
+    );
   }
 
   private static String objectToString(Object o) {
@@ -751,9 +942,15 @@ public class SmtpSession {
       if (request.command().equals(AUTH_COMMAND)) {
         return "<redacted-auth-command>";
       } else {
-        return String.format("%s %s", request.command().name(), Joiner.on(" ").join(request.parameters()));
+        return String.format(
+          "%s %s",
+          request.command().name(),
+          Joiner.on(" ").join(request.parameters())
+        );
       }
-    } else if (o instanceof SmtpContent || o instanceof ByteBuf || o instanceof ChunkedInput) {
+    } else if (
+      o instanceof SmtpContent || o instanceof ByteBuf || o instanceof ChunkedInput
+    ) {
       return "[CONTENT]";
     } else {
       return o.toString();
@@ -761,70 +958,103 @@ public class SmtpSession {
   }
 
   private static void checkValidPipelinedRequest(SmtpRequest[] requests) {
-    Preconditions.checkArgument(requests.length > 0, "You must provide requests to pipeline");
+    Preconditions.checkArgument(
+      requests.length > 0,
+      "You must provide requests to pipeline"
+    );
 
     for (int i = 0; i < requests.length; i++) {
       SmtpCommand command = requests[i].command();
       boolean isLastRequest = (i == requests.length - 1);
 
       if (isLastRequest) {
-        Preconditions.checkArgument(VALID_AT_END_PIPELINED_COMMANDS.contains(command),
-            command.name() + " cannot be used in a pipelined request");
+        Preconditions.checkArgument(
+          VALID_AT_END_PIPELINED_COMMANDS.contains(command),
+          command.name() + " cannot be used in a pipelined request"
+        );
       } else {
-        String errorMessage = VALID_AT_END_PIPELINED_COMMANDS.contains(command) ?
-            " must appear last in a pipelined request" : " cannot be used in a pipelined request";
+        String errorMessage = VALID_AT_END_PIPELINED_COMMANDS.contains(command)
+          ? " must appear last in a pipelined request"
+          : " cannot be used in a pipelined request";
 
-        Preconditions.checkArgument(VALID_ANYWHERE_PIPELINED_COMMANDS.contains(command),
-            command.name() + errorMessage);
+        Preconditions.checkArgument(
+          VALID_ANYWHERE_PIPELINED_COMMANDS.contains(command),
+          command.name() + errorMessage
+        );
       }
     }
   }
 
-  private <R, T> CompletableFuture<R> applyOnExecutor(CompletableFuture<T> eventLoopFuture, Function<T, R> mapper) {
+  private <R, T> CompletableFuture<R> applyOnExecutor(
+    CompletableFuture<T> eventLoopFuture,
+    Function<T, R> mapper
+  ) {
     if (executor == SmtpSessionFactoryConfig.DIRECT_EXECUTOR) {
       return eventLoopFuture.thenApply(mapper);
     }
 
     // use handleAsync to ensure exceptions and other callbacks are completed on the ExecutorService thread
-    return eventLoopFuture.handleAsync((rs, e) -> {
-      if (e != null) {
-        throw Throwables.propagate(e);
-      }
+    return eventLoopFuture.handleAsync(
+      (rs, e) -> {
+        if (e != null) {
+          throw Throwables.propagate(e);
+        }
 
-      return mapper.apply(rs);
-    }, executor);
+        return mapper.apply(rs);
+      },
+      executor
+    );
   }
 
-  CompletableFuture<List<SmtpResponse>> executeRequestInterceptor(Optional<SendInterceptor> interceptor, SmtpRequest request, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
+  CompletableFuture<List<SmtpResponse>> executeRequestInterceptor(
+    Optional<SendInterceptor> interceptor,
+    SmtpRequest request,
+    Supplier<CompletableFuture<List<SmtpResponse>>> supplier
+  ) {
     return interceptor.map(h -> h.aroundRequest(request, supplier)).orElseGet(supplier);
   }
 
-  CompletableFuture<List<SmtpResponse>> executeDataInterceptor(Optional<SendInterceptor> interceptor, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
+  CompletableFuture<List<SmtpResponse>> executeDataInterceptor(
+    Optional<SendInterceptor> interceptor,
+    Supplier<CompletableFuture<List<SmtpResponse>>> supplier
+  ) {
     return interceptor.map(h -> h.aroundData(supplier)).orElseGet(supplier);
   }
 
-  CompletableFuture<List<SmtpResponse>> executePipelineInterceptor(Optional<SendInterceptor> interceptor, List<SmtpRequest> requests, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
-    return interceptor.map(h -> h.aroundPipelinedSequence(requests, supplier)).orElseGet(supplier);
+  CompletableFuture<List<SmtpResponse>> executePipelineInterceptor(
+    Optional<SendInterceptor> interceptor,
+    List<SmtpRequest> requests,
+    Supplier<CompletableFuture<List<SmtpResponse>>> supplier
+  ) {
+    return interceptor
+      .map(h -> h.aroundPipelinedSequence(requests, supplier))
+      .orElseGet(supplier);
   }
 
   private class SendSequence {
+
     final Optional<SendInterceptor> sequenceInterceptor;
     CompletableFuture<List<SmtpResponse>> responseFuture;
 
-    SendSequence(Optional<SendInterceptor> sequenceInterceptor, int expectedResponses, Object... objects) {
+    SendSequence(
+      Optional<SendInterceptor> sequenceInterceptor,
+      int expectedResponses,
+      Object... objects
+    ) {
       this.sequenceInterceptor = sequenceInterceptor;
       responseFuture = writeObjectsAndCollectResponses(expectedResponses, objects);
     }
 
     SendSequence thenSend(Object... objects) {
-      responseFuture = responseFuture.thenCompose(responses -> {
-        if (SmtpResponses.isError(responses.get(responses.size() - 1))) {
-          return CompletableFuture.completedFuture(responses);
-        }
+      responseFuture =
+        responseFuture.thenCompose(responses -> {
+          if (SmtpResponses.isError(responses.get(responses.size() - 1))) {
+            return CompletableFuture.completedFuture(responses);
+          }
 
-        return writeObjectsAndCollectResponses(1, objects)
+          return writeObjectsAndCollectResponses(1, objects)
             .thenApply(mergeResponses(responses));
-      });
+        });
 
       return this;
     }
@@ -836,7 +1066,10 @@ public class SmtpSession {
       return this;
     }
 
-    private CompletableFuture<List<SmtpResponse>> sendNext(CompletableFuture<List<SmtpResponse>> prevFuture, Iterator<Object> iterator) {
+    private CompletableFuture<List<SmtpResponse>> sendNext(
+      CompletableFuture<List<SmtpResponse>> prevFuture,
+      Iterator<Object> iterator
+    ) {
       if (!iterator.hasNext()) {
         return prevFuture;
       }
@@ -848,14 +1081,19 @@ public class SmtpSession {
 
         Object nextObject = iterator.next();
 
-        CompletableFuture<List<SmtpResponse>> f = writeObjectsAndCollectResponses(1, nextObject)
-            .thenApply(mergeResponses(responses));
+        CompletableFuture<List<SmtpResponse>> f = writeObjectsAndCollectResponses(
+          1,
+          nextObject
+        )
+          .thenApply(mergeResponses(responses));
 
         return sendNext(f, iterator);
       });
     }
 
-    private Function<List<SmtpResponse>, List<SmtpResponse>> mergeResponses(List<SmtpResponse> existingResponses) {
+    private Function<List<SmtpResponse>, List<SmtpResponse>> mergeResponses(
+      List<SmtpResponse> existingResponses
+    ) {
       return newResponses -> {
         List<SmtpResponse> newList = Lists.newArrayList(existingResponses);
         newList.addAll(newResponses);
@@ -863,16 +1101,32 @@ public class SmtpSession {
       };
     }
 
-    private CompletableFuture<List<SmtpResponse>> writeObjectsAndCollectResponses(int expectedResponses, Object... objects) {
-      return executeInterceptor(expectedResponses, objects, () -> {
-        CompletableFuture<List<SmtpResponse>> nextFuture = createFuture(expectedResponses, objects);
-        writeObjects(objects);
-        return nextFuture;
-      });
+    private CompletableFuture<List<SmtpResponse>> writeObjectsAndCollectResponses(
+      int expectedResponses,
+      Object... objects
+    ) {
+      return executeInterceptor(
+        expectedResponses,
+        objects,
+        () -> {
+          CompletableFuture<List<SmtpResponse>> nextFuture = createFuture(
+            expectedResponses,
+            objects
+          );
+          writeObjects(objects);
+          return nextFuture;
+        }
+      );
     }
 
-    private CompletableFuture<List<SmtpResponse>> executeInterceptor(int expectedResponses, Object[] objects, Supplier<CompletableFuture<List<SmtpResponse>>> supplier) {
-      Optional<SendInterceptor> interceptor = Optional.ofNullable(sequenceInterceptor.orElse(config.getSendInterceptor().orElse(null)));
+    private CompletableFuture<List<SmtpResponse>> executeInterceptor(
+      int expectedResponses,
+      Object[] objects,
+      Supplier<CompletableFuture<List<SmtpResponse>>> supplier
+    ) {
+      Optional<SendInterceptor> interceptor = Optional.ofNullable(
+        sequenceInterceptor.orElse(config.getSendInterceptor().orElse(null))
+      );
       if (!interceptor.isPresent()) {
         return supplier.get();
       }
@@ -887,7 +1141,11 @@ public class SmtpSession {
 
         return executePipelineInterceptor(interceptor, requests, supplier);
       } else if (objects[0] instanceof SmtpRequest) {
-        return executeRequestInterceptor(interceptor, ((SmtpRequest) objects[0]), supplier);
+        return executeRequestInterceptor(
+          interceptor,
+          ((SmtpRequest) objects[0]),
+          supplier
+        );
       } else {
         return executeDataInterceptor(interceptor, supplier);
       }
@@ -904,16 +1162,24 @@ public class SmtpSession {
       channel.flush();
     }
 
-    private CompletableFuture<List<SmtpResponse>> createFuture(int expectedResponses, Object[] objects) {
-      return responseHandler.createResponseFuture(expectedResponses, () -> createDebugString(objects));
+    private CompletableFuture<List<SmtpResponse>> createFuture(
+      int expectedResponses,
+      Object[] objects
+    ) {
+      return responseHandler.createResponseFuture(
+        expectedResponses,
+        () -> createDebugString(objects)
+      );
     }
   }
 
   private class ErrorHandler extends ChannelInboundHandlerAdapter {
+
     private Throwable cause;
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+      throws Exception {
       this.cause = cause;
       ctx.close();
     }

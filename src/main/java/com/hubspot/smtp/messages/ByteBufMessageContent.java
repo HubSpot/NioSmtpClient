@@ -1,26 +1,27 @@
 package com.hubspot.smtp.messages;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.OptionalInt;
-
 import com.google.common.collect.Iterators;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.OptionalInt;
 
 /**
  * A {@link MessageContent} implementation backed by a Netty {@code ByteBuf}.
  *
  */
 public class ByteBufMessageContent extends MessageContent {
+
   private static final long LONG_WITH_HIGH_BITS_SET = 0x8080808080808080L;
   private static final float UNCOUNTED = -1F;
   private static final byte CR = '\r';
   private static final byte LF = '\n';
-  private static final byte[] CR_LF = {CR, LF};
-  private static final ByteBuf CR_LF_BUFFER = Unpooled.unreleasableBuffer(Unpooled.wrappedBuffer(CR_LF));
+  private static final byte[] CR_LF = { CR, LF };
+  private static final ByteBuf CR_LF_BUFFER = Unpooled.unreleasableBuffer(
+    Unpooled.wrappedBuffer(CR_LF)
+  );
 
   private final ByteBuf buffer;
   private final int size;
@@ -103,18 +104,29 @@ public class ByteBufMessageContent extends MessageContent {
   }
 
   private static ByteBuf terminate(ByteBuf buffer) {
-    return buffer.alloc()
-        .compositeBuffer(2)
-        .addComponents(true, buffer, CR_LF_BUFFER.slice());
+    return buffer
+      .alloc()
+      .compositeBuffer(2)
+      .addComponents(true, buffer, CR_LF_BUFFER.slice());
   }
 
   private static boolean isTerminated(ByteBuf buffer) {
     int length = buffer.readableBytes();
-    return length >= 2 && buffer.getByte(length - 2) == '\r' && buffer.getByte(length - 1) == '\n';
+    return (
+      length >= 2 &&
+      buffer.getByte(length - 2) == '\r' &&
+      buffer.getByte(length - 1) == '\n'
+    );
   }
 
   private static ByteBuf dotStuff(ByteBuf buffer) {
-    return DotStuffing.createDotStuffedBuffer(buffer.alloc(), buffer, null,
-        isTerminated(buffer) ? MessageTermination.DO_NOT_TERMINATE : MessageTermination.ADD_CRLF);
+    return DotStuffing.createDotStuffedBuffer(
+      buffer.alloc(),
+      buffer,
+      null,
+      isTerminated(buffer)
+        ? MessageTermination.DO_NOT_TERMINATE
+        : MessageTermination.ADD_CRLF
+    );
   }
 }

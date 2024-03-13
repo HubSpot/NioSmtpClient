@@ -6,15 +6,15 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FakeProxyServer {
+
   private static final Logger LOG = LoggerFactory.getLogger(FakeProxyServer.class);
 
   private final ServerSocket proxySocket;
-  private final  String proxyHost;
+  private final String proxyHost;
   private final int remotePort;
   private final byte[] request = new byte[1024];
   private final byte[] reply = new byte[4096];
@@ -30,6 +30,7 @@ public class FakeProxyServer {
   public void close() {
     this.isRunning = false;
   }
+
   private void run() {
     while (isRunning) {
       Socket clientSocket = null, serverSocket = null;
@@ -43,13 +44,19 @@ public class FakeProxyServer {
           serverSocket = new Socket(proxyHost, remotePort);
         } catch (IOException e) {
           PrintWriter out = new PrintWriter(outputStreamClient);
-          out.print("The Proxy Server could not connect to " + proxyHost + ":"
-              + remotePort + ":\n" + e + "\n");
+          out.print(
+            "The Proxy Server could not connect to " +
+            proxyHost +
+            ":" +
+            remotePort +
+            ":\n" +
+            e +
+            "\n"
+          );
           out.flush();
           clientSocket.close();
           continue;
         }
-
 
         final InputStream inputStreamServer = serverSocket.getInputStream();
         final OutputStream outputStreamServer = serverSocket.getOutputStream();
@@ -87,7 +94,7 @@ public class FakeProxyServer {
         } catch (IOException e) {
           LOG.warn("Error reading from server socket", e);
         }
-        
+
         outputStreamClient.close();
       } catch (IOException e) {
         LOG.warn("Error accepting client socket", e);

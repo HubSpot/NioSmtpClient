@@ -1,5 +1,12 @@
 package com.hubspot.smtp.client;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.smtp.SmtpResponse;
+import io.netty.handler.timeout.ReadTimeoutException;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -9,44 +16,56 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.smtp.SmtpResponse;
-import io.netty.handler.timeout.ReadTimeoutException;
-import io.netty.util.HashedWheelTimer;
-import io.netty.util.Timeout;
 
 /**
  * A Netty handler that collects responses to SMTP commands and makes them available.
  *
  */
 class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
-  private static final Logger LOG = LoggerFactory.getLogger(ResponseHandler.class);
-  private static final HashedWheelTimer TIMER = new HashedWheelTimer(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("response-timer-%d").build());
 
-  private final AtomicReference<ResponseCollector> responseCollector = new AtomicReference<>();
+  private static final Logger LOG = LoggerFactory.getLogger(ResponseHandler.class);
+  private static final HashedWheelTimer TIMER = new HashedWheelTimer(
+    new ThreadFactoryBuilder().setDaemon(true).setNameFormat("response-timer-%d").build()
+  );
+
+  private final AtomicReference<ResponseCollector> responseCollector =
+    new AtomicReference<>();
   private final String connectionId;
   private final Optional<Duration> defaultResponseTimeout;
   private final Optional<Consumer<Throwable>> exceptionHandler;
 
-  ResponseHandler(String connectionId, Optional<Duration> defaultResponseTimeout, Optional<Consumer<Throwable>> exceptionHandler) {
+  ResponseHandler(
+    String connectionId,
+    Optional<Duration> defaultResponseTimeout,
+    Optional<Consumer<Throwable>> exceptionHandler
+  ) {
     this.connectionId = connectionId;
     this.defaultResponseTimeout = defaultResponseTimeout;
     this.exceptionHandler = exceptionHandler;
   }
 
-  CompletableFuture<List<SmtpResponse>> createResponseFuture(int expectedResponses, Supplier<String> debugStringSupplier) {
-    return createResponseFuture(expectedResponses, defaultResponseTimeout, debugStringSupplier);
+  CompletableFuture<List<SmtpResponse>> createResponseFuture(
+    int expectedResponses,
+    Supplier<String> debugStringSupplier
+  ) {
+    return createResponseFuture(
+      expectedResponses,
+      defaultResponseTimeout,
+      debugStringSupplier
+    );
   }
 
-  CompletableFuture<List<SmtpResponse>> createResponseFuture(int expectedResponses, Optional<Duration> responseTimeout, Supplier<String> debugStringSupplier) {
-    ResponseCollector collector = new ResponseCollector(expectedResponses, debugStringSupplier);
+  CompletableFuture<List<SmtpResponse>> createResponseFuture(
+    int expectedResponses,
+    Optional<Duration> responseTimeout,
+    Supplier<String> debugStringSupplier
+  ) {
+    ResponseCollector collector = new ResponseCollector(
+      expectedResponses,
+      debugStringSupplier
+    );
 
     boolean success = responseCollector.compareAndSet(null, collector);
     if (!success) {
@@ -55,8 +74,14 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
         return createResponseFuture(expectedResponses, debugStringSupplier);
       }
 
-      throw new IllegalStateException(String.format("[%s] Cannot wait for a response to [%s] because we're still waiting for a response to [%s]",
-          connectionId, collector.getDebugString(), previousCollector.getDebugString()));
+      throw new IllegalStateException(
+        String.format(
+          "[%s] Cannot wait for a response to [%s] because we're still waiting for a response to [%s]",
+          connectionId,
+          collector.getDebugString(),
+          previousCollector.getDebugString()
+        )
+      );
     }
 
     // although the future field may have been written in another thread,
@@ -69,27 +94,42 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
     return responseFuture;
   }
 
-  private void applyResponseTimeout(CompletableFuture<List<SmtpResponse>> responseFuture, Optional<Duration> responseTimeout, Supplier<String> debugStringSupplier) {
-    responseTimeout = responseTimeout.isPresent() ? responseTimeout : defaultResponseTimeout;
+  private void applyResponseTimeout(
+    CompletableFuture<List<SmtpResponse>> responseFuture,
+    Optional<Duration> responseTimeout,
+    Supplier<String> debugStringSupplier
+  ) {
+    responseTimeout =
+      responseTimeout.isPresent() ? responseTimeout : defaultResponseTimeout;
 
     responseTimeout.ifPresent(timeout -> {
-      Timeout hwtTimeout = TIMER.newTimeout(ignored -> {
-        String message = String.format("[%s] Timed out waiting for a response to [%s]",
-            connectionId, debugStringSupplier.get());
+      Timeout hwtTimeout = TIMER.newTimeout(
+        ignored -> {
+          String message = String.format(
+            "[%s] Timed out waiting for a response to [%s]",
+            connectionId,
+            debugStringSupplier.get()
+          );
 
-        responseFuture.completeExceptionally(new TimeoutException(message));
-      }, timeout.toMillis(), TimeUnit.MILLISECONDS);
+          responseFuture.completeExceptionally(new TimeoutException(message));
+        },
+        timeout.toMillis(),
+        TimeUnit.MILLISECONDS
+      );
 
       responseFuture.whenComplete((ignored1, ignored2) -> hwtTimeout.cancel());
     });
   }
 
   Optional<String> getPendingResponseDebugString() {
-    return Optional.ofNullable(this.responseCollector.get()).map(ResponseCollector::getDebugString);
+    return Optional
+      .ofNullable(this.responseCollector.get())
+      .map(ResponseCollector::getDebugString);
   }
 
   @Override
-  protected void channelRead0(ChannelHandlerContext ctx, SmtpResponse msg) throws Exception {
+  protected void channelRead0(ChannelHandlerContext ctx, SmtpResponse msg)
+    throws Exception {
     ResponseCollector collector = responseCollector.get();
 
     if (collector == null) {
@@ -107,7 +147,8 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+    throws Exception {
     if (cause instanceof ReadTimeoutException) {
       LOG.warn("[{}] The channel was closed because a read timed out", connectionId);
     }
@@ -131,7 +172,14 @@ class ResponseHandler extends SimpleChannelInboundHandler<SmtpResponse> {
     ResponseCollector collector = responseCollector.get();
 
     if (collector != null) {
-      collector.completeExceptionally(new ChannelClosedException(connectionId, "Handled channelInactive while waiting for a response to [" + collector.getDebugString() + "]"));
+      collector.completeExceptionally(
+        new ChannelClosedException(
+          connectionId,
+          "Handled channelInactive while waiting for a response to [" +
+          collector.getDebugString() +
+          "]"
+        )
+      );
     }
 
     super.channelInactive(ctx);

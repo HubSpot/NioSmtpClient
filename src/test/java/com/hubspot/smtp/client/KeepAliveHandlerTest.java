@@ -1,13 +1,13 @@
 package com.hubspot.smtp.client;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.Mockito.*;
-
-import java.time.Duration;
-import java.util.Optional;
-
-import org.junit.Before;
-import org.junit.Test;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -17,11 +17,19 @@ import io.netty.handler.codec.smtp.DefaultSmtpResponse;
 import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.handler.timeout.IdleStateEvent;
+import java.time.Duration;
+import java.util.Optional;
+import org.junit.Before;
+import org.junit.Test;
 
 public class KeepAliveHandlerTest {
+
   private static final String CONNECTION_ID = "connection";
   private static final SmtpResponse OK_RESPONSE = new DefaultSmtpResponse(250);
-  private static final SmtpResponse ERROR_RESPONSE = new DefaultSmtpResponse(400, "that didn't work");
+  private static final SmtpResponse ERROR_RESPONSE = new DefaultSmtpResponse(
+    400,
+    "that didn't work"
+  );
 
   private ChannelHandlerContext context;
   private Channel channel;
@@ -60,7 +68,7 @@ public class KeepAliveHandlerTest {
 
     handler.triggerIdle();
 
-    verifyZeroInteractions(channel);
+    verifyNoInteractions(channel);
   }
 
   @Test
@@ -143,7 +151,12 @@ public class KeepAliveHandlerTest {
   }
 
   private class TestHandler extends KeepAliveHandler {
-    TestHandler(ResponseHandler responseHandler, String connectionId, Duration idleTimeout) {
+
+    TestHandler(
+      ResponseHandler responseHandler,
+      String connectionId,
+      Duration idleTimeout
+    ) {
       super(responseHandler, connectionId, idleTimeout);
     }
 

@@ -1,19 +1,19 @@
 package com.hubspot.smtp.client;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.RandomAccess;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import io.netty.handler.codec.smtp.SmtpRequest;
+import java.util.Iterator;
+import java.util.List;
+import java.util.RandomAccess;
 
 // Based very closely on SmtpRequestEncoder, but supports utf8 parameters
 // and doesn't require the LastSmtpContent because we always send a single content object
 public final class Utf8SmtpRequestEncoder extends MessageToMessageEncoder<Object> {
-  private static final byte[] CRLF = {'\r', '\n'};
+
+  private static final byte[] CRLF = { '\r', '\n' };
   private static final byte SP = ' ';
 
   @Override
@@ -22,7 +22,8 @@ public final class Utf8SmtpRequestEncoder extends MessageToMessageEncoder<Object
   }
 
   @Override
-  protected void encode(ChannelHandlerContext ctx, Object msg, List<Object> out) throws Exception {
+  protected void encode(ChannelHandlerContext ctx, Object msg, List<Object> out)
+    throws Exception {
     if (!(msg instanceof SmtpRequest)) {
       return;
     }
@@ -61,7 +62,6 @@ public final class Utf8SmtpRequestEncoder extends MessageToMessageEncoder<Object
       }
 
       ByteBufUtil.writeUtf8(out, parameters.get(sizeMinusOne));
-
     } else {
       Iterator<CharSequence> params = parameters.iterator();
       while (true) {

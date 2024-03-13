@@ -1,17 +1,16 @@
 package com.hubspot.smtp.utils;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-
 import io.netty.handler.codec.smtp.SmtpResponse;
+import java.util.List;
 
 /**
  * Helps identify and print {@link SmtpResponse} instances.
  *
  */
 public final class SmtpResponses {
+
   private static final Joiner SPACE_JOINER = Joiner.on(" ").skipNulls();
 
   private SmtpResponses() {

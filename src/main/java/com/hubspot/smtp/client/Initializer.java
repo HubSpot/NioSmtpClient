@@ -1,14 +1,14 @@
 package com.hubspot.smtp.client;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import java.util.ArrayList;
+import java.util.List;
 
 class Initializer extends ChannelInitializer<SocketChannel> {
+
   private static final int MAX_LINE_LENGTH = 1000;
 
   private final ResponseHandler responseHandler;
@@ -32,7 +32,13 @@ class Initializer extends ChannelInitializer<SocketChannel> {
     handlers.add(new Utf8SmtpResponseDecoder(MAX_LINE_LENGTH));
     handlers.add(new ChunkedWriteHandler());
 
-    config.getKeepAliveTimeout().ifPresent(timeout -> handlers.add(new KeepAliveHandler(responseHandler, config.getConnectionId(), timeout)));
+    config
+      .getKeepAliveTimeout()
+      .ifPresent(timeout ->
+        handlers.add(
+          new KeepAliveHandler(responseHandler, config.getConnectionId(), timeout)
+        )
+      );
 
     handlers.add(responseHandler);
 

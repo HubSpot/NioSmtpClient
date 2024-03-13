@@ -5,6 +5,7 @@ package com.hubspot.smtp.client;
  *
  */
 public abstract class SmtpException extends RuntimeException {
+
   public SmtpException(String connectionId, String message) {
     super(constructErrorMessage(connectionId, message));
   }

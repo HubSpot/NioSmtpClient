@@ -1,11 +1,10 @@
 package com.hubspot.smtp.client;
 
+import io.netty.handler.codec.smtp.SmtpRequest;
+import io.netty.handler.codec.smtp.SmtpResponse;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-
-import io.netty.handler.codec.smtp.SmtpRequest;
-import io.netty.handler.codec.smtp.SmtpResponse;
 
 /**
  * An extension point that supports intercepting commands and data before they are sent.
@@ -50,7 +49,10 @@ public interface SendInterceptor {
    * @return {@code next.get()}, a {@code CompletableFuture} derived from it, or an exceptional future if the send should
    *         be aborted
    */
-  CompletableFuture<List<SmtpResponse>> aroundRequest(SmtpRequest request, Supplier<CompletableFuture<List<SmtpResponse>>> next);
+  CompletableFuture<List<SmtpResponse>> aroundRequest(
+    SmtpRequest request,
+    Supplier<CompletableFuture<List<SmtpResponse>>> next
+  );
 
   /**
    * Called before data is sent.
@@ -59,7 +61,9 @@ public interface SendInterceptor {
    * @return {@code next.get()}, a {@code CompletableFuture} derived from it, or an exceptional future if the send should
    *         be aborted
    */
-  CompletableFuture<List<SmtpResponse>> aroundData(Supplier<CompletableFuture<List<SmtpResponse>>> next);
+  CompletableFuture<List<SmtpResponse>> aroundData(
+    Supplier<CompletableFuture<List<SmtpResponse>>> next
+  );
 
   /**
    * Called before a pipelined series of requests is sent.
@@ -69,5 +73,8 @@ public interface SendInterceptor {
    * @return {@code next.get()}, a {@code CompletableFuture} derived from it, or an exceptional future if the send should
    *         be aborted
    */
-  CompletableFuture<List<SmtpResponse>> aroundPipelinedSequence(List<SmtpRequest> requests, Supplier<CompletableFuture<List<SmtpResponse>>> next);
+  CompletableFuture<List<SmtpResponse>> aroundPipelinedSequence(
+    List<SmtpRequest> requests,
+    Supplier<CompletableFuture<List<SmtpResponse>>> next
+  );
 }

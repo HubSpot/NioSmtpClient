@@ -1,5 +1,10 @@
 package com.hubspot.smtp.messages;
 
+import com.google.common.io.ByteSource;
+import com.google.common.io.CharStreams;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -8,17 +13,11 @@ import java.util.Iterator;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
 
-import com.google.common.io.ByteSource;
-import com.google.common.io.CharStreams;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-
 /**
  * A {@link MessageContent} implementation backed by an {@code InputStream}.
- *
  */
 public class InputStreamMessageContent extends MessageContent {
+
   private static final float UNCOUNTED = -1F;
   private static final float DEFAULT_8BIT_PROPORTION = 0.1F;
   private static final int READ_LIMIT = 8192;
@@ -30,13 +29,22 @@ public class InputStreamMessageContent extends MessageContent {
   private float eightBitCharProportion = UNCOUNTED;
   private InputStream stream;
 
-  public InputStreamMessageContent(Supplier<InputStream> streamSupplier, OptionalInt size, MessageContentEncoding encoding) {
+  public InputStreamMessageContent(
+    Supplier<InputStream> streamSupplier,
+    OptionalInt size,
+    MessageContentEncoding encoding
+  ) {
     this.streamSupplier = streamSupplier;
     this.size = size;
     this.encoding = encoding;
   }
 
-  public InputStreamMessageContent(ByteSource byteSource, OptionalInt size, MessageContentEncoding encoding) {
+  @SuppressFBWarnings("CT_CONSTRUCTOR_THROW")
+  public InputStreamMessageContent(
+    ByteSource byteSource,
+    OptionalInt size,
+    MessageContentEncoding encoding
+  ) {
     this(getStream(byteSource), size, encoding);
   }
 
@@ -56,7 +64,9 @@ public class InputStreamMessageContent extends MessageContent {
    */
   @Override
   public Iterator<ByteBuf> getContentChunkIterator(ByteBufAllocator allocator) {
-    CrlfTerminatingChunkedStream chunkedStream = new CrlfTerminatingChunkedStream(getStream());
+    CrlfTerminatingChunkedStream chunkedStream = new CrlfTerminatingChunkedStream(
+      getStream()
+    );
 
     return new Iterator<ByteBuf>() {
       @Override
@@ -125,7 +135,6 @@ public class InputStreamMessageContent extends MessageContent {
 
       inputStream.reset();
       eightBitCharProportion = 1.0F * eightBitCharCount / bytesRead;
-
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -136,7 +145,9 @@ public class InputStreamMessageContent extends MessageContent {
   @Override
   public String getContentAsString() {
     try {
-      return CharStreams.toString(new InputStreamReader(getStream(), StandardCharsets.UTF_8));
+      return CharStreams.toString(
+        new InputStreamReader(getStream(), StandardCharsets.UTF_8)
+      );
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

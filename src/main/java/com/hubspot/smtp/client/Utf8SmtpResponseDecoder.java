@@ -1,9 +1,5 @@
 package com.hubspot.smtp.client;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
@@ -11,6 +7,9 @@ import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.smtp.DefaultSmtpResponse;
 import io.netty.handler.codec.smtp.SmtpResponse;
 import io.netty.util.CharsetUtil;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 // A copy of Netty's SmtpResponseDecoder but parses responses using UTF8
 public final class Utf8SmtpResponseDecoder extends LineBasedFrameDecoder {
@@ -25,7 +24,8 @@ public final class Utf8SmtpResponseDecoder extends LineBasedFrameDecoder {
   }
 
   @Override
-  protected SmtpResponse decode(ChannelHandlerContext ctx, ByteBuf buffer) throws Exception {
+  protected SmtpResponse decode(ChannelHandlerContext ctx, ByteBuf buffer)
+    throws Exception {
     ByteBuf frame = (ByteBuf) super.decode(ctx, buffer);
     if (frame == null) {
       // No full line received yet.
@@ -39,7 +39,9 @@ public final class Utf8SmtpResponseDecoder extends LineBasedFrameDecoder {
       }
       final int code = parseCode(frame);
       final int separator = frame.readByte();
-      final CharSequence detail = frame.isReadable() ? frame.toString(CharsetUtil.UTF_8) : null;
+      final CharSequence detail = frame.isReadable()
+        ? frame.toString(CharsetUtil.UTF_8)
+        : null;
 
       List<CharSequence> details = this.details;
 
@@ -75,9 +77,16 @@ public final class Utf8SmtpResponseDecoder extends LineBasedFrameDecoder {
     return null;
   }
 
-  private static DecoderException newDecoderException(ByteBuf buffer, int readerIndex, int readable) {
+  private static DecoderException newDecoderException(
+    ByteBuf buffer,
+    int readerIndex,
+    int readable
+  ) {
     return new DecoderException(
-        "Received invalid line: '" + buffer.toString(readerIndex, readable, CharsetUtil.UTF_8) + '\'');
+      "Received invalid line: '" +
+      buffer.toString(readerIndex, readable, CharsetUtil.UTF_8) +
+      '\''
+    );
   }
 
   /**
@@ -94,4 +103,3 @@ public final class Utf8SmtpResponseDecoder extends LineBasedFrameDecoder {
     return Character.digit((char) b, 10);
   }
 }
-

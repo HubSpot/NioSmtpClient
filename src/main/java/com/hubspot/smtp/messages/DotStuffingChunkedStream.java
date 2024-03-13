@@ -1,10 +1,9 @@
 package com.hubspot.smtp.messages;
 
-import java.io.InputStream;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.stream.ChunkedStream;
+import java.io.InputStream;
 
 /**
  * A {@code ChunkedStream} implementation that applies the SMTP dot-stuffing algorithm
@@ -13,6 +12,7 @@ import io.netty.handler.stream.ChunkedStream;
  * @see DotStuffing
  */
 class DotStuffingChunkedStream extends ChunkedStream {
+
   private static final byte CR = '\r';
   private static final byte LF = '\n';
   private static final int DEFAULT_CHUNK_SIZE = 64 * 1024;
@@ -40,10 +40,15 @@ class DotStuffingChunkedStream extends ChunkedStream {
 
     updateTrailingBytes(chunk);
 
-    boolean appendCRLF = isEndOfInput() && !(trailingBytes[0] == CR && trailingBytes[1] == LF);
+    boolean appendCRLF =
+      isEndOfInput() && !(trailingBytes[0] == CR && trailingBytes[1] == LF);
 
-    return DotStuffing.createDotStuffedBuffer(allocator, chunk, prevChunkTrailingBytes,
-        appendCRLF ? MessageTermination.ADD_CRLF : MessageTermination.DO_NOT_TERMINATE);
+    return DotStuffing.createDotStuffedBuffer(
+      allocator,
+      chunk,
+      prevChunkTrailingBytes,
+      appendCRLF ? MessageTermination.ADD_CRLF : MessageTermination.DO_NOT_TERMINATE
+    );
   }
 
   private void updateTrailingBytes(ByteBuf chunk) {

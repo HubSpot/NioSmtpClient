@@ -24,8 +24,9 @@ public enum Extension {
 
   private final String lowerCaseName;
 
-  private static Map<String, Extension> NAME_TO_EXTENSION = Arrays.stream(Extension.values())
-      .collect(Collectors.toMap(Extension::getLowerCaseName, v -> v));
+  private static Map<String, Extension> NAME_TO_EXTENSION = Arrays
+    .stream(Extension.values())
+    .collect(Collectors.toMap(Extension::getLowerCaseName, v -> v));
 
   public static Optional<Extension> find(String name) {
     return Optional.ofNullable(NAME_TO_EXTENSION.get(name.toLowerCase()));

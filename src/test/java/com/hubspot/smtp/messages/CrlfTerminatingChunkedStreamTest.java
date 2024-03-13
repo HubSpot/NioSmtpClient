@@ -2,18 +2,19 @@ package com.hubspot.smtp.messages;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-
-import org.junit.Test;
-
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.CharsetUtil;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import org.junit.Test;
 
 public class CrlfTerminatingChunkedStreamTest {
+
   private static final String CRLF = "\r\n";
-  private static final UnpooledByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(true);
+  private static final UnpooledByteBufAllocator ALLOCATOR = new UnpooledByteBufAllocator(
+    true
+  );
 
   @Test
   public void itTerminatesWithCrlf() throws Exception {
@@ -36,7 +37,8 @@ public class CrlfTerminatingChunkedStreamTest {
 
   @Test
   public void itDoesNotThrowNullPointerExceptionAtTheEndOfTheStream() throws Exception {
-    new CrlfTerminatingChunkedStream(new ByteArrayInputStream(new byte[0]), 8192).readChunk(ALLOCATOR);
+    new CrlfTerminatingChunkedStream(new ByteArrayInputStream(new byte[0]), 8192)
+      .readChunk(ALLOCATOR);
   }
 
   private String terminate(String testString) throws Exception {
@@ -44,8 +46,13 @@ public class CrlfTerminatingChunkedStreamTest {
   }
 
   private String terminate(String testString, int chunkSize) throws Exception {
-    ByteArrayInputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
-    CrlfTerminatingChunkedStream chunkedStream = new CrlfTerminatingChunkedStream(stream, chunkSize);
+    ByteArrayInputStream stream = new ByteArrayInputStream(
+      testString.getBytes(StandardCharsets.UTF_8)
+    );
+    CrlfTerminatingChunkedStream chunkedStream = new CrlfTerminatingChunkedStream(
+      stream,
+      chunkSize
+    );
 
     CompositeByteBuf destBuffer = ALLOCATOR.compositeBuffer();
     while (!chunkedStream.isEndOfInput()) {
