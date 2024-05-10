@@ -76,9 +76,8 @@ final class DotStuffing {
 
       int nextDotIndex;
       while (
-        (
-          nextDotIndex = findDotAtBeginningOfLine(sourceBuffer, dotIndex + 1, NOT_CR_LF)
-        ) !=
+        (nextDotIndex =
+            findDotAtBeginningOfLine(sourceBuffer, dotIndex + 1, NOT_CR_LF)) !=
         -1
       ) {
         compositeByteBuf.addComponents(

@@ -78,7 +78,7 @@ public class ByteBufMessageContent extends MessageContent {
 
       if (0 != (bytes & LONG_WITH_HIGH_BITS_SET)) {
         for (int i = 0; i < 8; i++) {
-          if (0 != (bytes & (0x80 << i * 8))) {
+          if (0 != (bytes & (0x80 << (i * 8)))) {
             eightBitCharCount++;
           }
         }
@@ -94,7 +94,7 @@ public class ByteBufMessageContent extends MessageContent {
 
     buffer.resetReaderIndex();
 
-    eightBitCharProportion = 1.0F * eightBitCharCount / size;
+    eightBitCharProportion = (1.0F * eightBitCharCount) / size;
     return eightBitCharProportion;
   }
 
