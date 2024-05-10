@@ -134,7 +134,7 @@ public class InputStreamMessageContent extends MessageContent {
       }
 
       inputStream.reset();
-      eightBitCharProportion = 1.0F * eightBitCharCount / bytesRead;
+      eightBitCharProportion = (1.0F * eightBitCharCount) / bytesRead;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

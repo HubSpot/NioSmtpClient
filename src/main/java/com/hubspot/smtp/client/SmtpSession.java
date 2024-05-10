@@ -382,11 +382,9 @@ public class SmtpSession {
       if (firstChunk == null) {
         throw new IllegalArgumentException(
           "The MessageContent was empty; size is " +
-          (
-            content.size().isPresent()
+          (content.size().isPresent()
               ? Integer.toString(content.size().getAsInt())
-              : "not present"
-          )
+              : "not present")
         );
       }
 
