@@ -7,7 +7,11 @@ import static io.netty.handler.codec.smtp.SmtpCommand.QUIT;
 import static io.netty.handler.codec.smtp.SmtpCommand.RCPT;
 import static io.netty.handler.codec.smtp.SmtpCommand.RSET;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.endsWith;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteSource;
@@ -492,6 +496,7 @@ public class IntegrationTest {
       return SslContextBuilder
         .forClient()
         .trustManager(InsecureTrustManagerFactory.INSTANCE)
+        .protocols("TLSv1.2")
         .build()
         .newEngine(PooledByteBufAllocator.DEFAULT);
     } catch (Exception e) {
