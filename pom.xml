@@ -15,7 +15,7 @@
     <basepom.test.arguments>--add-opens=java.base/java.nio=ALL-UNNAMED</basepom.test.arguments>
 
     <james.protocols.version>1.6.3</james.protocols.version>
-    <james.netty.version>3.3.1.Final</james.netty.version>
+    <james.netty.version>3.9.8.Final</james.netty.version>
   </properties>
 
   <dependencyManagement>
