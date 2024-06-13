@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
@@ -44,6 +45,10 @@ public class KeepAliveHandlerTest {
     handler = new TestHandler(responseHandler, CONNECTION_ID, Duration.ofSeconds(30));
 
     when(context.channel()).thenReturn(channel);
+
+    ChannelFuture writeFuture = mock(ChannelFuture.class);
+    when(context.write(any(), any())).thenReturn(writeFuture);
+
     when(responseHandler.getPendingResponseDebugString()).thenReturn(Optional.empty());
   }
 
