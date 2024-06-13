@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>NioSmtpClient</artifactId>
-  <version>1.2.0</version>
+  <version>1.2.1-SNAPSHOT</version>
 
   <properties>
     <basepom.test.arguments>--add-opens=java.base/java.nio=ALL-UNNAMED</basepom.test.arguments>
@@ -195,7 +195,7 @@
     <connection>scm:git:git@github.com:HubSpot/NioSmtpClient.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/HubSpot/NioSmtpClient.git</developerConnection>
     <url>git@github.com:HubSpot/NioSmtpClient.git</url>
-    <tag>NioSmtpClient-1.2.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
 </project>
