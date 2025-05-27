@@ -1183,7 +1183,6 @@ public class SmtpSession {
     }
 
     @Override
-    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION") // https://github.com/findbugsproject/findbugs/issues/79
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
       if (cause != null) {
         closeFuture.completeExceptionally(cause);

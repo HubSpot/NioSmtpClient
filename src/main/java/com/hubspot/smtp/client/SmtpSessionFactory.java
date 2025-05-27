@@ -1,6 +1,5 @@
 package com.hubspot.smtp.client;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -123,7 +122,6 @@ public class SmtpSessionFactory implements Closeable {
    *
    * @return a future that will be completed when all sessions have been closed
    */
-  @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION") // https://github.com/findbugsproject/findbugs/issues/79
   public CompletableFuture<Void> closeAsync() {
     CompletableFuture<Void> returnedFuture = new CompletableFuture<>();
 
