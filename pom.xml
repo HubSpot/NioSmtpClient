@@ -24,16 +24,6 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-codec-smtp</artifactId>
-        <version>${dep.netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-handler-proxy</artifactId>
-        <version>${dep.netty.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.james.protocols</groupId>
         <artifactId>protocols-api</artifactId>
         <version>${james.protocols.version}</version>
@@ -72,7 +62,7 @@
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty-codec</artifactId>
+      <artifactId>netty-codec-base</artifactId>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
