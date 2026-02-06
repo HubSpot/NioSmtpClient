@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.hubspot</groupId>
     <artifactId>basepom</artifactId>
-    <version>63.10</version>
+    <version>67.2</version>
   </parent>
 
   <artifactId>NioSmtpClient</artifactId>
@@ -23,16 +23,6 @@
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-codec-smtp</artifactId>
-        <version>${dep.netty.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-handler-proxy</artifactId>
-        <version>${dep.netty.version}</version>
-      </dependency>
       <dependency>
         <groupId>org.apache.james.protocols</groupId>
         <artifactId>protocols-api</artifactId>
@@ -72,7 +62,7 @@
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
-      <artifactId>netty-codec</artifactId>
+      <artifactId>netty-codec-base</artifactId>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
