@@ -24,10 +24,11 @@ import com.hubspot.smtp.client.SmtpSessionFactory;
 import com.hubspot.smtp.client.SmtpSessionFactoryConfig;
 import com.hubspot.smtp.messages.MessageContent;
 import com.hubspot.smtp.messages.MessageContentEncoding;
+import io.netty.buffer.AdaptiveByteBufAllocator;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.handler.codec.smtp.DefaultSmtpRequest;
 import io.netty.handler.codec.smtp.SmtpCommand;
 import io.netty.handler.codec.smtp.SmtpRequest;
@@ -76,7 +77,8 @@ public class IntegrationTest {
     "Subject: test mail\r\n\r\n" +
     "Hello!\r\n";
 
-  private static final NioEventLoopGroup EVENT_LOOP_GROUP = new NioEventLoopGroup();
+  private static final MultiThreadIoEventLoopGroup EVENT_LOOP_GROUP =
+    new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
   private InetSocketAddress serverAddress;
   private NettyServer smtpServer;
   private SmtpSessionFactory sessionFactory;
@@ -498,7 +500,7 @@ public class IntegrationTest {
         .trustManager(InsecureTrustManagerFactory.INSTANCE)
         .protocols("TLSv1.2")
         .build()
-        .newEngine(PooledByteBufAllocator.DEFAULT);
+        .newEngine(AdaptiveByteBufAllocator.DEFAULT);
     } catch (Exception e) {
       throw new RuntimeException("Could not create SSLEngine", e);
     }
