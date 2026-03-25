@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>NioSmtpClient</artifactId>
-  <version>1.2.3-SNAPSHOT</version>
+  <version>1.2.3</version>
 
   <name>${project.groupId}:${project.artifactId}</name>
   <description>Smtp Client based on Netty</description>
@@ -190,7 +190,7 @@
     <connection>scm:git:git@github.com:HubSpot/NioSmtpClient.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/HubSpot/NioSmtpClient.git</developerConnection>
     <url>git@github.com:HubSpot/NioSmtpClient.git</url>
-    <tag>HEAD</tag>
+    <tag>NioSmtpClient-1.2.3</tag>
   </scm>
 
 </project>
