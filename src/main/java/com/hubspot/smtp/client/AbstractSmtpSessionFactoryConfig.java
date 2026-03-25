@@ -2,11 +2,12 @@ package com.hubspot.smtp.client;
 
 import com.google.common.base.Suppliers;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.netty.buffer.AdaptiveByteBufAllocator;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslContextBuilder;
 import java.security.KeyStore;
@@ -45,13 +46,15 @@ abstract class AbstractSmtpSessionFactoryConfig {
 
     return SmtpSessionFactoryConfig
       .builder()
-      .eventLoopGroup(new NioEventLoopGroup(1, threadFactory))
+      .eventLoopGroup(
+        new MultiThreadIoEventLoopGroup(1, threadFactory, NioIoHandler.newFactory())
+      )
       .executor(Executors.newCachedThreadPool(threadFactory))
       .build();
   }
 
   /**
-   * Creates a configuration with a default {@code NioEventLoopGroup} and {@code Executor}. This is
+   * Creates a configuration with a default {@code MultiThreadIoEventLoopGroup} and {@code Executor}. This is
    * NOT suitable for a production environment but is useful for testing.
    */
   public static SmtpSessionFactoryConfig nonProductionConfig() {
@@ -73,7 +76,7 @@ abstract class AbstractSmtpSessionFactoryConfig {
    */
   @Default
   public ByteBufAllocator getAllocator() {
-    return PooledByteBufAllocator.DEFAULT;
+    return AdaptiveByteBufAllocator.DEFAULT;
   }
 
   /**
