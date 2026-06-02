@@ -1,26 +1,33 @@
 package com.hubspot.smtp;
 
-import static com.hubspot.smtp.ExtensibleNettyServer.NETTY_CHANNEL;
+import static com.hubspot.smtp.ChunkingChannelHandlerFactory.NETTY_CHANNEL;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelPipeline;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.james.protocols.api.ProtocolSession;
+import org.apache.james.core.MaybeSender;
+import org.apache.james.protocols.api.ProtocolSession.AttachmentKey;
 import org.apache.james.protocols.api.ProtocolSession.State;
 import org.apache.james.protocols.api.Request;
 import org.apache.james.protocols.api.Response;
-import org.apache.james.protocols.api.future.FutureResponseImpl;
 import org.apache.james.protocols.api.handler.CommandHandler;
 import org.apache.james.protocols.api.handler.ExtensibleHandler;
 import org.apache.james.protocols.api.handler.LineHandler;
 import org.apache.james.protocols.api.handler.WiringException;
 import org.apache.james.protocols.netty.HandlerConstants;
-import org.apache.james.protocols.smtp.MailAddress;
 import org.apache.james.protocols.smtp.MailEnvelopeImpl;
 import org.apache.james.protocols.smtp.SMTPResponse;
 import org.apache.james.protocols.smtp.SMTPRetCode;
@@ -29,17 +36,14 @@ import org.apache.james.protocols.smtp.core.esmtp.EhloExtension;
 import org.apache.james.protocols.smtp.dsn.DSNStatus;
 import org.apache.james.protocols.smtp.hook.Hook;
 import org.apache.james.protocols.smtp.hook.MessageHook;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 
 public class ChunkingExtension
   implements EhloExtension, CommandHandler<SMTPSession>, ExtensibleHandler, Hook {
 
-  private static final String MAIL_ENVELOPE = "mail envelope";
+  private static final AttachmentKey<MailEnvelopeImpl> MAIL_ENVELOPE = AttachmentKey.of(
+    "mail envelope",
+    MailEnvelopeImpl.class
+  );
   private static final String BDAT_HANDLER_NAME = "BDAT handler";
   private static final Pattern BDAT_COMMAND_PATTERN = Pattern.compile(
     "(?<size>[0-9]+)(?<last> LAST)?"
@@ -61,19 +65,23 @@ public class ChunkingExtension
       return DELIVERY_SYNTAX;
     }
 
-    Channel channel = (Channel) session.getAttachment(NETTY_CHANNEL, State.Connection);
-    if (channel == null) {
-      throw new RuntimeException(
-        "ExtensibleNettyServer must be used to support chunking"
+    Channel channel = session
+      .getAttachment(NETTY_CHANNEL, State.Connection)
+      .orElseThrow(() ->
+        new RuntimeException(
+          "ChunkingChannelHandlerFactory must be used to support chunking"
+        )
       );
-    }
 
-    BdatHandler bdatHandler = new BdatHandler(channel.getPipeline(), session);
+    BdatHandler bdatHandler = new BdatHandler(channel, session);
     bdatHandler.startCapturingData(
       Integer.parseInt(matcher.group("size")),
-      !matcher.group("last").isEmpty()
+      matcher.group("last") != null
     );
-    return bdatHandler.bdatResponseFuture;
+
+    // Return null: the response is written by the BdatHandler once the chunk has been
+    // captured, mirroring how James' transport defers a response.
+    return null;
   }
 
   @Override
@@ -105,28 +113,26 @@ public class ChunkingExtension
     }
   }
 
-  private class BdatHandler extends SimpleChannelUpstreamHandler {
+  private class BdatHandler extends ChannelInboundHandlerAdapter {
 
+    private final Channel channel;
     private final ChannelPipeline pipeline;
     private final SMTPSession session;
-    private final FutureResponseImpl bdatResponseFuture;
 
     private int currentChunkSize;
     private int bytesRead;
     private boolean isLastChunk;
 
-    public BdatHandler(ChannelPipeline pipeline, SMTPSession session) {
-      this.pipeline = pipeline;
+    BdatHandler(Channel channel, SMTPSession session) {
+      this.channel = channel;
+      this.pipeline = channel.pipeline();
       this.session = session;
-      this.bdatResponseFuture = new FutureResponseImpl();
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
-      throws Exception {
-      if (e.getMessage() instanceof ChannelBuffer) {
-        ChannelBuffer buffer = (ChannelBuffer) e.getMessage();
-
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+      if (msg instanceof ByteBuf) {
+        ByteBuf buffer = (ByteBuf) msg;
         int bytesToRead = Math.min(currentChunkSize - bytesRead, buffer.readableBytes());
         buffer.readBytes(getMailEnvelope().getMessageOutputStream(), bytesToRead);
         bytesRead += bytesToRead;
@@ -135,13 +141,18 @@ public class ChunkingExtension
           stopCapturingData();
         }
 
+        if (buffer.isReadable()) {
+          ctx.fireChannelRead(buffer);
+        } else {
+          buffer.release();
+        }
+
         return;
       }
 
-      super.messageReceived(ctx, e);
+      ctx.fireChannelRead(msg);
     }
 
-    @SuppressWarnings("unchecked")
     private void startCapturingData(int bytesToCapture, boolean last) {
       currentChunkSize = bytesToCapture;
       isLastChunk = last;
@@ -150,26 +161,22 @@ public class ChunkingExtension
 
       MailEnvelopeImpl env = new MailEnvelopeImpl();
       env.setRecipients(
-        Lists.newArrayList(
-          (Collection<MailAddress>) session.getAttachment(
-            SMTPSession.RCPT_LIST,
-            State.Transaction
-          )
-        )
+        session
+          .getAttachment(SMTPSession.RCPT_LIST, State.Transaction)
+          .orElse(ImmutableList.of())
       );
       env.setSender(
-        (MailAddress) session.getAttachment(
-          SMTPSession.SENDER,
-          ProtocolSession.State.Transaction
-        )
+        session
+          .getAttachment(SMTPSession.SENDER, State.Transaction)
+          .orElse(MaybeSender.nullSender())
       );
 
-      session.setAttachment(MAIL_ENVELOPE, env, ProtocolSession.State.Transaction);
+      session.setAttachment(MAIL_ENVELOPE, env, State.Transaction);
     }
 
     private void stopCapturingData() {
       pipeline.remove(this);
-      bdatResponseFuture.setResponse(
+      writeResponse(
         new SMTPResponse(
           "250",
           String.format("Message OK, %d octets received", currentChunkSize)
@@ -179,6 +186,17 @@ public class ChunkingExtension
       if (isLastChunk) {
         callMessageHooks();
       }
+    }
+
+    private void writeResponse(Response response) {
+      StringBuilder builder = new StringBuilder();
+      for (CharSequence line : response.getLines()) {
+        builder.append(line).append("\r\n");
+      }
+
+      channel.writeAndFlush(
+        Unpooled.wrappedBuffer(builder.toString().getBytes(StandardCharsets.US_ASCII))
+      );
     }
 
     private void callMessageHooks() {
@@ -199,7 +217,9 @@ public class ChunkingExtension
     }
 
     private MailEnvelopeImpl getMailEnvelope() {
-      return (MailEnvelopeImpl) session.getAttachment(MAIL_ENVELOPE, State.Transaction);
+      return session
+        .getAttachment(MAIL_ENVELOPE, State.Transaction)
+        .orElseThrow(() -> new RuntimeException("No mail envelope on session"));
     }
   }
 }

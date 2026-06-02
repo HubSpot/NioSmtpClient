@@ -7,11 +7,6 @@ import static io.netty.handler.codec.smtp.SmtpCommand.QUIT;
 import static io.netty.handler.codec.smtp.SmtpCommand.RCPT;
 import static io.netty.handler.codec.smtp.SmtpCommand.RSET;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.endsWith;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteSource;
@@ -41,14 +36,22 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.net.ssl.SSLEngine;
-import org.apache.james.protocols.api.Encryption;
-import org.apache.james.protocols.api.logger.Logger;
+import org.apache.james.core.Username;
+import org.apache.james.metrics.tests.RecordingMetricFactory;
+import org.apache.james.protocols.api.OidcSASLConfiguration;
+import org.apache.james.protocols.api.Request;
+import org.apache.james.protocols.api.Response;
+import org.apache.james.protocols.api.handler.CommandHandler;
+import org.apache.james.protocols.netty.Encryption;
 import org.apache.james.protocols.netty.NettyServer;
 import org.apache.james.protocols.smtp.MailEnvelope;
 import org.apache.james.protocols.smtp.SMTPConfigurationImpl;
@@ -67,6 +70,7 @@ import org.junit.Test;
 public class IntegrationTest {
 
   private static final long MAX_MESSAGE_SIZE = 1234000L;
+  private static final int MAX_LINE_LENGTH = 1024 * 1024;
   private static final String CORRECT_USERNAME = "smtp-user";
   private static final String CORRECT_PASSWORD = "correct horse battery staple";
   private static final String RETURN_PATH = "return-path@example.com";
@@ -84,30 +88,28 @@ public class IntegrationTest {
   private SmtpSessionFactory sessionFactory;
   private List<MailEnvelope> receivedMails;
   private String receivedMessageSize;
-  private Logger serverLog;
+  private AtomicInteger noopCount;
   private boolean requireAuth;
 
   @Before
   public void setup() throws Exception {
     receivedMails = Lists.newArrayList();
+    noopCount = new AtomicInteger();
     serverAddress = new InetSocketAddress(getFreePort());
-    serverLog = mock(Logger.class);
-    smtpServer = createAndStartSmtpServer(serverLog, serverAddress);
+    smtpServer = createAndStartSmtpServer(serverAddress);
     sessionFactory =
       new SmtpSessionFactory(
         SmtpSessionFactoryConfig
           .nonProductionConfig()
           .withSslEngineSupplier(this::createInsecureSSLEngine)
       );
-
-    when(serverLog.isDebugEnabled()).thenReturn(true);
   }
 
-  private NettyServer createAndStartSmtpServer(Logger log, InetSocketAddress address)
+  private NettyServer createAndStartSmtpServer(InetSocketAddress address)
     throws Exception {
     SMTPConfigurationImpl config = new SMTPConfigurationImpl() {
       @Override
-      public boolean isAuthRequired(String remoteIP) {
+      public boolean isAuthAnnounced(String remoteIP, boolean tlsStarted) {
         return requireAuth;
       }
 
@@ -118,13 +120,24 @@ public class IntegrationTest {
     };
 
     SMTPProtocolHandlerChain chain = new SMTPProtocolHandlerChain(
-      new CollectEmailsHook(),
-      new ChunkingExtension()
+      new RecordingMetricFactory()
     );
-    SMTPProtocol protocol = new SMTPProtocol(chain, config, log);
+    // Counts NOOP keep-alives but declines (returns null) so James' default
+    // NoopCmdHandler still issues the 250. It must precede that default handler
+    // because command dispatch is first-match-wins.
+    chain.add(0, new NoopCountingHandler());
+    chain.add(new CollectEmailsHook());
+    chain.add(new ChunkingExtension());
+    chain.wireExtensibleHandlers();
+
+    SMTPProtocol protocol = new SMTPProtocol(chain, config);
     Encryption encryption = Encryption.createStartTls(FakeTlsContext.createContext());
 
-    NettyServer server = new ExtensibleNettyServer(protocol, encryption);
+    NettyServer server = new NettyServer.Factory()
+      .protocol(protocol)
+      .secure(encryption)
+      .frameHandlerFactory(new ChunkingChannelHandlerFactory("starttls", MAX_LINE_LENGTH))
+      .build();
     server.setListenAddresses(address);
     server.bind();
 
@@ -202,8 +215,8 @@ public class IntegrationTest {
     assertThat(receivedMails.size()).isEqualTo(1);
     MailEnvelope mail = receivedMails.get(0);
 
-    assertThat(mail.getSender().toString()).isEqualTo(RETURN_PATH);
-    assertThat(mail.getRecipients().get(0).toString()).isEqualTo(RECIPIENT);
+    assertThat(mail.getSender().asString()).isEqualTo(RETURN_PATH);
+    assertThat(mail.getRecipients().get(0).asString()).isEqualTo(RECIPIENT);
     assertThat(readContents(mail)).contains(MESSAGE_DATA);
     assertThat(receivedMessageSize).contains(Integer.toString(MESSAGE_DATA.length()));
   }
@@ -227,9 +240,9 @@ public class IntegrationTest {
     assertThat(receivedMails.size()).isEqualTo(1);
     MailEnvelope mail = receivedMails.get(0);
 
-    assertThat(mail.getSender().toString()).isEqualTo(RETURN_PATH);
-    assertThat(mail.getRecipients().get(0).toString()).isEqualTo("a@example.com");
-    assertThat(mail.getRecipients().get(1).toString()).isEqualTo("b@example.com");
+    assertThat(mail.getSender().asString()).isEqualTo(RETURN_PATH);
+    assertThat(mail.getRecipients().get(0).asString()).isEqualTo("a@example.com");
+    assertThat(mail.getRecipients().get(1).asString()).isEqualTo("b@example.com");
     assertThat(readContents(mail)).contains(MESSAGE_DATA);
   }
 
@@ -303,8 +316,8 @@ public class IntegrationTest {
     assertThat(receivedMails.size()).isEqualTo(1);
     MailEnvelope mail = receivedMails.get(0);
 
-    assertThat(mail.getSender().toString()).isEqualTo(RETURN_PATH);
-    assertThat(mail.getRecipients().get(0).toString()).isEqualTo(RECIPIENT);
+    assertThat(mail.getSender().asString()).isEqualTo(RETURN_PATH);
+    assertThat(mail.getRecipients().get(0).asString()).isEqualTo(RECIPIENT);
     assertThat(readContents(mail)).contains(MESSAGE_DATA);
   }
 
@@ -329,8 +342,8 @@ public class IntegrationTest {
     assertThat(receivedMails.size()).isEqualTo(1);
     MailEnvelope mail = receivedMails.get(0);
 
-    assertThat(mail.getSender().toString()).isEqualTo(RETURN_PATH);
-    assertThat(mail.getRecipients().get(0).toString()).isEqualTo(RECIPIENT);
+    assertThat(mail.getSender().asString()).isEqualTo(RETURN_PATH);
+    assertThat(mail.getRecipients().get(0).asString()).isEqualTo(RECIPIENT);
     assertThat(readContents(mail)).contains(messageText);
   }
 
@@ -353,8 +366,8 @@ public class IntegrationTest {
     assertThat(receivedMails.size()).isEqualTo(1);
     MailEnvelope mail = receivedMails.get(0);
 
-    assertThat(mail.getSender().toString()).isEqualTo(RETURN_PATH);
-    assertThat(mail.getRecipients().get(0).toString()).isEqualTo(RECIPIENT);
+    assertThat(mail.getSender().asString()).isEqualTo(RETURN_PATH);
+    assertThat(mail.getRecipients().get(0).asString()).isEqualTo(RECIPIENT);
     assertThat(readContents(mail)).contains(MESSAGE_DATA);
   }
 
@@ -473,7 +486,7 @@ public class IntegrationTest {
 
     Thread.sleep(3000);
 
-    verify(serverLog, atLeast(2)).debug(endsWith("received: NOOP"));
+    assertThat(noopCount.get()).isGreaterThanOrEqualTo(2);
   }
 
   private String readContents(MailEnvelope mail) throws IOException {
@@ -537,21 +550,46 @@ public class IntegrationTest {
     return Unpooled.wrappedBuffer(s.getBytes(StandardCharsets.UTF_8));
   }
 
+  private class NoopCountingHandler implements CommandHandler<SMTPSession> {
+
+    @Override
+    public Response onCommand(SMTPSession session, Request request) {
+      noopCount.incrementAndGet();
+      return null;
+    }
+
+    @Override
+    public Collection<String> getImplCommands() {
+      return Collections.singletonList("NOOP");
+    }
+  }
+
   private class CollectEmailsHook implements MessageHook, MailParametersHook, AuthHook {
 
     @Override
     public synchronized HookResult onMessage(SMTPSession session, MailEnvelope mail) {
       receivedMails.add(mail);
-      return HookResult.ok();
+      return HookResult.OK;
     }
 
     @Override
-    public HookResult doAuth(SMTPSession session, String username, String password) {
-      if (username.equals(CORRECT_USERNAME) && password.equals(CORRECT_PASSWORD)) {
-        return HookResult.ok();
+    public HookResult doAuth(SMTPSession session, Username username, String password) {
+      if (
+        username.asString().equals(CORRECT_USERNAME) && password.equals(CORRECT_PASSWORD)
+      ) {
+        return HookResult.OK;
       } else {
-        return HookResult.deny();
+        return HookResult.DENY;
       }
+    }
+
+    @Override
+    public HookResult doSasl(
+      SMTPSession session,
+      OidcSASLConfiguration saslConfiguration,
+      String initialResponse
+    ) {
+      return HookResult.DECLINED;
     }
 
     @Override
@@ -564,7 +602,7 @@ public class IntegrationTest {
         receivedMessageSize = paramValue;
       }
 
-      return null;
+      return HookResult.DECLINED;
     }
 
     @Override

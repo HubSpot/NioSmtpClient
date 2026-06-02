@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.hubspot</groupId>
     <artifactId>basepom</artifactId>
-    <version>68.1</version>
+    <version>69.3-SNAPSHOT</version>
   </parent>
 
   <artifactId>NioSmtpClient</artifactId>
@@ -17,8 +17,7 @@
   <properties>
     <basepom.test.arguments>--add-opens=java.base/java.nio=ALL-UNNAMED</basepom.test.arguments>
 
-    <james.protocols.version>1.6.3</james.protocols.version>
-    <james.netty.version>3.9.8.Final</james.netty.version>
+    <james.version>3.9.0</james.version>
   </properties>
 
   <dependencyManagement>
@@ -26,22 +25,32 @@
       <dependency>
         <groupId>org.apache.james.protocols</groupId>
         <artifactId>protocols-api</artifactId>
-        <version>${james.protocols.version}</version>
+        <version>${james.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.james.protocols</groupId>
         <artifactId>protocols-netty</artifactId>
-        <version>${james.protocols.version}</version>
+        <version>${james.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.james.protocols</groupId>
         <artifactId>protocols-smtp</artifactId>
-        <version>${james.protocols.version}</version>
+        <version>${james.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty</artifactId>
-        <version>${james.netty.version}</version>
+        <groupId>org.apache.james</groupId>
+        <artifactId>james-core</artifactId>
+        <version>${james.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.james</groupId>
+        <artifactId>metrics-api</artifactId>
+        <version>${james.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.james</groupId>
+        <artifactId>metrics-tests</artifactId>
+        <version>${james.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -133,8 +142,18 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty</artifactId>
+      <groupId>org.apache.james</groupId>
+      <artifactId>james-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.james</groupId>
+      <artifactId>metrics-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.james</groupId>
+      <artifactId>metrics-tests</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
